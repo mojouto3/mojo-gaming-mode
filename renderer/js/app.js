@@ -4,6 +4,7 @@ const state = {
   gpu: { vendor: 'nvidia', model: '' },
   preset: 'balanced',
   tweaks: {},
+  manualOverrides: {},
   rules: [],
   active: false,
   sessions: 0
@@ -28,12 +29,10 @@ async function init() {
     if (config.preset) {
       state.preset = config.preset;
     }
-    if (config.tweaks && Object.keys(config.tweaks).length > 0) {
-      Object.assign(state.tweaks, config.tweaks);
-    } else {
-      // First run - apply defaults for detected preset
-      ALL_TWEAKS.forEach(t => { state.tweaks[t.id] = t.presets[state.preset]; });
-    }
+    // Always apply preset defaults first, then overlay manual overrides
+    ALL_TWEAKS.forEach(t => { state.tweaks[t.id] = t.presets[state.preset]; });
+    state.manualOverrides = config.manualOverrides || {};
+    Object.assign(state.tweaks, state.manualOverrides);
     if (config.customRules) state.rules = config.customRules;
 
     setPresetButtons(state.preset);
@@ -116,12 +115,37 @@ function updateDetectedGPU(vendor, model) {
 
 // ── Presets ───────────────────────────────────────────────────────────────────
 
-function setPreset(preset) {
-  state.preset = preset;
-  ALL_TWEAKS.forEach(t => { state.tweaks[t.id] = t.presets[preset]; });
-  setPresetButtons(preset);
-  renderAll();
-  persistConfig();
+async function setPreset(preset) {
+  if (state.preset === preset) return;
+
+  if (state.active) {
+    // Auto-switch: revert current, apply new
+    setPresetsDisabled(true);
+    await revertMode(true); // silent=true, no toast
+    state.preset = preset;
+    state.manualOverrides = {};
+    ALL_TWEAKS.forEach(t => { state.tweaks[t.id] = t.presets[preset]; });
+    setPresetButtons(preset);
+    renderAll();
+    persistConfig();
+    await applyMode(true); // silent=true, custom toast
+    showToast('Switched to ' + preset.charAt(0).toUpperCase() + preset.slice(1));
+    setPresetsDisabled(false);
+  } else {
+    state.preset = preset;
+    state.manualOverrides = {};
+    ALL_TWEAKS.forEach(t => { state.tweaks[t.id] = t.presets[preset]; });
+    setPresetButtons(preset);
+    renderAll();
+    persistConfig();
+  }
+}
+
+function setPresetsDisabled(disabled) {
+  document.querySelectorAll('.preset-card').forEach(card => {
+    card.style.opacity = disabled ? '0.5' : '1';
+    card.style.pointerEvents = disabled ? 'none' : '';
+  });
 }
 
 function setPresetButtons(preset) {
@@ -271,6 +295,13 @@ function renderAll() {
 
 function toggleTweak(id, val) {
   state.tweaks[id] = val;
+  // Track as manual override only if different from preset default
+  const tweak = ALL_TWEAKS.find(t => t.id === id);
+  if (tweak && tweak.presets[state.preset] !== val) {
+    state.manualOverrides[id] = val;
+  } else {
+    delete state.manualOverrides[id];
+  }
   const row = document.getElementById('tr-' + id);
   if (row) row.className = 'tweak-row' + (val ? ' active' : '');
   renderPresetActive();
@@ -278,9 +309,20 @@ function toggleTweak(id, val) {
   persistConfig();
 }
 
-async function applyMode() {
-  const result = await window.mgm.applyMode({ tweaks: state.tweaks, rules: state.rules });
-  if (!result.success) { showToast('Failed to apply mode'); return; }
+async function applyMode(silent = false) {
+  const btn = document.getElementById('btn-activate');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader"></i> Applying...';
+  if (!silent) showToast('Applying tweaks...');
+
+  const result = await window.mgm.applyMode({ tweaks: state.tweaks, rules: state.rules, preset: state.preset });
+  btn.disabled = false;
+
+  if (!result.success) {
+    btn.innerHTML = '<i class="ti ti-bolt"></i> Activate';
+    if (!silent) showToast('Failed to apply — check logs');
+    return;
+  }
 
   state.active = true;
   state.sessions++;
@@ -288,31 +330,39 @@ async function applyMode() {
   document.getElementById('status-dot').classList.add('on');
   document.getElementById('status-label').textContent = 'Gaming mode active';
 
-  const btn = document.getElementById('btn-activate');
   btn.className = 'btn-activate deact';
   btn.innerHTML = '<i class="ti ti-power"></i> Deactivate';
   btn.removeEventListener('click', applyMode);
   btn.addEventListener('click', revertMode);
 
+  if (!silent) {
+    const failed = result.failed ? result.failed.length : 0;
+    showToast(failed > 0 ? `Activated — ${failed} tweak(s) skipped` : 'Gaming mode activated');
+  }
+
   renderStats();
-  showToast('Gaming mode activated');
 }
 
-async function revertMode() {
+async function revertMode(silent = false) {
+  const btn = document.getElementById('btn-activate');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader"></i> Reverting...';
+
   await window.mgm.revertMode();
+  btn.disabled = false;
+
   state.active = false;
 
   document.getElementById('status-dot').classList.remove('on');
   document.getElementById('status-label').textContent = 'Gaming mode off';
 
-  const btn = document.getElementById('btn-activate');
   btn.className = 'btn-activate';
   btn.innerHTML = '<i class="ti ti-bolt"></i> Activate';
   btn.removeEventListener('click', revertMode);
   btn.addEventListener('click', applyMode);
 
   renderStats();
-  showToast('Reverted to normal');
+  if (!silent) showToast('Reverted to normal');
 }
 
 // ── Rules ─────────────────────────────────────────────────────────────────────
@@ -354,7 +404,7 @@ async function persistConfig() {
   await window.mgm.saveConfig({
     gpu: state.gpu.vendor,
     preset: state.preset,
-    tweaks: state.tweaks,
+    manualOverrides: state.manualOverrides,
     customRules: state.rules
   });
 }
