@@ -12,5 +12,8 @@ contextBridge.exposeInMainWorld('mgm', {
   revertMode: () => ipcRenderer.invoke('revert-mode'),
   windowClose: () => ipcRenderer.send('window-close'),
   windowMinimize: () => ipcRenderer.send('window-minimize'),
-  onTrayToggle: (cb) => ipcRenderer.on('tray-toggle-mode', (e, val) => cb(val))
+  onTrayToggle: (cb) => ipcRenderer.on('tray-toggle-mode', (e, val) => cb(val)),
+  metricsStart: () => ipcRenderer.send('metrics-start'),
+  metricsStop: () => ipcRenderer.send('metrics-stop'),
+  onMetricsData: (cb) => ipcRenderer.on('metrics-data', (e, data) => cb(data))
 });

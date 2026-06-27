@@ -2,6 +2,34 @@
 
 All notable changes to Mojo Gaming Mode will be documented here.
 
+## [0.4.0] - 2026-06-27
+
+### Added
+
+- Settings tab: manual vendor theme override (Auto / NVIDIA / AMD / Intel) with vendor logos
+- Settings tab: language selection with 10 languages (EN, GR, DE, ES, RU, IT, FR, PT-BR, PL, TR)
+- Full i18n system via translations.js with t() helper function
+- Language applies immediately without restart
+- Performance tab: live CPU, RAM, GPU gauges with real-time data via persistent PowerShell process
+- Performance tab: mini sparkline history per gauge (20 readings)
+- Performance tab: GPU usage % via nvidia-smi when available, VRAM fallback otherwise
+- Performance tab: Applied Changes collapsible section with count badge, closed by default
+- Performance tab: LIVE pill badge next to System Resources header
+- Metrics polling starts only when Performance tab is open, stops on tab switch (zero idle overhead)
+- Vendor theme sidebar branding: vendor logo + vendor subtitle (NVIDIA Control Panel / AMD Adrenalin Edition / Intel Arc Control)
+- Topbar badge always shows real detected GPU model regardless of manual theme
+
+### Changed
+
+- Performance tab completely redesigned: bigger 36px gauge values, thicker bars, sparklines
+- Applied Changes moved to collapsible section to give more space to live metrics
+- Sidebar subtitle changes based on active theme vendor, not GPU model
+
+### Fixed
+
+- GPU gauge shows N/A gracefully when nvidia-smi is unavailable
+- Metrics process stops cleanly when window is hidden to tray
+
 ## [0.3.0] - 2026-06-27
 
 ### Added

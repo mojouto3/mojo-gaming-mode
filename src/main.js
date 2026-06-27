@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const { exec } = require('child_process');
 const { executeTweaks } = require('./executor');
+const metrics = require('./metrics');
 const { TWEAK_DEFINITIONS } = require('./tweaks');
 
 const CONFIG_PATH = path.join(app.getPath('userData'), 'config.json');
@@ -115,6 +116,7 @@ function createWindow() {
 
   mainWindow.on('close', (e) => {
     e.preventDefault();
+    metrics.stop();
     mainWindow.hide();
   });
 
@@ -337,6 +339,18 @@ ipcMain.handle('set-autostart', (e, enabled) => {
     name: 'Mojo Gaming Mode'
   });
   return { success: true };
+});
+
+ipcMain.on('metrics-start', () => {
+  metrics.start((data) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('metrics-data', data);
+    }
+  });
+});
+
+ipcMain.on('metrics-stop', () => {
+  metrics.stop();
 });
 
 ipcMain.on('window-close', () => {

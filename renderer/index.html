@@ -165,44 +165,109 @@
               </div>
             </div>
 
-            <div class="section-header" style="margin-top:16px"><span class="sh-title">THEME</span></div>
+            <div class="section-header" style="margin-top:16px"><span class="sh-title" data-t="settings_theme">THEME</span></div>
+            <div class="settings-card">
+              <div class="settings-info" style="margin-bottom:12px">
+                <div class="settings-label" data-t="settings_vendor">Vendor theme</div>
+                <div class="settings-desc" data-t="settings_vendor_desc">Choose your GPU vendor theme. Auto-detected by default.</div>
+              </div>
+              <div class="theme-picker" id="theme-picker">
+                <button class="theme-btn" id="tb-auto" data-theme="auto">
+                  <span class="theme-btn-dot" style="background:var(--acc)"></span>
+                  Auto
+                </button>
+                <button class="theme-btn" id="tb-nvidia" data-theme="nvidia">
+                  <img src="../assets/icons/nvidia_logo.png" class="theme-btn-icon">
+                  NVIDIA
+                </button>
+                <button class="theme-btn" id="tb-amd" data-theme="amd">
+                  <img src="../assets/icons/amd_logo.png" class="theme-btn-icon">
+                  AMD
+                </button>
+                <button class="theme-btn" id="tb-intel" data-theme="intel">
+                  <img src="../assets/icons/intel_logo.png" class="theme-btn-icon">
+                  Intel
+                </button>
+              </div>
+            </div>
+
+            <div class="section-header" style="margin-top:16px"><span class="sh-title" data-t="settings_lang">LANGUAGE</span></div>
             <div class="settings-card">
               <div class="settings-row">
                 <div class="settings-info">
-                  <div class="settings-label">Vendor theme</div>
-                  <div class="settings-desc">Auto-detected from your GPU. Manual override coming in v0.4.0.</div>
+                  <div class="settings-label" data-t="settings_lang_label">Display language</div>
+                  <div class="settings-desc" data-t="settings_lang_desc">Choose the language for the app interface.</div>
                 </div>
-                <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-                  <img id="settings-vendor-icon" src="../assets/icons/nvidia_logo.png" style="width:24px;height:24px;object-fit:contain;border-radius:4px">
-                  <div class="gpu-badge" id="settings-gpu-badge"></div>
-                </div>
+              </div>
+              <div class="lang-picker" id="lang-picker">
+                <button class="lang-btn active" data-lang="en">🇬🇧 English</button>
+                <button class="lang-btn" data-lang="gr">🇬🇷 Ελληνικά</button>
+                <button class="lang-btn" data-lang="de">🇩🇪 Deutsch</button>
+                <button class="lang-btn" data-lang="es">🇪🇸 Español</button>
+                <button class="lang-btn" data-lang="ru">🇷🇺 Русский</button>
+                <button class="lang-btn" data-lang="it">🇮🇹 Italiano</button>
+                <button class="lang-btn" data-lang="fr">🇫🇷 Français</button>
+                <button class="lang-btn" data-lang="pt">🇧🇷 Português</button>
+                <button class="lang-btn" data-lang="pl">🇵🇱 Polski</button>
+                <button class="lang-btn" data-lang="tr">🇹🇷 Türkçe</button>
               </div>
             </div>
 
           </div>
 
           <div id="tab-stats" class="tab-panel">
+
+            <div class="section-header">
+              <span class="sh-title">SYSTEM RESOURCES</span>
+              <span class="live-pill"><span class="live-dot-anim"></span>LIVE</span>
+            </div>
+
+            <div class="gauge-grid-big">
+              <div class="gauge-card-big">
+                <div class="gauge-big-label">CPU</div>
+                <div class="gauge-big-val" id="cpu-val">--</div>
+                <div class="gauge-bar-wrap-big"><div class="gauge-bar-fill" id="cpu-bar" style="width:0%"></div></div>
+                <div class="gauge-big-sub" id="cpu-sub">Waiting...</div>
+                <div class="gauge-sparkline" id="cpu-spark"></div>
+              </div>
+              <div class="gauge-card-big">
+                <div class="gauge-big-label">RAM</div>
+                <div class="gauge-big-val" id="ram-val">--</div>
+                <div class="gauge-bar-wrap-big"><div class="gauge-bar-fill" id="ram-bar" style="width:0%"></div></div>
+                <div class="gauge-big-sub" id="ram-sub">Waiting...</div>
+                <div class="gauge-sparkline" id="ram-spark"></div>
+              </div>
+              <div class="gauge-card-big">
+                <div class="gauge-big-label">GPU</div>
+                <div class="gauge-big-val" id="gpu-val-live">--</div>
+                <div class="gauge-bar-wrap-big"><div class="gauge-bar-fill" id="gpu-bar" style="width:0%"></div></div>
+                <div class="gauge-big-sub" id="gpu-sub-live">Waiting...</div>
+                <div class="gauge-sparkline" id="gpu-spark"></div>
+              </div>
+            </div>
+
+            <div class="section-header" style="margin-top:14px"><span class="sh-title">SESSION</span></div>
             <div class="metrics-grid">
-              <div class="metric highlighted">
-                <div class="metric-val accent" id="fps-val">60<span>fps</span></div>
-                <div class="metric-label">Target FPS</div>
-                <div class="perf-bar-wrap"><div class="perf-bar" id="fps-bar" style="width:40%"></div></div>
+              <div class="metric">
+                <div class="metric-val" id="sv-sessions">0</div>
+                <div class="metric-label">Sessions</div>
               </div>
               <div class="metric">
                 <div class="metric-val" id="sv-tweaks">0</div>
                 <div class="metric-label">Active tweaks</div>
               </div>
               <div class="metric">
-                <div class="metric-val" id="sv-sessions">0</div>
-                <div class="metric-label">Sessions</div>
-              </div>
-              <div class="metric">
                 <div class="metric-val" id="sv-rules">0</div>
                 <div class="metric-label">Custom rules</div>
               </div>
             </div>
-            <div class="section-header" style="margin-top:16px"><span class="sh-title">APPLIED CHANGES</span></div>
-            <div id="stats-changes"></div>
+
+            <div class="collapsible-header" id="changes-toggle">
+              <span class="sh-title">APPLIED CHANGES</span>
+              <span class="changes-count" id="changes-count"></span>
+              <i class="ti ti-chevron-down collapsible-arrow" id="changes-arrow"></i>
+            </div>
+            <div id="stats-changes" class="collapsible-body collapsed"></div>
           </div>
 
         </div>
@@ -238,6 +303,7 @@
     </div>
   </div>
 
+  <script src="js/translations.js"></script>
   <script src="js/tweaks.js"></script>
   <script src="js/app.js"></script>
 </body>
