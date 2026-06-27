@@ -1,5 +1,13 @@
 'use strict';
 
+const _fs_log = require('fs');
+const _log_path = require('path').join(require('os').tmpdir(), 'mgm-debug.log');
+function flog(...args) {
+  const line = new Date().toISOString() + ' ' + args.join(' ') + '\n';
+  _fs_log.appendFileSync(_log_path, line);
+  console.log(...args);
+}
+
 const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, Notification } = require('electron');
 const path = require('path');
 const fs = require('fs');
@@ -15,6 +23,7 @@ let mainWindow = null;
 let tray = null;
 let gamingModeActive = false;
 let detectedGPU = { vendor: 'nvidia', model: 'Unknown GPU' };
+let activeTweakIds = []; // tweaks currently applied, used for revert
 
 const DEFAULT_CONFIG = {
   gpu: null,
@@ -190,7 +199,7 @@ function updateTrayMenu() {
           mainWindow.close();
         }
         mainWindow = null;
-        app.exit(0);
+        app.quit(); // triggers before-quit for auto-revert
       }
     }
   ]);
@@ -205,6 +214,23 @@ app.commandLine.appendSwitch('no-sandbox');
 
 app.whenReady().then(async () => {
   detectedGPU = await detectGPU();
+
+  // Check if app crashed while active and auto-revert
+  const startupConfig = loadConfig();
+  if (startupConfig.wasActive && startupConfig.activeTweakIds && startupConfig.activeTweakIds.length > 0) {
+    flog('Crash recovery: reverting', JSON.stringify(startupConfig.activeTweakIds));
+    activeTweakIds = [...startupConfig.activeTweakIds];
+    try {
+      await executeTweaks(activeTweakIds, TWEAK_DEFINITIONS, 'revert');
+    } catch(e) {
+      flog('Crash recovery error:', e.message);
+    }
+    activeTweakIds = [];
+    startupConfig.wasActive = false;
+    startupConfig.activeTweakIds = [];
+    saveConfig(startupConfig);
+    flog('Crash recovery complete');
+  }
   const config = loadConfig();
   if (!config.gpu) {
     config.gpu = detectedGPU.vendor;
@@ -264,6 +290,10 @@ ipcMain.handle('apply-mode', async (e, config) => {
       .filter(([id, enabled]) => enabled)
       .map(([id]) => id);
 
+    // Store active tweaks for revert
+    activeTweakIds = [...enabledTweaks];
+    flog('apply-mode: storing activeTweakIds:', JSON.stringify(activeTweakIds));
+
     // Execute all enabled tweaks
     let results;
     try {
@@ -276,6 +306,11 @@ ipcMain.handle('apply-mode', async (e, config) => {
 
     gamingModeActive = true;
     updateTrayMenu();
+    // Save active state to config for crash recovery
+    const activeConfig = loadConfig();
+    activeConfig.wasActive = true;
+    activeConfig.activeTweakIds = [...activeTweakIds];
+    saveConfig(activeConfig);
     if (tray) {
       const onIcon = nativeImage.createFromPath(path.join(ASSETS_PATH, 'icons', 'tray-on.png'));
       tray.setImage(onIcon);
@@ -302,12 +337,17 @@ ipcMain.handle('apply-mode', async (e, config) => {
 
 ipcMain.handle('revert-mode', async (e, config) => {
   try {
-    const config_data = loadConfig();
-    const enabledTweaks = Object.entries(config_data.tweaks || {})
-      .filter(([id, enabled]) => enabled)
-      .map(([id]) => id);
+    // Use the tweaks that were actually applied, not the config
+    const tweaksToRevert = [...activeTweakIds];
+    flog('revert-mode: activeTweakIds:', JSON.stringify(tweaksToRevert));
 
-    const results = await executeTweaks(enabledTweaks, TWEAK_DEFINITIONS, 'revert');
+    const results = await executeTweaks(tweaksToRevert, TWEAK_DEFINITIONS, 'revert');
+    activeTweakIds = []; // clear after revert
+    // Clear active state from config
+    const revertConfig = loadConfig();
+    revertConfig.wasActive = false;
+    revertConfig.activeTweakIds = [];
+    saveConfig(revertConfig);
 
     gamingModeActive = false;
     updateTrayMenu();
@@ -355,6 +395,32 @@ ipcMain.on('metrics-stop', () => {
 
 ipcMain.on('window-close', () => {
   if (mainWindow) mainWindow.hide();
+});
+
+// Auto-revert on app quit (tray Quit or system shutdown)
+async function revertOnExit() {
+  if (gamingModeActive && activeTweakIds.length > 0) {
+    flog('Auto-revert on exit, tweaks:', JSON.stringify(activeTweakIds));
+    try {
+      await executeTweaks([...activeTweakIds], TWEAK_DEFINITIONS, 'revert');
+      activeTweakIds = [];
+      gamingModeActive = false;
+      // Save inactive state to config
+      const config = loadConfig();
+      config.wasActive = false;
+      saveConfig(config);
+    } catch(e) {
+      flog('Auto-revert error:', e.message);
+    }
+  }
+}
+
+app.on('before-quit', async (e) => {
+  if (gamingModeActive && activeTweakIds.length > 0) {
+    e.preventDefault();
+    await revertOnExit();
+    app.exit(0);
+  }
 });
 
 ipcMain.on('window-minimize', () => {

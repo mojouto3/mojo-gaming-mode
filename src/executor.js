@@ -2,23 +2,19 @@
 
 const { spawn } = require('child_process');
 
-// Run PowerShell command completely hidden - no window, no flash
-function runPS(command, requiresAdmin = false) {
+// Run PowerShell command silently.
+// App already runs as Administrator via manifest, so no elevation needed.
+function runPS(command) {
   return new Promise((resolve) => {
     const encoded = Buffer.from(command, 'utf16le').toString('base64');
 
-    let args;
-    if (requiresAdmin) {
-      // Wrap in Start-Process RunAs - still hidden via windowsHide
-      const inner = `-NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand ${encoded}`;
-      const wrapper = `Start-Process powershell.exe -ArgumentList "${inner}" -Verb RunAs -Wait -WindowStyle Hidden`;
-      const wrapperEncoded = Buffer.from(wrapper, 'utf16le').toString('base64');
-      args = ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', wrapperEncoded];
-    } else {
-      args = ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', encoded];
-    }
-
-    const ps = spawn('powershell.exe', args, {
+    const ps = spawn('powershell.exe', [
+      '-NoProfile',
+      '-NonInteractive',
+      '-WindowStyle', 'Hidden',
+      '-ExecutionPolicy', 'Bypass',
+      '-EncodedCommand', encoded
+    ], {
       windowsHide: true,
       stdio: ['ignore', 'pipe', 'pipe'],
       shell: false
@@ -41,16 +37,14 @@ function runPS(command, requiresAdmin = false) {
       resolve({ success: false, output: '', error: err.message });
     });
 
-    // Timeout safety
     setTimeout(() => {
-      ps.kill();
+      try { ps.kill(); } catch(e) {}
       resolve({ success: false, output: '', error: 'Timeout' });
     }, 30000);
   });
 }
 
 async function executeTweaks(tweakIds, tweak_definitions, mode = 'apply') {
-  // Run all tweaks in parallel for speed
   const promises = tweakIds.map(async (id) => {
     const def = tweak_definitions[id];
     if (!def) return { id, success: false, error: 'Unknown tweak' };
@@ -59,9 +53,11 @@ async function executeTweaks(tweakIds, tweak_definitions, mode = 'apply') {
     if (!command) return { id, success: true, skipped: true };
 
     try {
-      const result = await runPS(command, def.requiresAdmin);
+      const result = await runPS(command);
+      console.log(`[${mode}] ${id}: ${result.success ? 'OK' : 'FAIL'} ${result.error ? result.error.slice(0, 80) : ''}`);
       return { id, success: result.success, error: result.error };
     } catch (e) {
+      console.log(`[${mode}] ${id}: EXCEPTION ${e.message}`);
       return { id, success: false, error: e.message };
     }
   });
