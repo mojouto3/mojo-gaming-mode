@@ -1057,3 +1057,78 @@ html, body {
   color: var(--text3);
   margin-top: 2px;
 }
+
+/* Settings tab */
+.settings-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 14px 16px;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.settings-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+
+.settings-desc {
+  font-size: 11px;
+  color: var(--text2);
+  line-height: 1.4;
+}
+
+.settings-last {
+  font-size: 10px;
+  color: var(--text3);
+  margin-top: 4px;
+  font-family: 'Courier New', monospace;
+}
+
+.btn-restore {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border-acc);
+  background: rgba(var(--acc-rgb), 0.08);
+  color: var(--acc);
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.btn-restore:hover {
+  background: rgba(var(--acc-rgb), 0.15);
+}
+
+.btn-restore:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Settings button at bottom of sidebar */
+.sidebar-settings-btn {
+  padding: 6px 8px;
+}
+
+.sidebar-settings-btn .nav-item {
+  margin-bottom: 0;
+}

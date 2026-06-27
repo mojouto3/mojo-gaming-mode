@@ -52,6 +52,12 @@
           </div>
         </nav>
 
+        <div class="sidebar-settings-btn">
+          <div class="nav-item" id="ni-settings" data-tab="settings">
+            <i class="ti ti-settings"></i> Settings
+          </div>
+        </div>
+
         <div class="sidebar-footer">
           <div class="status-chip">
             <span class="status-dot" id="status-dot"></span>
@@ -126,6 +132,53 @@
             <div class="rules-info">
               Rules are saved and will execute when gaming mode is activated. Execution engine arrives in v0.2.0.
             </div>
+          </div>
+
+          <div id="tab-settings" class="tab-panel">
+
+            <div class="section-header"><span class="sh-title">SYSTEM</span></div>
+
+            <div class="settings-card">
+              <div class="settings-row">
+                <div class="settings-info">
+                  <div class="settings-label">System Restore Point</div>
+                  <div class="settings-desc">Create a Windows restore point before applying tweaks. Recommended before first use.</div>
+                  <div class="settings-last" id="restore-last"></div>
+                </div>
+                <button class="btn-restore" id="btn-restore">
+                  <i class="ti ti-shield-check"></i> Create Restore Point
+                </button>
+              </div>
+            </div>
+
+            <div class="settings-card" style="margin-top:8px">
+              <div class="settings-row">
+                <div class="settings-info">
+                  <div class="settings-label">Start with Windows</div>
+                  <div class="settings-desc">Launch Mojo Gaming Mode automatically when Windows starts. Opens minimized to tray.</div>
+                </div>
+                <label class="tog" id="tog-autostart">
+                  <input type="checkbox" id="cb-autostart">
+                  <div class="tog-track"></div>
+                  <div class="tog-thumb"></div>
+                </label>
+              </div>
+            </div>
+
+            <div class="section-header" style="margin-top:16px"><span class="sh-title">THEME</span></div>
+            <div class="settings-card">
+              <div class="settings-row">
+                <div class="settings-info">
+                  <div class="settings-label">Vendor theme</div>
+                  <div class="settings-desc">Auto-detected from your GPU. Manual override coming in v0.4.0.</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+                  <img id="settings-vendor-icon" src="../assets/icons/nvidia_logo.png" style="width:24px;height:24px;object-fit:contain;border-radius:4px">
+                  <div class="gpu-badge" id="settings-gpu-badge"></div>
+                </div>
+              </div>
+            </div>
+
           </div>
 
           <div id="tab-stats" class="tab-panel">

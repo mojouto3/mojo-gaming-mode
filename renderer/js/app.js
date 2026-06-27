@@ -7,7 +7,9 @@ const state = {
   manualOverrides: {},
   rules: [],
   active: false,
-  sessions: 0
+  sessions: 0,
+  autostart: false,
+  lastRestorePoint: null
 };
 
 ALL_TWEAKS.forEach(t => { state.tweaks[t.id] = t.presets.balanced; });
@@ -34,6 +36,8 @@ async function init() {
     state.manualOverrides = config.manualOverrides || {};
     Object.assign(state.tweaks, state.manualOverrides);
     if (config.customRules) state.rules = config.customRules;
+    if (config.autostart !== undefined) state.autostart = config.autostart;
+    if (config.lastRestorePoint) state.lastRestorePoint = config.lastRestorePoint;
 
     setPresetButtons(state.preset);
     renderAll();
@@ -79,6 +83,14 @@ function bindEvents() {
   // Close modal on overlay click
   document.getElementById('modal-overlay').addEventListener('click', (e) => {
     if (e.target === document.getElementById('modal-overlay')) closeModal();
+  });
+
+  // Settings - Restore Point
+  document.getElementById('btn-restore').addEventListener('click', createRestorePoint);
+
+  // Settings - Autostart
+  document.getElementById('cb-autostart').addEventListener('change', (e) => {
+    toggleAutostart(e.target.checked);
   });
 }
 
@@ -161,8 +173,9 @@ function switchTab(name, el) {
   document.getElementById('tab-' + name).classList.add('active');
   document.querySelectorAll('.nav-item[data-tab]').forEach(n => n.classList.remove('active'));
   el.classList.add('active');
-  const titles = { presets: 'Presets', tweaks: 'Tweaks', rules: 'Custom rules', stats: 'Performance' };
+  const titles = { presets: 'Presets', tweaks: 'Tweaks', rules: 'Custom rules', stats: 'Performance', settings: 'Settings' };
   document.getElementById('page-title').textContent = titles[name] || name;
+  if (name === 'settings') initSettingsTab();
 }
 
 // ── Render helpers ────────────────────────────────────────────────────────────
@@ -398,6 +411,55 @@ function deleteRule(index) {
   persistConfig();
 }
 
+// ── Settings ─────────────────────────────────────────────────────────────────
+
+async function createRestorePoint() {
+  const btn = document.getElementById('btn-restore');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader"></i> Creating...';
+  showToast('Creating restore point...');
+
+  const result = await window.mgm.createRestorePoint();
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="ti ti-shield-check"></i> Create Restore Point';
+
+  if (result.success) {
+    const now = new Date().toLocaleString();
+    state.lastRestorePoint = now;
+    const el = document.getElementById('restore-last');
+    if (el) el.textContent = 'Last created: ' + now;
+    persistConfig();
+    showToast('Restore point created');
+  } else {
+    showToast('Failed to create restore point');
+  }
+}
+
+async function toggleAutostart(enabled) {
+  state.autostart = enabled;
+  await window.mgm.setAutostart(enabled);
+  persistConfig();
+  showToast(enabled ? 'Autostart enabled' : 'Autostart disabled');
+}
+
+function initSettingsTab() {
+  // Restore last restore point timestamp
+  if (state.lastRestorePoint) {
+    const el = document.getElementById('restore-last');
+    if (el) el.textContent = 'Last created: ' + state.lastRestorePoint;
+  }
+  // Restore autostart state
+  const cb = document.getElementById('cb-autostart');
+  if (cb) cb.checked = !!state.autostart;
+  // Settings vendor theme - show vendor name and logo
+  const badge = document.getElementById('settings-gpu-badge');
+  const vendorIcon = document.getElementById('settings-vendor-icon');
+  const vendorNames = { nvidia: 'NVIDIA', amd: 'AMD', intel: 'Intel' };
+  if (badge) badge.textContent = vendorNames[state.gpu.vendor] || state.gpu.vendor;
+  if (vendorIcon) vendorIcon.src = '../assets/icons/' + state.gpu.vendor + '_logo.png';
+}
+
 // ── Persist ───────────────────────────────────────────────────────────────────
 
 async function persistConfig() {
@@ -405,7 +467,9 @@ async function persistConfig() {
     gpu: state.gpu.vendor,
     preset: state.preset,
     manualOverrides: state.manualOverrides,
-    customRules: state.rules
+    customRules: state.rules,
+    autostart: state.autostart,
+    lastRestorePoint: state.lastRestorePoint
   });
 }
 
