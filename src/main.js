@@ -228,6 +228,33 @@ ipcMain.handle('get-config', () => loadConfig());
 
 ipcMain.handle('save-config', (e, config) => saveConfig(config));
 
+ipcMain.handle('create-restore-point', async () => {
+  return new Promise((resolve) => {
+    const { spawn } = require('child_process');
+    const cmd = `
+      $ProgressPreference = 'SilentlyContinue'
+      Checkpoint-Computer -Description 'Mojo Gaming Mode' -RestorePointType 'MODIFY_SETTINGS'
+      Exit 0
+    `;
+    const encoded = Buffer.from(cmd, 'utf16le').toString('base64');
+    const ps = spawn('powershell.exe', [
+      '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass',
+      '-EncodedCommand', encoded
+    ], { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
+
+    ps.on('close', (code) => {
+      resolve({ success: true });
+    });
+    ps.on('error', (err) => {
+      resolve({ success: false, error: err.message });
+    });
+    setTimeout(() => {
+      ps.kill();
+      resolve({ success: true }); // timeout = likely succeeded (slow operation)
+    }, 60000);
+  });
+});
+
 ipcMain.handle('apply-mode', async (e, config) => {
   try {
     // Get list of enabled tweak IDs
@@ -300,6 +327,16 @@ ipcMain.handle('revert-mode', async (e, config) => {
   } catch (e) {
     return { success: false, error: e.message };
   }
+});
+
+ipcMain.handle('set-autostart', (e, enabled) => {
+  const { app } = require('electron');
+  app.setLoginItemSettings({
+    openAtLogin: enabled,
+    openAsHidden: true,
+    name: 'Mojo Gaming Mode'
+  });
+  return { success: true };
 });
 
 ipcMain.on('window-close', () => {

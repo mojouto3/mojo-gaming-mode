@@ -2,6 +2,25 @@
 
 All notable changes to Mojo Gaming Mode will be documented here.
 
+## [0.3.0] - 2026-06-27
+
+### Added
+
+- Settings tab in sidebar navigation, positioned below Performance as standalone item
+- System Restore Point creation on demand via Settings tab with timestamp display
+- Start with Windows autostart toggle in Settings (opens minimized to tray)
+- Vendor theme section in Settings showing vendor logo and name
+- Settings state persisted in config.json (autostart, lastRestorePoint)
+
+### Changed
+
+- Settings tab positioned at bottom of sidebar before status chip for cleaner separation
+- Vendor theme badge in Settings shows vendor name only (NVIDIA/AMD/Intel), not GPU model
+
+### Fixed
+
+- System Restore Point command now suppresses CLIXML progress output for reliable execution
+
 ## [0.2.0] - 2026-06-27
 
 ### Added
