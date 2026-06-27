@@ -176,7 +176,7 @@ function tagHtml(tag) {
 function iconFor(id) {
   const map = {
     gm: 'device-gamepad-2', sysmain: 'cpu', hp: 'bolt', wsearch: 'search',
-    fso: 'maximize', hpet: 'clock', msi: 'circuit-board',
+    fso: 'maximize', hpet: 'clock', msi: 'cpu-2',
     xbox: 'brand-xbox', steam: 'brand-steam', nvoverlay: 'device-desktop',
     onedrive: 'cloud', discord: 'brand-discord', telemetry: 'radar',
     qos: 'router', nagle: 'network'
