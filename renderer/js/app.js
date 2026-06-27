@@ -9,7 +9,9 @@ const state = {
   active: false,
   sessions: 0,
   autostart: false,
-  lastRestorePoint: null
+  lastRestorePoint: null,
+  lang: 'en',
+  manualTheme: null
 };
 
 ALL_TWEAKS.forEach(t => { state.tweaks[t.id] = t.presets.balanced; });
@@ -38,8 +40,12 @@ async function init() {
     if (config.customRules) state.rules = config.customRules;
     if (config.autostart !== undefined) state.autostart = config.autostart;
     if (config.lastRestorePoint) state.lastRestorePoint = config.lastRestorePoint;
+    if (config.lang) state.lang = config.lang;
+    if (config.manualTheme) state.manualTheme = config.manualTheme;
 
     setPresetButtons(state.preset);
+    applyLanguage(state.lang);
+    if (state.manualTheme) applyGPUTheme(state.manualTheme);
     renderAll();
   } catch (e) {
     // Fallback - apply balanced defaults
@@ -51,13 +57,18 @@ async function init() {
   window.mgm.onTrayToggle((val) => {
     val ? applyMode() : revertMode();
   });
+
+  // Live metrics listener
+  window.mgm.onMetricsData((data) => {
+    updateMetricsUI(data);
+  });
 }
 
 // ── Bind all events (no inline onclick) ──────────────────────────────────────
 
 function bindEvents() {
   // Titlebar
-  document.getElementById('btn-close').addEventListener('click', () => window.mgm.windowClose());
+  document.getElementById('btn-close').addEventListener('click', () => { window.mgm.metricsStop(); window.mgm.windowClose(); });
   document.getElementById('btn-minimize').addEventListener('click', () => window.mgm.windowMinimize());
 
   // Nav tabs
@@ -85,6 +96,20 @@ function bindEvents() {
     if (e.target === document.getElementById('modal-overlay')) closeModal();
   });
 
+  // Settings - Theme picker
+  document.querySelectorAll('.theme-btn[data-theme]').forEach(btn => {
+    btn.addEventListener('click', () => setManualTheme(btn.dataset.theme));
+  });
+
+  // Settings - Language picker
+  document.querySelectorAll('.lang-btn[data-lang]').forEach(btn => {
+    btn.addEventListener('click', () => setLanguage(btn.dataset.lang));
+  });
+
+  // Applied Changes collapsible
+  const changesToggle = document.getElementById('changes-toggle');
+  if (changesToggle) changesToggle.addEventListener('click', toggleChanges);
+
   // Settings - Restore Point
   document.getElementById('btn-restore').addEventListener('click', createRestorePoint);
 
@@ -102,14 +127,41 @@ function applyGPUTheme(vendor) {
   app.classList.remove('theme-nvidia', 'theme-amd', 'theme-intel');
   app.classList.add('theme-' + vendor);
 
+  const isVendorTheme = ['nvidia', 'amd', 'intel'].includes(vendor);
+  const isManualVendor = state.manualTheme && isVendorTheme;
+
+  // Badge in topbar - always shows real GPU model
   const rawModel = (state.gpu.model || '').replace(/\s+/g, ' ').trim();
   const fallbacks = { nvidia: 'NVIDIA GeForce', amd: 'AMD Radeon', intel: 'Intel Graphics' };
-  const badgeText = rawModel.length > 3 ? rawModel : (fallbacks[vendor] || vendor);
-
+  const badgeText = rawModel.length > 3 ? rawModel : (fallbacks[state.gpu.vendor] || state.gpu.vendor);
   const badge = document.getElementById('gpu-badge');
   if (badge) badge.textContent = badgeText;
 
-  // Update detected GPU section in sidebar (titlebar always uses MGM icon)
+  // Sidebar - depends on whether theme is vendor or custom
+  const vendorNames = { nvidia: 'NVIDIA', amd: 'AMD', intel: 'Intel' };
+  const vendorSubs = { nvidia: 'NVIDIA Control Panel', amd: 'AMD Adrenalin Edition', intel: 'Intel Arc Control' };
+  const logoMark = document.getElementById('logo-mark');
+  const logoSub = document.getElementById('logo-sub');
+
+  if (isVendorTheme) {
+    // Vendor theme - show vendor logo and branding
+    if (logoMark) {
+      logoMark.style.background = 'transparent';
+      logoMark.style.padding = '2px';
+      logoMark.innerHTML = '<img src="../assets/icons/' + vendor + '_logo.png" style="width:28px;height:28px;object-fit:contain;border-radius:4px">';
+    }
+    if (logoSub) logoSub.textContent = vendorSubs[vendor] || vendor;
+  } else {
+    // Custom theme - show MGM icon and GPU model
+    if (logoMark) {
+      logoMark.style.background = 'var(--acc)';
+      logoMark.style.padding = '0';
+      logoMark.innerHTML = '<i class="ti ti-device-gamepad-2"></i>';
+    }
+    if (logoSub) logoSub.textContent = rawModel.length > 3 ? rawModel : 'Gaming Mode Manager';
+  }
+
+  // Update detected GPU section
   updateDetectedGPU(vendor, state.gpu.model);
 }
 
@@ -176,6 +228,12 @@ function switchTab(name, el) {
   const titles = { presets: 'Presets', tweaks: 'Tweaks', rules: 'Custom rules', stats: 'Performance', settings: 'Settings' };
   document.getElementById('page-title').textContent = titles[name] || name;
   if (name === 'settings') initSettingsTab();
+  // Start/stop metrics polling based on active tab
+  if (name === 'stats') {
+    window.mgm.metricsStart();
+  } else {
+    window.mgm.metricsStop();
+  }
 }
 
 // ── Render helpers ────────────────────────────────────────────────────────────
@@ -281,11 +339,12 @@ function renderStats() {
   document.getElementById('sv-tweaks').textContent = active.length;
   document.getElementById('sv-sessions').textContent = state.sessions;
   document.getElementById('sv-rules').textContent = state.rules.length;
-  document.getElementById('fps-val').innerHTML = (state.active ? '144' : '60') + '<span>fps</span>';
-  document.getElementById('fps-bar').style.width = state.active ? '88%' : '40%';
+  // FPS removed - replaced by live CPU/RAM/GPU metrics
 
   const container = document.getElementById('stats-changes');
+  const countEl = document.getElementById('changes-count');
   container.innerHTML = '';
+  if (countEl) countEl.textContent = active.length;
   if (!active.length) {
     container.innerHTML = '<div class="empty-state">No active tweaks.</div>';
     return;
@@ -295,6 +354,95 @@ function renderStats() {
     row.style.cursor = 'default';
     container.appendChild(row);
   });
+}
+
+// Sparkline history
+const cpuHistory = Array(20).fill(0);
+const ramHistory = Array(20).fill(0);
+const gpuHistory = Array(20).fill(0);
+
+function renderSparkline(containerId, history, color) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const max = Math.max(...history, 1);
+  el.innerHTML = history.map(v => {
+    const h = Math.max(2, Math.round((v / max) * 28));
+    return `<div class="spark-bar" style="height:${h}px;background:${color}"></div>`;
+  }).join('');
+}
+
+function toggleChanges() {
+  const body = document.getElementById('stats-changes');
+  const arrow = document.getElementById('changes-arrow');
+  if (!body || !arrow) return;
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  body.classList.toggle('collapsed', isOpen);
+  arrow.classList.toggle('open', !isOpen);
+}
+
+function updateMetricsUI(data) {
+  if (!data) return;
+
+  // CPU
+  const cpuVal = document.getElementById('cpu-val');
+  const cpuBar = document.getElementById('cpu-bar');
+  const cpuSub = document.getElementById('cpu-sub');
+  if (cpuVal && data.cpu !== undefined) {
+    const v = Math.round(data.cpu);
+    cpuVal.textContent = v + '%';
+    cpuVal.className = 'gauge-big-val' + (v > 80 ? ' danger' : v > 50 ? ' warn' : '');
+    if (cpuBar) { cpuBar.style.width = v + '%'; cpuBar.style.background = v > 80 ? '#ed1c24' : v > 50 ? '#f0a500' : 'var(--acc)'; }
+    if (cpuSub) cpuSub.textContent = 'Usage: ' + v + '%';
+    cpuHistory.shift(); cpuHistory.push(v);
+    const cpuColor = v > 80 ? '#ed1c24' : v > 50 ? '#f0a500' : 'var(--acc)';
+    renderSparkline('cpu-spark', cpuHistory, cpuColor);
+  }
+
+  // RAM
+  const ramVal = document.getElementById('ram-val');
+  const ramBar = document.getElementById('ram-bar');
+  const ramSub = document.getElementById('ram-sub');
+  if (ramVal && data.ramPct !== undefined) {
+    const v = Math.round(data.ramPct);
+    ramVal.textContent = v + '%';
+    ramVal.className = 'gauge-big-val' + (v > 80 ? ' danger' : v > 60 ? ' warn' : '');
+    if (ramBar) { ramBar.style.width = v + '%'; ramBar.style.background = v > 80 ? '#ed1c24' : v > 60 ? '#f0a500' : 'var(--acc)'; }
+    if (ramSub) ramSub.textContent = data.ramUsed + ' GB / ' + data.ramTotal + ' GB';
+    ramHistory.shift(); ramHistory.push(v);
+    const ramColor = v > 80 ? '#ed1c24' : v > 60 ? '#f0a500' : 'var(--acc)';
+    renderSparkline('ram-spark', ramHistory, ramColor);
+  }
+
+  // GPU - usage % via nvidia-smi if available, otherwise VRAM info
+  const gpuValLive = document.getElementById('gpu-val-live');
+  const gpuBar = document.getElementById('gpu-bar');
+  const gpuSubLive = document.getElementById('gpu-sub-live');
+  if (gpuValLive) {
+    if (data.gpuUsage !== undefined && data.gpuUsage > 0) {
+      const v = Math.round(data.gpuUsage);
+      gpuValLive.textContent = v + '%';
+      gpuValLive.className = 'gauge-big-val' + (v > 80 ? ' danger' : v > 50 ? ' warn' : '');
+    gpuHistory.shift(); gpuHistory.push(v);
+    renderSparkline('gpu-spark', gpuHistory, v > 80 ? '#ed1c24' : v > 50 ? '#f0a500' : 'var(--acc)');
+      if (gpuBar) { gpuBar.style.width = v + '%'; gpuBar.style.background = v > 80 ? '#ed1c24' : v > 50 ? '#f0a500' : 'var(--acc)'; }
+      if (gpuSubLive && data.gpuVramUsed !== undefined) {
+        gpuSubLive.textContent = 'VRAM: ' + data.gpuVramUsed + ' / ' + data.gpuVramTotal + ' GB';
+      }
+    } else if (data.gpuVramTotal > 0) {
+      // No nvidia-smi — show VRAM total only
+      gpuValLive.textContent = data.gpuVramTotal + ' GB';
+      gpuValLive.className = 'gauge-big-val';
+      if (gpuBar) { gpuBar.style.width = '100%'; gpuBar.style.background = 'var(--acc)'; }
+      if (gpuSubLive && data.gpuName) {
+        const shortName = data.gpuName.replace('NVIDIA ', '').replace('AMD ', '').replace('Intel ', '');
+        gpuSubLive.textContent = shortName;
+      }
+    } else {
+      gpuValLive.textContent = 'N/A';
+      if (gpuSubLive && data.gpuName) gpuSubLive.textContent = data.gpuName;
+    }
+  }
 }
 
 function renderAll() {
@@ -413,6 +561,79 @@ function deleteRule(index) {
 
 // ── Settings ─────────────────────────────────────────────────────────────────
 
+function setManualTheme(theme) {
+  state.manualTheme = theme === 'auto' ? null : theme;
+  const vendor = state.manualTheme || state.gpu.vendor;
+  applyGPUTheme(vendor);
+  document.querySelectorAll('.theme-btn[data-theme]').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.theme === (state.manualTheme || 'auto'));
+  });
+  persistConfig();
+  showToast(theme === 'auto' ? 'Auto theme restored' : theme.toUpperCase() + ' theme applied');
+}
+
+function setLanguage(lang) {
+  state.lang = lang;
+  applyLanguage(lang);
+  document.querySelectorAll('.lang-btn[data-lang]').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.lang === lang);
+  });
+  persistConfig();
+}
+
+function applyLanguage(lang) {
+  state.lang = lang;
+  // Update all elements with data-t attribute
+  document.querySelectorAll('[data-t]').forEach(el => {
+    const key = el.dataset.t;
+    el.textContent = t(key);
+  });
+  // Update dynamic UI elements
+  updateDynamicTranslations();
+}
+
+function updateDynamicTranslations() {
+  // Nav items
+  const navMap = {
+    'ni-presets': 'nav_presets',
+    'ni-tweaks': 'nav_tweaks',
+    'ni-rules': 'nav_rules',
+    'ni-stats': 'nav_performance',
+    'ni-settings': 'nav_settings'
+  };
+  Object.entries(navMap).forEach(([id, key]) => {
+    const el = document.getElementById(id);
+    if (el) {
+      const icon = el.querySelector('i');
+      el.textContent = t(key);
+      if (icon) el.prepend(icon);
+    }
+  });
+
+  // Status label
+  const statusEl = document.getElementById('status-label');
+  if (statusEl) statusEl.textContent = t(state.active ? 'status_on' : 'status_off');
+
+  // Activate button
+  const actBtn = document.getElementById('btn-activate');
+  if (actBtn && !actBtn.disabled) {
+    const icon = actBtn.querySelector('i');
+    actBtn.textContent = t(state.active ? 'btn_deactivate' : 'btn_activate');
+    if (icon) actBtn.prepend(icon);
+  }
+
+  // Revert button
+  const revBtn = document.getElementById('btn-revert');
+  if (revBtn) {
+    const icon = revBtn.querySelector('i');
+    revBtn.textContent = t('btn_revert');
+    if (icon) revBtn.prepend(icon);
+  }
+
+  // Re-render all tabs to pick up translations
+  renderAll();
+}
+
 async function createRestorePoint() {
   const btn = document.getElementById('btn-restore');
   btn.disabled = true;
@@ -469,7 +690,9 @@ async function persistConfig() {
     manualOverrides: state.manualOverrides,
     customRules: state.rules,
     autostart: state.autostart,
-    lastRestorePoint: state.lastRestorePoint
+    lastRestorePoint: state.lastRestorePoint,
+    lang: state.lang,
+    manualTheme: state.manualTheme
   });
 }
 
