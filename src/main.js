@@ -1,9 +1,11 @@
 'use strict';
 
-const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage } = require('electron');
+const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, Notification } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { exec } = require('child_process');
+const { executeTweaks } = require('./executor');
+const { TWEAK_DEFINITIONS } = require('./tweaks');
 
 const CONFIG_PATH = path.join(app.getPath('userData'), 'config.json');
 const ASSETS_PATH = path.join(__dirname, '..', 'assets');
@@ -197,6 +199,8 @@ function updateTrayMenu() {
 app.commandLine.appendSwitch('disable-gpu-shader-disk-cache');
 app.commandLine.appendSwitch('no-sandbox');
 
+
+
 app.whenReady().then(async () => {
   detectedGPU = await detectGPU();
   const config = loadConfig();
@@ -224,28 +228,78 @@ ipcMain.handle('get-config', () => loadConfig());
 
 ipcMain.handle('save-config', (e, config) => saveConfig(config));
 
-ipcMain.handle('apply-mode', (e, config) => {
-  gamingModeActive = true;
-  updateTrayMenu();
-  if (tray) {
-    const onIcon = nativeImage.createFromPath(path.join(ASSETS_PATH, 'icons', 'tray-on.png'));
-    tray.setImage(onIcon);
-    tray.setToolTip('Mojo Gaming Mode — ACTIVE');
+ipcMain.handle('apply-mode', async (e, config) => {
+  try {
+    // Get list of enabled tweak IDs
+    const enabledTweaks = Object.entries(config.tweaks || {})
+      .filter(([id, enabled]) => enabled)
+      .map(([id]) => id);
+
+    // Execute all enabled tweaks
+    let results;
+    try {
+      results = await executeTweaks(enabledTweaks, TWEAK_DEFINITIONS, 'apply');
+    } catch(ex) {
+      console.log('EXECUTOR ERROR:', ex.message, ex.stack);
+      return { success: false, error: ex.message };
+    }
+    const failed = results.filter(r => !r.success && !r.skipped);
+
+    gamingModeActive = true;
+    updateTrayMenu();
+    if (tray) {
+      const onIcon = nativeImage.createFromPath(path.join(ASSETS_PATH, 'icons', 'tray-on.png'));
+      tray.setImage(onIcon);
+      tray.setToolTip('Mojo Gaming Mode — ACTIVE');
+    }
+
+    // Windows native notification
+    const activeCount = results.filter(r => r.success && !r.skipped).length;
+    const presetName = config.preset
+      ? config.preset.charAt(0).toUpperCase() + config.preset.slice(1)
+      : 'Gaming';
+    new Notification({
+      title: `Gaming Mode Activated — ${presetName}`,
+      body: `${activeCount} tweak${activeCount !== 1 ? 's' : ''} applied successfully. System optimized for gaming.`,
+      icon: path.join(ASSETS_PATH, 'icons', 'tray-on.png'),
+      silent: true
+    }).show();
+
+    return { success: true, results, failed };
+  } catch (e) {
+    return { success: false, error: e.message };
   }
-  // PowerShell execution comes in v0.2.0
-  return { success: true };
 });
 
-ipcMain.handle('revert-mode', () => {
-  gamingModeActive = false;
-  updateTrayMenu();
-  if (tray) {
-    const offIcon = nativeImage.createFromPath(path.join(ASSETS_PATH, 'icons', 'tray-off.png'));
-    tray.setImage(offIcon);
-    tray.setToolTip('Mojo Gaming Mode');
+ipcMain.handle('revert-mode', async (e, config) => {
+  try {
+    const config_data = loadConfig();
+    const enabledTweaks = Object.entries(config_data.tweaks || {})
+      .filter(([id, enabled]) => enabled)
+      .map(([id]) => id);
+
+    const results = await executeTweaks(enabledTweaks, TWEAK_DEFINITIONS, 'revert');
+
+    gamingModeActive = false;
+    updateTrayMenu();
+    if (tray) {
+      const offIcon = nativeImage.createFromPath(path.join(ASSETS_PATH, 'icons', 'tray-off.png'));
+      tray.setImage(offIcon);
+      tray.setToolTip('Mojo Gaming Mode');
+    }
+
+    // Windows native notification
+    new Notification({
+      title: 'Gaming Mode Deactivated',
+      body: 'All tweaks reverted. System restored to normal.',
+      icon: path.join(ASSETS_PATH, 'icons', 'tray-off.png'),
+      silent: true
+    }).show();
+
+    return { success: true, results };
+  } catch (e) {
+    return { success: false, error: e.message };
   }
-  // PowerShell revert comes in v0.2.0
-  return { success: true };
 });
 
 ipcMain.on('window-close', () => {

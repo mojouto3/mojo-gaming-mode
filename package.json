@@ -19,7 +19,8 @@
     "productName": "Mojo Gaming Mode",
     "win": {
       "target": "nsis",
-      "icon": "assets/icons/icon.ico"
+      "icon": "assets/icons/icon.ico",
+      "requestedExecutionLevel": "requireAdministrator"
     },
     "nsis": {
       "installerIcon": "assets/icons/icon.ico",
