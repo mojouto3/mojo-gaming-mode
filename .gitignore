@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+
+# Electron build output
+dist/
+out/
+release/
+
+# Electron binary (copied manually)
+node_modules/electron/dist/
+
+# Build cache
+.cache/
+.parcel-cache/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.suo
+*.user
+
+# Environment
+.env
+.env.local
+.env.production
+
+# App user data (never commit)
+appdata/
+
+# Windows installer artifacts
+*.nsis
+*.nsh
