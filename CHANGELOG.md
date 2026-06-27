@@ -2,6 +2,17 @@
 
 All notable changes to Mojo Gaming Mode will be documented here.
 
+## [0.4.1] - 2026-06-27
+
+### Fixed
+
+- Revert system now uses activeTweakIds stored at apply time instead of config file
+- Service revert uses sc.exe instead of Set-Service/reg add for reliable startup type change
+- Executor elevation wrapper removed — app runs as admin via manifest, no per-command elevation needed
+- All tweak commands rewritten as single-line with Exit 0 and ErrorAction SilentlyContinue
+- Auto-revert on tray Quit via before-quit event
+- Crash recovery on next boot via wasActive flag in config.json
+
 ## [0.4.0] - 2026-06-27
 
 ### Added
