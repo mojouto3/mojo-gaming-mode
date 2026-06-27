@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; script-src 'self'">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mojo Gaming Mode</title>
+  <link rel="stylesheet" href="../node_modules/@tabler/icons-webfont/tabler-icons.min.css">
+  <link rel="stylesheet" href="css/theme.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <div class="app" id="app">
+
+    <div class="titlebar" id="titlebar">
+      <div class="titlebar-icon">
+        <img src="../assets/icons/icon.ico" alt="MGM" id="titlebar-icon-img">
+      </div>
+      <div class="titlebar-apptitle">Mojo Gaming Mode</div>
+      <div class="titlebar-drag"></div>
+      <div class="titlebar-controls">
+        <button class="tb-btn tb-min" id="btn-minimize" title="Minimize"><i class="ti ti-minus"></i></button>
+        <button class="tb-btn tb-close" id="btn-close" title="Close to tray"><i class="ti ti-x"></i></button>
+      </div>
+    </div>
+
+    <div class="layout">
+
+      <aside class="sidebar">
+        <div class="sidebar-gpu-card">
+          <img src="../assets/icons/nvidia_logo.png" id="gpu-detected-icon" class="gpu-card-icon">
+          <div class="gpu-card-info">
+            <div class="gpu-card-model" id="gpu-detected-model">Detecting...</div>
+            <div class="gpu-card-vendor" id="gpu-detected-vendor">Please wait</div>
+          </div>
+        </div>
+
+        <nav class="sidebar-nav">
+          <div class="section-label">Gaming</div>
+          <div class="nav-item active" id="ni-presets" data-tab="presets">
+            <i class="ti ti-layout-grid"></i> Presets
+          </div>
+          <div class="nav-item" id="ni-tweaks" data-tab="tweaks">
+            <i class="ti ti-adjustments-horizontal"></i> Tweaks
+          </div>
+          <div class="section-label" style="margin-top:8px">System</div>
+          <div class="nav-item" id="ni-rules" data-tab="rules">
+            <i class="ti ti-list-check"></i> Custom rules
+          </div>
+          <div class="nav-item" id="ni-stats" data-tab="stats">
+            <i class="ti ti-chart-bar"></i> Performance
+          </div>
+        </nav>
+
+        <div class="sidebar-footer">
+          <div class="status-chip">
+            <span class="status-dot" id="status-dot"></span>
+            <span class="status-label" id="status-label">Gaming mode off</span>
+          </div>
+          <div class="version-label">v0.1.0</div>
+        </div>
+      </aside>
+
+      <main class="main">
+        <div class="topbar">
+          <div class="topbar-title" id="page-title">Presets</div>
+          <div class="topbar-right">
+            <div class="gpu-badge" id="gpu-badge">Detecting GPU...</div>
+            <button class="btn-revert" id="btn-revert">
+              <i class="ti ti-refresh"></i> Revert
+            </button>
+            <button class="btn-activate" id="btn-activate">
+              <i class="ti ti-bolt"></i> Activate
+            </button>
+          </div>
+        </div>
+
+        <div class="content" id="content">
+
+          <div id="tab-presets" class="tab-panel active">
+            <div class="preset-grid" id="preset-grid">
+              <div class="preset-card active" id="pc-balanced" data-preset="balanced">
+                <div class="pc-check"><i class="ti ti-check"></i></div>
+                <i class="ti ti-adjustments pc-icon"></i>
+                <div class="pc-name">Balanced</div>
+                <div class="pc-sub">Safe defaults, no admin needed</div>
+              </div>
+              <div class="preset-card" id="pc-performance" data-preset="performance">
+                <div class="pc-check"><i class="ti ti-check"></i></div>
+                <i class="ti ti-rocket pc-icon"></i>
+                <div class="pc-name">Performance</div>
+                <div class="pc-sub">Max FPS, some admin tweaks</div>
+              </div>
+              <div class="preset-card" id="pc-esports" data-preset="esports">
+                <div class="pc-check"><i class="ti ti-check"></i></div>
+                <i class="ti ti-trophy pc-icon"></i>
+                <div class="pc-name">Esports</div>
+                <div class="pc-sub">Ultra low latency, all tweaks</div>
+              </div>
+            </div>
+            <div class="section-header">
+              <span class="sh-title">ACTIVE IN THIS PRESET</span>
+              <span class="sh-count" id="active-count">0 tweaks</span>
+            </div>
+            <div id="preset-active-list"></div>
+          </div>
+
+          <div id="tab-tweaks" class="tab-panel">
+            <div class="section-header"><span class="sh-title">WINDOWS SYSTEM</span></div>
+            <div id="tw-win"></div>
+            <div class="section-header" style="margin-top:14px"><span class="sh-title">OVERLAYS AND APPS</span></div>
+            <div id="tw-ov"></div>
+            <div class="section-header" style="margin-top:14px"><span class="sh-title">NETWORK</span></div>
+            <div id="tw-net"></div>
+          </div>
+
+          <div id="tab-rules" class="tab-panel">
+            <div class="section-header">
+              <span class="sh-title">CUSTOM RULES</span>
+              <span class="sh-count" id="rules-count">0</span>
+            </div>
+            <div id="rules-list"></div>
+            <button class="btn-add-rule" id="btn-add-rule">
+              <i class="ti ti-plus"></i> Add custom rule
+            </button>
+            <div class="rules-info">
+              Rules are saved and will execute when gaming mode is activated. Execution engine arrives in v0.2.0.
+            </div>
+          </div>
+
+          <div id="tab-stats" class="tab-panel">
+            <div class="metrics-grid">
+              <div class="metric highlighted">
+                <div class="metric-val accent" id="fps-val">60<span>fps</span></div>
+                <div class="metric-label">Target FPS</div>
+                <div class="perf-bar-wrap"><div class="perf-bar" id="fps-bar" style="width:40%"></div></div>
+              </div>
+              <div class="metric">
+                <div class="metric-val" id="sv-tweaks">0</div>
+                <div class="metric-label">Active tweaks</div>
+              </div>
+              <div class="metric">
+                <div class="metric-val" id="sv-sessions">0</div>
+                <div class="metric-label">Sessions</div>
+              </div>
+              <div class="metric">
+                <div class="metric-val" id="sv-rules">0</div>
+                <div class="metric-label">Custom rules</div>
+              </div>
+            </div>
+            <div class="section-header" style="margin-top:16px"><span class="sh-title">APPLIED CHANGES</span></div>
+            <div id="stats-changes"></div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title"><i class="ti ti-plus"></i> New custom rule</span>
+        <button class="modal-close" id="modal-close"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <label class="field-label">Rule name</label>
+        <input type="text" class="field-input" id="rule-name" placeholder="Kill Discord on launch">
+        <label class="field-label">Action</label>
+        <select class="field-input" id="rule-type">
+          <option value="kill">Kill process</option>
+          <option value="priority">Set CPU priority</option>
+          <option value="reg">Registry tweak</option>
+          <option value="service">Disable service</option>
+        </select>
+        <label class="field-label">Target</label>
+        <input type="text" class="field-input" id="rule-target" placeholder="Discord.exe">
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="btn-modal-cancel">Cancel</button>
+        <button class="btn-ok" id="btn-modal-ok">Add rule</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/tweaks.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

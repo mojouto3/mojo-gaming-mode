@@ -1,0 +1,39 @@
+{
+  "name": "mojo-gaming-mode",
+  "version": "0.1.0",
+  "description": "A lightweight Windows gaming optimizer with GPU vendor themes and safe system tweaks",
+  "main": "src/main.js",
+  "author": "mojouto3",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win --x64",
+    "dev": "electron . --inspect"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.0.0"
+  },
+  "build": {
+    "appId": "com.mojomultimedia.gaming-mode",
+    "productName": "Mojo Gaming Mode",
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icons/icon.ico"
+    },
+    "nsis": {
+      "installerIcon": "assets/icons/icon.ico",
+      "installerHeaderIcon": "assets/icons/icon.ico",
+      "createDesktopShortcut": "ask",
+      "runAfterFinish": true,
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "files": [
+      "src/**/*",
+      "renderer/**/*",
+      "assets/**/*",
+      "package.json"
+    ]
+  }
+}

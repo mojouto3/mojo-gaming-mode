@@ -1,0 +1,375 @@
+'use strict';
+
+const state = {
+  gpu: { vendor: 'nvidia', model: '' },
+  preset: 'balanced',
+  tweaks: {},
+  rules: [],
+  active: false,
+  sessions: 0
+};
+
+ALL_TWEAKS.forEach(t => { state.tweaks[t.id] = t.presets.balanced; });
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+
+async function init() {
+  bindEvents();
+
+  try {
+    // Get GPU info first so theme and sidebar are correct from the start
+    const gpuInfo = await window.mgm.getGPUInfo();
+    state.gpu = gpuInfo;
+    applyGPUTheme(state.gpu.vendor);
+    updateDetectedGPU(state.gpu.vendor, state.gpu.model);
+
+    // Then load saved config
+    const config = await window.mgm.getConfig();
+    if (config.preset) {
+      state.preset = config.preset;
+    }
+    if (config.tweaks && Object.keys(config.tweaks).length > 0) {
+      Object.assign(state.tweaks, config.tweaks);
+    } else {
+      // First run - apply defaults for detected preset
+      ALL_TWEAKS.forEach(t => { state.tweaks[t.id] = t.presets[state.preset]; });
+    }
+    if (config.customRules) state.rules = config.customRules;
+
+    setPresetButtons(state.preset);
+    renderAll();
+  } catch (e) {
+    // Fallback - apply balanced defaults
+    ALL_TWEAKS.forEach(t => { state.tweaks[t.id] = t.presets.balanced; });
+    applyGPUTheme('nvidia');
+    renderAll();
+  }
+
+  window.mgm.onTrayToggle((val) => {
+    val ? applyMode() : revertMode();
+  });
+}
+
+// ── Bind all events (no inline onclick) ──────────────────────────────────────
+
+function bindEvents() {
+  // Titlebar
+  document.getElementById('btn-close').addEventListener('click', () => window.mgm.windowClose());
+  document.getElementById('btn-minimize').addEventListener('click', () => window.mgm.windowMinimize());
+
+  // Nav tabs
+  document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
+    item.addEventListener('click', () => switchTab(item.dataset.tab, item));
+  });
+
+  // Preset cards
+  document.querySelectorAll('.preset-card[data-preset]').forEach(card => {
+    card.addEventListener('click', () => setPreset(card.dataset.preset));
+  });
+
+  // Activate / Revert
+  document.getElementById('btn-activate').addEventListener('click', applyMode);
+  document.getElementById('btn-revert').addEventListener('click', revertMode);
+
+  // Rules
+  document.getElementById('btn-add-rule').addEventListener('click', openModal);
+  document.getElementById('modal-close').addEventListener('click', closeModal);
+  document.getElementById('btn-modal-cancel').addEventListener('click', closeModal);
+  document.getElementById('btn-modal-ok').addEventListener('click', saveRule);
+
+  // Close modal on overlay click
+  document.getElementById('modal-overlay').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('modal-overlay')) closeModal();
+  });
+}
+
+// ── GPU Theme ─────────────────────────────────────────────────────────────────
+
+function applyGPUTheme(vendor) {
+  const app = document.getElementById('app');
+  if (!app) return;
+  app.classList.remove('theme-nvidia', 'theme-amd', 'theme-intel');
+  app.classList.add('theme-' + vendor);
+
+  const rawModel = (state.gpu.model || '').replace(/\s+/g, ' ').trim();
+  const fallbacks = { nvidia: 'NVIDIA GeForce', amd: 'AMD Radeon', intel: 'Intel Graphics' };
+  const badgeText = rawModel.length > 3 ? rawModel : (fallbacks[vendor] || vendor);
+
+  const badge = document.getElementById('gpu-badge');
+  if (badge) badge.textContent = badgeText;
+
+  // Update detected GPU section in sidebar (titlebar always uses MGM icon)
+  updateDetectedGPU(vendor, state.gpu.model);
+}
+
+function updateDetectedGPU(vendor, model) {
+  const icon = document.getElementById('gpu-detected-icon');
+  const modelEl = document.getElementById('gpu-detected-model');
+  const vendorEl = document.getElementById('gpu-detected-vendor');
+
+  if (icon) icon.src = '../assets/icons/' + vendor + '_logo.png';
+
+  const vendorNames = { nvidia: 'NVIDIA Control Panel', amd: 'AMD Adrenalin Edition', intel: 'Intel Arc Control' };
+  if (modelEl) modelEl.textContent = model || vendor.toUpperCase();
+  if (vendorEl) vendorEl.textContent = vendorNames[vendor] || vendor;
+}
+
+// ── Presets ───────────────────────────────────────────────────────────────────
+
+function setPreset(preset) {
+  state.preset = preset;
+  ALL_TWEAKS.forEach(t => { state.tweaks[t.id] = t.presets[preset]; });
+  setPresetButtons(preset);
+  renderAll();
+  persistConfig();
+}
+
+function setPresetButtons(preset) {
+  document.querySelectorAll('.preset-card[data-preset]').forEach(card => {
+    card.classList.toggle('active', card.dataset.preset === preset);
+  });
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+
+function switchTab(name, el) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.querySelectorAll('.nav-item[data-tab]').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+  const titles = { presets: 'Presets', tweaks: 'Tweaks', rules: 'Custom rules', stats: 'Performance' };
+  document.getElementById('page-title').textContent = titles[name] || name;
+}
+
+// ── Render helpers ────────────────────────────────────────────────────────────
+
+function tagHtml(tag) {
+  const map = { s: ['tag-s', 'No admin'], a: ['tag-a', 'Admin'], r: ['tag-r', 'Registry'] };
+  const [cls, label] = map[tag] || ['tag-r', tag];
+  return `<span class="tag ${cls}">${label}</span>`;
+}
+
+function iconFor(id) {
+  const map = {
+    gm: 'device-gamepad-2', sysmain: 'cpu', hp: 'bolt', wsearch: 'search',
+    fso: 'maximize', hpet: 'clock', msi: 'circuit-board',
+    xbox: 'brand-xbox', steam: 'brand-steam', nvoverlay: 'device-desktop',
+    onedrive: 'cloud', discord: 'brand-discord', telemetry: 'radar',
+    qos: 'router', nagle: 'network'
+  };
+  return map[id] || 'settings';
+}
+
+function buildTweakRow(t, mini = false) {
+  const row = document.createElement('div');
+  row.className = 'tweak-row' + (state.tweaks[t.id] ? ' active' : '');
+  row.id = 'tr-' + t.id;
+
+  if (mini) {
+    row.innerHTML = `
+      <div class="tr-icon"><i class="ti ti-${iconFor(t.id)}"></i></div>
+      <div class="tr-info"><div class="tr-name">${t.name}</div></div>
+      ${tagHtml(t.tag)}`;
+    row.style.cursor = 'default';
+  } else {
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = !!state.tweaks[t.id];
+    cb.addEventListener('change', (e) => toggleTweak(t.id, e.target.checked));
+
+    const tog = document.createElement('label');
+    tog.className = 'tog';
+    tog.appendChild(cb);
+    tog.innerHTML += '<div class="tog-track"></div><div class="tog-thumb"></div>';
+
+    row.innerHTML = `
+      <div class="tr-icon"><i class="ti ti-${iconFor(t.id)}"></i></div>
+      <div class="tr-info">
+        <div class="tr-name">${t.name} ${tagHtml(t.tag)}</div>
+        <div class="tr-desc">${t.desc}</div>
+        <div class="tr-cmd">${t.cmd}</div>
+      </div>`;
+    row.appendChild(tog);
+  }
+  return row;
+}
+
+function renderTweaks() {
+  ['tw-win', 'tw-ov', 'tw-net'].forEach(id => document.getElementById(id).innerHTML = '');
+  TWEAKS.win.forEach(t => document.getElementById('tw-win').appendChild(buildTweakRow(t)));
+  TWEAKS.ov.forEach(t => document.getElementById('tw-ov').appendChild(buildTweakRow(t)));
+  TWEAKS.net.forEach(t => document.getElementById('tw-net').appendChild(buildTweakRow(t)));
+}
+
+function renderPresetActive() {
+  const container = document.getElementById('preset-active-list');
+  container.innerHTML = '';
+  const active = ALL_TWEAKS.filter(t => state.tweaks[t.id]);
+  document.getElementById('active-count').textContent = active.length + ' tweak' + (active.length !== 1 ? 's' : '');
+  if (!active.length) {
+    container.innerHTML = '<div class="empty-state">No tweaks selected.</div>';
+    return;
+  }
+  active.forEach(t => container.appendChild(buildTweakRow(t, true)));
+}
+
+function renderRules() {
+  const container = document.getElementById('rules-list');
+  container.innerHTML = '';
+  document.getElementById('rules-count').textContent = state.rules.length;
+  if (!state.rules.length) {
+    container.innerHTML = '<div class="empty-state">No custom rules yet.</div>';
+    return;
+  }
+  state.rules.forEach((r, i) => {
+    const row = document.createElement('div');
+    row.className = 'rule-row';
+    row.innerHTML = `
+      <i class="ti ti-terminal" style="font-size:16px;color:var(--text3)"></i>
+      <div class="rr-info">
+        <div class="rr-name">${r.name}</div>
+        <div class="rr-type">${r.type} &rarr; ${r.target}</div>
+      </div>`;
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn-del';
+    delBtn.innerHTML = '<i class="ti ti-trash"></i>';
+    delBtn.addEventListener('click', () => deleteRule(i));
+    row.appendChild(delBtn);
+    container.appendChild(row);
+  });
+}
+
+function renderStats() {
+  const active = ALL_TWEAKS.filter(t => state.tweaks[t.id]);
+  document.getElementById('sv-tweaks').textContent = active.length;
+  document.getElementById('sv-sessions').textContent = state.sessions;
+  document.getElementById('sv-rules').textContent = state.rules.length;
+  document.getElementById('fps-val').innerHTML = (state.active ? '144' : '60') + '<span>fps</span>';
+  document.getElementById('fps-bar').style.width = state.active ? '88%' : '40%';
+
+  const container = document.getElementById('stats-changes');
+  container.innerHTML = '';
+  if (!active.length) {
+    container.innerHTML = '<div class="empty-state">No active tweaks.</div>';
+    return;
+  }
+  active.forEach(t => {
+    const row = buildTweakRow(t, true);
+    row.style.cursor = 'default';
+    container.appendChild(row);
+  });
+}
+
+function renderAll() {
+  renderTweaks();
+  renderPresetActive();
+  renderRules();
+  renderStats();
+}
+
+// ── Actions ───────────────────────────────────────────────────────────────────
+
+function toggleTweak(id, val) {
+  state.tweaks[id] = val;
+  const row = document.getElementById('tr-' + id);
+  if (row) row.className = 'tweak-row' + (val ? ' active' : '');
+  renderPresetActive();
+  renderStats();
+  persistConfig();
+}
+
+async function applyMode() {
+  const result = await window.mgm.applyMode({ tweaks: state.tweaks, rules: state.rules });
+  if (!result.success) { showToast('Failed to apply mode'); return; }
+
+  state.active = true;
+  state.sessions++;
+
+  document.getElementById('status-dot').classList.add('on');
+  document.getElementById('status-label').textContent = 'Gaming mode active';
+
+  const btn = document.getElementById('btn-activate');
+  btn.className = 'btn-activate deact';
+  btn.innerHTML = '<i class="ti ti-power"></i> Deactivate';
+  btn.removeEventListener('click', applyMode);
+  btn.addEventListener('click', revertMode);
+
+  renderStats();
+  showToast('Gaming mode activated');
+}
+
+async function revertMode() {
+  await window.mgm.revertMode();
+  state.active = false;
+
+  document.getElementById('status-dot').classList.remove('on');
+  document.getElementById('status-label').textContent = 'Gaming mode off';
+
+  const btn = document.getElementById('btn-activate');
+  btn.className = 'btn-activate';
+  btn.innerHTML = '<i class="ti ti-bolt"></i> Activate';
+  btn.removeEventListener('click', revertMode);
+  btn.addEventListener('click', applyMode);
+
+  renderStats();
+  showToast('Reverted to normal');
+}
+
+// ── Rules ─────────────────────────────────────────────────────────────────────
+
+function openModal() {
+  document.getElementById('modal-overlay').classList.add('open');
+  document.getElementById('rule-name').focus();
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  document.getElementById('rule-name').value = '';
+  document.getElementById('rule-target').value = '';
+}
+
+function saveRule() {
+  const name = document.getElementById('rule-name').value.trim();
+  const type = document.getElementById('rule-type').value;
+  const target = document.getElementById('rule-target').value.trim();
+  if (!name || !target) { showToast('Fill in all fields'); return; }
+  state.rules.push({ name, type, target });
+  closeModal();
+  renderRules();
+  renderStats();
+  persistConfig();
+  showToast('Rule added');
+}
+
+function deleteRule(index) {
+  state.rules.splice(index, 1);
+  renderRules();
+  renderStats();
+  persistConfig();
+}
+
+// ── Persist ───────────────────────────────────────────────────────────────────
+
+async function persistConfig() {
+  await window.mgm.saveConfig({
+    gpu: state.gpu.vendor,
+    preset: state.preset,
+    tweaks: state.tweaks,
+    customRules: state.rules
+  });
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+
+let toastTimer = null;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', init);

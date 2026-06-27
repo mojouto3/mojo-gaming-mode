@@ -1,0 +1,16 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run MGM",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "${workspaceFolder}/node_modules/electron/dist/electron.exe",
+      "program": "${workspaceFolder}/src/main.js",
+      "stopOnEntry": false,
+      "sourceMaps": false,
+      "outputCapture": "std",
+      "console": "integratedTerminal"
+    }
+  ]
+}

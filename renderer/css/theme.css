@@ -1,0 +1,54 @@
+/* NVIDIA theme (default) */
+:root,
+.theme-nvidia {
+  --acc: #76b900;
+  --acc-dim: #5a8c00;
+  --acc-rgb: 118, 185, 0;
+  --bg: #1a1a1a;
+  --sidebar: #111111;
+  --surface: #1f1f1f;
+  --card: #242424;
+  --card2: #2c2c2c;
+  --text: #ffffff;
+  --text2: #a0a0a0;
+  --text3: #555555;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-acc: rgba(118, 185, 0, 0.35);
+  --font: 'Inter', system-ui, sans-serif;
+}
+
+/* AMD theme */
+.theme-amd {
+  --acc: #ed1c24;
+  --acc-dim: #b81219;
+  --acc-rgb: 237, 28, 36;
+  --bg: #1c1c1e;
+  --sidebar: #141414;
+  --surface: #202022;
+  --card: #252527;
+  --card2: #2e2e30;
+  --text: #ffffff;
+  --text2: #9a9a9c;
+  --text3: #4a4a4c;
+  --border: rgba(255, 255, 255, 0.07);
+  --border-acc: rgba(237, 28, 36, 0.4);
+  --font: 'Inter', system-ui, sans-serif;
+}
+
+/* Intel theme */
+.theme-intel {
+  --acc: #0071c5;
+  --acc-dim: #005299;
+  --acc-rgb: 0, 113, 197;
+  --bg: #00070d;
+  --sidebar: #000d13;
+  --surface: #001018;
+  --card: #000c12;
+  --card2: #001017;
+  --text: #c0d8f0;
+  --text2: #4a7a9a;
+  --text3: #2a4a6a;
+  --border: rgba(0, 113, 197, 0.15);
+  --border-acc: rgba(0, 113, 197, 0.4);
+  --font: 'Inter', system-ui, sans-serif;
+}
