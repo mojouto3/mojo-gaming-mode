@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e1e1e"/>
+      <stop offset="100%" style="stop-color:#111111"/>
+    </linearGradient>
+    <linearGradient id="mGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#9ae000"/>
+      <stop offset="100%" style="stop-color:#4d7a00"/>
+    </linearGradient>
+    <linearGradient id="strokeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#76b900"/>
+      <stop offset="100%" style="stop-color:#3d6600"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Drop shadow hex -->
+  <polygon points="128,14 222,67 222,189 128,242 34,189 34,67"
+    fill="#000000" opacity="0.4" transform="translate(3,4)"/>
+
+  <!-- Main hex -->
+  <polygon points="128,14 222,67 222,189 128,242 34,189 34,67"
+    fill="url(#bg)"/>
+
+  <!-- Hex border - outer -->
+  <polygon points="128,14 222,67 222,189 128,242 34,189 34,67"
+    fill="none" stroke="url(#strokeGrad)" stroke-width="7"/>
+
+  <!-- Hex border - inner thin accent -->
+  <polygon points="128,26 212,74 212,182 128,230 44,182 44,74"
+    fill="none" stroke="#76b900" stroke-width="1" opacity="0.25"/>
+
+  <!-- Top accent bar inside hex -->
+  <rect x="80" y="72" width="96" height="3" rx="1.5" fill="#76b900" opacity="0.5"/>
+
+  <!-- M lettermark -->
+  <!-- Left vertical bar -->
+  <rect x="62" y="78" width="20" height="100" rx="5" fill="url(#mGrad)"/>
+  <!-- Right vertical bar -->
+  <rect x="174" y="78" width="20" height="100" rx="5" fill="url(#mGrad)"/>
+
+  <!-- Left diagonal (top-left to center-bottom) -->
+  <polygon points="62,78 82,78 130,133 110,133" fill="url(#mGrad)"/>
+  <!-- Right diagonal (top-right to center-bottom) -->
+  <polygon points="194,78 174,78 126,133 146,133" fill="url(#mGrad)"/>
+
+  <!-- Center notch fill (tiny triangle at bottom of V) -->
+  <polygon points="110,133 146,133 128,115" fill="url(#mGrad)"/>
+
+  <!-- Bottom accent line -->
+  <rect x="62" y="170" width="132" height="4" rx="2" fill="#76b900" opacity="0.6"/>
+
+  <!-- Tiny diamond sparks -->
+  <!-- top right -->
+  <polygon points="208,42 214,54 220,42 214,30" fill="#76b900" opacity="0.8"/>
+  <!-- bottom left -->
+  <polygon points="36,202 42,214 48,202 42,190" fill="#76b900" opacity="0.5"/>
+</svg>

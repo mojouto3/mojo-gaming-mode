@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; script-src 'self'">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mojo Gaming Mode</title>
+  <link rel="stylesheet" href="./fonts/tabler-icons.min.css">
+  <link rel="stylesheet" href="css/theme.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <div class="app" id="app">
+
+    <div class="titlebar" id="titlebar">
+      <div class="titlebar-icon">
+        <img src="../assets/icons/icon.ico" alt="MGM" id="titlebar-icon-img">
+      </div>
+      <div class="titlebar-apptitle">Mojo Gaming Mode</div>
+      <div class="titlebar-drag"></div>
+      <div class="update-bar" id="update-bar" style="display:none">
+        <span class="update-msg" id="update-msg"></span>
+        <button class="update-btn" id="update-btn" style="display:none"></button>
+        <div class="update-progress" id="update-progress" style="display:none">
+          <div class="update-progress-fill" id="update-progress-fill"></div>
+        </div>
+      </div>
+      <div class="titlebar-controls">
+        <button class="tb-btn tb-min" id="btn-minimize" title="Minimize"><i class="ti ti-minus"></i></button>
+        <button class="tb-btn tb-close" id="btn-close" title="Close to tray"><i class="ti ti-x"></i></button>
+      </div>
+    </div>
+
+    <div class="layout">
+
+      <aside class="sidebar">
+        <div class="sidebar-gpu-card">
+          <img src="../assets/icons/nvidia_logo.png" id="gpu-detected-icon" class="gpu-card-icon">
+          <div class="gpu-card-info">
+            <div class="gpu-card-model" id="gpu-detected-model">Detecting...</div>
+            <div class="gpu-card-vendor" id="gpu-detected-vendor">Please wait</div>
+          </div>
+        </div>
+
+        <nav class="sidebar-nav">
+          <div class="section-label">Gaming</div>
+          <div class="nav-item active" id="ni-presets" data-tab="presets">
+            <i class="ti ti-layout-grid"></i> Presets
+          </div>
+          <div class="nav-item" id="ni-tweaks" data-tab="tweaks">
+            <i class="ti ti-adjustments-horizontal"></i> Tweaks
+          </div>
+          <div class="section-label" style="margin-top:8px">System</div>
+          <div class="nav-item" id="ni-rules" data-tab="rules">
+            <i class="ti ti-list-check"></i> Custom rules
+          </div>
+          <div class="nav-item" id="ni-stats" data-tab="stats">
+            <i class="ti ti-chart-bar"></i> Performance
+          </div>
+        </nav>
+
+        <div class="sidebar-settings-btn">
+          <div class="nav-item" id="ni-settings" data-tab="settings">
+            <i class="ti ti-settings"></i> Settings
+          </div>
+        </div>
+
+        <div class="sidebar-footer">
+          <div class="status-chip">
+            <span class="status-dot" id="status-dot"></span>
+            <span class="status-label" id="status-label">Gaming mode off</span>
+          </div>
+          <div class="version-wrap">
+            <div class="version-label">v1.0.0</div>
+            <span class="new-badge" id="new-badge" style="display:none">NEW</span>
+          </div>
+
+          <!-- What's New Popup -->
+          <div class="wn-popup" id="wn-popup" style="display:none">
+            <div class="wn-popup-header">
+              <span class="wn-popup-title">What's new <span id="wn-popup-version"></span></span>
+              <button class="wn-popup-close" id="wn-popup-close"><i class="ti ti-x"></i></button>
+            </div>
+            <ul class="wn-popup-list" id="wn-popup-list"></ul>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main">
+        <div class="topbar">
+          <div class="topbar-title" id="page-title">Presets</div>
+          <div class="topbar-right">
+            <div class="gpu-badge" id="gpu-badge">Detecting GPU...</div>
+            <button class="btn-revert" id="btn-revert">
+              <i class="ti ti-refresh"></i> Revert
+            </button>
+            <button class="btn-activate" id="btn-activate">
+              <i class="ti ti-bolt"></i> Activate
+            </button>
+          </div>
+        </div>
+
+        <div class="content" id="content">
+
+          <div id="tab-presets" class="tab-panel active">
+            <div class="preset-grid" id="preset-grid">
+              <div class="preset-card active" id="pc-balanced" data-preset="balanced">
+                <div class="pc-check"><i class="ti ti-check"></i></div>
+                <i class="ti ti-adjustments pc-icon"></i>
+                <div class="pc-name">Balanced</div>
+                <div class="pc-sub">Safe defaults, no admin needed</div>
+              </div>
+              <div class="preset-card" id="pc-performance" data-preset="performance">
+                <div class="pc-check"><i class="ti ti-check"></i></div>
+                <i class="ti ti-rocket pc-icon"></i>
+                <div class="pc-name">Performance</div>
+                <div class="pc-sub">Max FPS, some admin tweaks</div>
+              </div>
+              <div class="preset-card" id="pc-esports" data-preset="esports">
+                <div class="pc-check"><i class="ti ti-check"></i></div>
+                <i class="ti ti-trophy pc-icon"></i>
+                <div class="pc-name">Esports</div>
+                <div class="pc-sub">Ultra low latency, all tweaks</div>
+              </div>
+            </div>
+            <div class="section-header">
+              <span class="sh-title">ACTIVE IN THIS PRESET</span>
+              <span class="sh-count" id="active-count">0 tweaks</span>
+            </div>
+            <div id="preset-active-list"></div>
+          </div>
+
+          <div id="tab-tweaks" class="tab-panel">
+            <div class="tweak-search-wrap">
+              <i class="ti ti-search tweak-search-icon"></i>
+              <input type="text" id="tweak-search" class="tweak-search-input" placeholder="Search tweaks...">
+              <button class="tweak-search-clear" id="tweak-search-clear" style="display:none"><i class="ti ti-x"></i></button>
+            </div>
+            <div id="tweak-no-results" class="tweak-no-results" style="display:none">No tweaks match your search.</div>
+            <div class="section-header" id="sh-win"><span class="sh-title">WINDOWS SYSTEM</span></div>
+            <div id="tw-win"></div>
+            <div class="section-header" style="margin-top:14px"><span class="sh-title">OVERLAYS AND APPS</span></div>
+            <div id="tw-ov"></div>
+            <div class="section-header" style="margin-top:14px"><span class="sh-title">NETWORK</span></div>
+            <div id="tw-net"></div>
+          </div>
+
+          <div id="tab-rules" class="tab-panel">
+            <div class="section-header">
+              <span class="sh-title">CUSTOM RULES</span>
+              <span class="sh-count" id="rules-count">0</span>
+            </div>
+            <div id="rules-list"></div>
+            <button class="btn-add-rule" id="btn-add-rule">
+              <i class="ti ti-plus"></i> Add custom rule
+            </button>
+            <div class="rules-info">
+              Rules are saved and will execute when gaming mode is activated. Execution engine arrives in v0.2.0.
+            </div>
+          </div>
+
+          <div id="tab-settings" class="tab-panel">
+
+            <div class="section-header"><span class="sh-title">SYSTEM</span></div>
+
+            <div class="settings-card">
+              <div class="settings-row">
+                <div class="settings-info">
+                  <div class="settings-label">System Restore Point</div>
+                  <div class="settings-desc">Create a Windows restore point before applying tweaks. Recommended before first use.</div>
+                  <div class="settings-last" id="restore-last"></div>
+                </div>
+                <button class="btn-restore" id="btn-restore">
+                  <i class="ti ti-shield-check"></i> Create Restore Point
+                </button>
+              </div>
+            </div>
+
+            <div class="settings-card" style="margin-top:8px">
+              <div class="settings-row">
+                <div class="settings-info">
+                  <div class="settings-label">Start with Windows</div>
+                  <div class="settings-desc">Launch Mojo Gaming Mode automatically when Windows starts. Opens minimized to tray.</div>
+                </div>
+                <label class="tog" id="tog-autostart">
+                  <input type="checkbox" id="cb-autostart">
+                  <div class="tog-track"></div>
+                  <div class="tog-thumb"></div>
+                </label>
+              </div>
+            </div>
+
+            <div class="settings-card" style="margin-top:8px">
+              <div class="settings-row">
+                <div class="settings-info">
+                  <div class="settings-label">Updates</div>
+                  <div class="settings-desc">Check for a newer version of Mojo Gaming Mode.</div>
+                  <div class="settings-last" id="update-status"></div>
+                </div>
+                <button class="btn-restore" id="btn-check-update">
+                  <i class="ti ti-refresh"></i> Check for updates
+                </button>
+              </div>
+            </div>
+
+            <div class="section-header" style="margin-top:16px"><span class="sh-title" data-t="settings_theme">THEME</span></div>
+            <div class="settings-card">
+              <div class="settings-info" style="margin-bottom:12px">
+                <div class="settings-label" data-t="settings_vendor">Vendor theme</div>
+                <div class="settings-desc" data-t="settings_vendor_desc">Choose your GPU vendor theme. Auto-detected by default.</div>
+              </div>
+              <div class="theme-picker" id="theme-picker">
+                <button class="theme-btn" id="tb-auto" data-theme="auto">
+                  <span class="theme-btn-dot" style="background:var(--acc)"></span>
+                  Auto
+                </button>
+                <button class="theme-btn" id="tb-nvidia" data-theme="nvidia">
+                  <img src="../assets/icons/nvidia_logo.png" class="theme-btn-icon">
+                  NVIDIA
+                </button>
+                <button class="theme-btn" id="tb-amd" data-theme="amd">
+                  <img src="../assets/icons/amd_logo.png" class="theme-btn-icon">
+                  AMD
+                </button>
+                <button class="theme-btn" id="tb-intel" data-theme="intel">
+                  <img src="../assets/icons/intel_logo.png" class="theme-btn-icon">
+                  Intel
+                </button>
+              </div>
+            </div>
+
+            <div class="section-header" style="margin-top:16px"><span class="sh-title" data-t="settings_lang">LANGUAGE</span></div>
+            <div class="settings-card">
+              <div class="settings-row">
+                <div class="settings-info">
+                  <div class="settings-label" data-t="settings_lang_label">Display language</div>
+                  <div class="settings-desc" data-t="settings_lang_desc">Choose the language for the app interface.</div>
+                </div>
+              </div>
+              <div class="lang-picker" id="lang-picker">
+                <button class="lang-btn active" data-lang="en">🇬🇧 English</button>
+                <button class="lang-btn" data-lang="gr">🇬🇷 Ελληνικά</button>
+                <button class="lang-btn" data-lang="de">🇩🇪 Deutsch</button>
+                <button class="lang-btn" data-lang="es">🇪🇸 Español</button>
+                <button class="lang-btn" data-lang="ru">🇷🇺 Русский</button>
+                <button class="lang-btn" data-lang="it">🇮🇹 Italiano</button>
+                <button class="lang-btn" data-lang="fr">🇫🇷 Français</button>
+                <button class="lang-btn" data-lang="pt">🇧🇷 Português</button>
+                <button class="lang-btn" data-lang="pl">🇵🇱 Polski</button>
+                <button class="lang-btn" data-lang="tr">🇹🇷 Türkçe</button>
+              </div>
+            </div>
+
+          </div>
+
+          <div id="tab-stats" class="tab-panel">
+
+            <div class="section-header">
+              <span class="sh-title">SYSTEM RESOURCES</span>
+              <span class="live-pill"><span class="live-dot-anim"></span>LIVE</span>
+            </div>
+
+            <div class="gauge-grid-big">
+              <div class="gauge-card-big">
+                <div class="gauge-big-label">CPU</div>
+                <div class="gauge-big-val" id="cpu-val">--</div>
+                <div class="gauge-bar-wrap-big"><div class="gauge-bar-fill" id="cpu-bar" style="width:0%"></div></div>
+                <div class="gauge-big-sub" id="cpu-sub">Waiting...</div>
+                <div class="gauge-sparkline" id="cpu-spark"></div>
+              </div>
+              <div class="gauge-card-big">
+                <div class="gauge-big-label">RAM</div>
+                <div class="gauge-big-val" id="ram-val">--</div>
+                <div class="gauge-bar-wrap-big"><div class="gauge-bar-fill" id="ram-bar" style="width:0%"></div></div>
+                <div class="gauge-big-sub" id="ram-sub">Waiting...</div>
+                <div class="gauge-sparkline" id="ram-spark"></div>
+              </div>
+              <div class="gauge-card-big">
+                <div class="gauge-big-label">GPU</div>
+                <div class="gauge-big-val" id="gpu-val-live">--</div>
+                <div class="gauge-bar-wrap-big"><div class="gauge-bar-fill" id="gpu-bar" style="width:0%"></div></div>
+                <div class="gauge-big-sub" id="gpu-sub-live">Waiting...</div>
+                <div class="gauge-sparkline" id="gpu-spark"></div>
+              </div>
+            </div>
+
+            <div class="section-header" style="margin-top:14px"><span class="sh-title">SESSION</span></div>
+            <div class="metrics-grid">
+              <div class="metric">
+                <div class="metric-val" id="sv-sessions">0</div>
+                <div class="metric-label">Sessions</div>
+              </div>
+              <div class="metric">
+                <div class="metric-val" id="sv-tweaks">0</div>
+                <div class="metric-label">Active tweaks</div>
+              </div>
+              <div class="metric">
+                <div class="metric-val" id="sv-rules">0</div>
+                <div class="metric-label">Custom rules</div>
+              </div>
+            </div>
+
+            <div class="collapsible-header" id="changes-toggle">
+              <span class="sh-title">APPLIED CHANGES</span>
+              <span class="changes-count" id="changes-count"></span>
+              <i class="ti ti-chevron-down collapsible-arrow" id="changes-arrow"></i>
+            </div>
+            <div id="stats-changes" class="collapsible-body collapsed"></div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title"><i class="ti ti-plus"></i> New custom rule</span>
+        <button class="modal-close" id="modal-close"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <label class="field-label">Rule name</label>
+        <input type="text" class="field-input" id="rule-name" placeholder="Kill Discord on launch">
+        <label class="field-label">Action</label>
+        <select class="field-input" id="rule-type">
+          <option value="kill">Kill process</option>
+          <option value="priority">Set CPU priority</option>
+          <option value="reg">Registry tweak</option>
+          <option value="service">Disable service</option>
+        </select>
+        <label class="field-label">Target</label>
+        <input type="text" class="field-input" id="rule-target" placeholder="Discord.exe">
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="btn-modal-cancel">Cancel</button>
+        <button class="btn-ok" id="btn-modal-ok">Add rule</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/translations.js"></script>
+  <!-- Onboarding Modal -->
+  <div class="ob-overlay" id="ob-overlay">
+    <div class="ob-modal" id="ob-modal">
+
+      <!-- Step 1: Welcome -->
+      <div class="ob-step active" id="ob-step-1">
+        <div class="ob-logo" id="ob-logo">
+          <img id="ob-vendor-logo" src="" alt="">
+        </div>
+        <div class="ob-title">Welcome to Mojo Gaming Mode</div>
+        <div class="ob-sub" id="ob-gpu-detected">Detecting your GPU...</div>
+        <div class="ob-desc">A lightweight gaming optimizer that applies safe, fully revertible system tweaks with one click.</div>
+        <div class="ob-actions">
+          <button class="ob-btn-next" id="ob-next-1">Get started <i class="ti ti-arrow-right"></i></button>
+        </div>
+        <div class="ob-dots">
+          <span class="ob-dot active"></span>
+          <span class="ob-dot"></span>
+          <span class="ob-dot"></span>
+          <span class="ob-dot"></span>
+        </div>
+      </div>
+
+      <!-- Step 2: Presets -->
+      <div class="ob-step" id="ob-step-2">
+        <div class="ob-title">Choose your preset</div>
+        <div class="ob-desc">Pick a preset that matches how you game. You can change it anytime.</div>
+        <div class="ob-presets">
+          <div class="ob-preset" data-preset="balanced">
+            <i class="ti ti-adjustments ob-preset-icon"></i>
+            <div class="ob-preset-name">Balanced</div>
+            <div class="ob-preset-sub">Safe defaults, no admin needed</div>
+          </div>
+          <div class="ob-preset" data-preset="performance">
+            <i class="ti ti-rocket ob-preset-icon"></i>
+            <div class="ob-preset-name">Performance</div>
+            <div class="ob-preset-sub">Max FPS, some admin tweaks</div>
+          </div>
+          <div class="ob-preset selected" data-preset="esports">
+            <i class="ti ti-trophy ob-preset-icon"></i>
+            <div class="ob-preset-name">Esports</div>
+            <div class="ob-preset-sub">Ultra low latency, all tweaks</div>
+          </div>
+        </div>
+        <div class="ob-actions">
+          <button class="ob-btn-back" id="ob-back-2"><i class="ti ti-arrow-left"></i> Back</button>
+          <button class="ob-btn-next" id="ob-next-2">Next <i class="ti ti-arrow-right"></i></button>
+        </div>
+        <div class="ob-dots">
+          <span class="ob-dot"></span>
+          <span class="ob-dot active"></span>
+          <span class="ob-dot"></span>
+          <span class="ob-dot"></span>
+        </div>
+      </div>
+
+      <!-- Step 3: Safety -->
+      <div class="ob-step" id="ob-step-3">
+        <div class="ob-icon-large"><i class="ti ti-shield-check"></i></div>
+        <div class="ob-title">Always safe to revert</div>
+        <div class="ob-desc">Every tweak has a matching revert command. Deactivating restores your system exactly as it was.</div>
+        <div class="ob-safety-list">
+          <div class="ob-safety-item"><i class="ti ti-check"></i> Auto-revert when you quit the app</div>
+          <div class="ob-safety-item"><i class="ti ti-check"></i> Crash recovery on next boot</div>
+          <div class="ob-safety-item"><i class="ti ti-check"></i> Windows shutdown script included</div>
+          <div class="ob-safety-item"><i class="ti ti-check"></i> System Restore Point on install</div>
+        </div>
+        <div class="ob-actions">
+          <button class="ob-btn-back" id="ob-back-3"><i class="ti ti-arrow-left"></i> Back</button>
+          <button class="ob-btn-next" id="ob-next-3">Next <i class="ti ti-arrow-right"></i></button>
+        </div>
+        <div class="ob-dots">
+          <span class="ob-dot"></span>
+          <span class="ob-dot"></span>
+          <span class="ob-dot active"></span>
+          <span class="ob-dot"></span>
+        </div>
+      </div>
+
+      <!-- Step 4: Ready -->
+      <div class="ob-step" id="ob-step-4">
+        <div class="ob-icon-large accent"><i class="ti ti-bolt"></i></div>
+        <div class="ob-title">You're ready</div>
+        <div class="ob-sub" id="ob-ready-sub">Balanced preset selected</div>
+        <div class="ob-desc">Hit Activate whenever you're about to game. One click to optimize, one click to restore.</div>
+        <div class="ob-actions">
+          <button class="ob-btn-back" id="ob-back-4"><i class="ti ti-arrow-left"></i> Back</button>
+          <button class="ob-btn-finish" id="ob-finish">Let's game <i class="ti ti-bolt"></i></button>
+        </div>
+        <div class="ob-dots">
+          <span class="ob-dot"></span>
+          <span class="ob-dot"></span>
+          <span class="ob-dot"></span>
+          <span class="ob-dot active"></span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="js/tweaks.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
