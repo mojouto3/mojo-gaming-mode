@@ -3,7 +3,8 @@
 !macro customInstall
   ; Kill any running instances before install
   nsExec::ExecToLog 'taskkill /F /IM "Mojo Gaming Mode.exe" /T'
-  Sleep 1000
+  nsExec::ExecToLog 'taskkill /F /IM "mojo-gaming-mode.exe" /T'
+  Sleep 2000
 
   ; Register shutdown script in Windows
   WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\Scripts\Shutdown\0\0" "Script" "$INSTDIR\resources\assets\scripts\revert-on-shutdown.ps1"
@@ -19,7 +20,8 @@
 !macro customUninstall
   ; Kill running instances before uninstall
   nsExec::ExecToLog 'taskkill /F /IM "Mojo Gaming Mode.exe" /T'
-  Sleep 1000
+  nsExec::ExecToLog 'taskkill /F /IM "mojo-gaming-mode.exe" /T'
+  Sleep 2000
 
   ; Run revert script before uninstall
   nsExec::ExecToLog 'powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$INSTDIR\resources\assets\scripts\revert-on-shutdown.ps1"'
