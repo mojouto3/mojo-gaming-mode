@@ -1,5 +1,8 @@
 'use strict';
 
+// Custom rules state - initialized after DOM ready
+const customRulesState = {};
+
 const state = {
   gpu: { vendor: 'nvidia', model: '' },
   preset: 'balanced',
@@ -38,6 +41,12 @@ async function init() {
     state.manualOverrides = config.manualOverrides || {};
     Object.assign(state.tweaks, state.manualOverrides);
     if (config.customRules) state.rules = config.customRules;
+    // Init custom rules state
+    if (typeof CUSTOM_RULES !== 'undefined') {
+      CUSTOM_RULES.forEach(r => {
+        customRulesState[r.id] = (config.customRulesActive && config.customRulesActive[r.id]) || false;
+      });
+    }
     if (config.autostart !== undefined) state.autostart = config.autostart;
     if (config.lastRestorePoint) state.lastRestorePoint = config.lastRestorePoint;
     if (config.lang) state.lang = config.lang;
@@ -135,7 +144,27 @@ function bindEvents() {
 
   // Preset cards
   document.querySelectorAll('.preset-card[data-preset]').forEach(card => {
-    card.addEventListener('click', () => setPreset(card.dataset.preset));
+    card.addEventListener('click', () => {
+      // Disable all custom rules and hide Custom card
+      if (typeof CUSTOM_RULES !== 'undefined') {
+        CUSTOM_RULES.forEach(r => { customRulesState[r.id] = false; });
+        renderCustomRules();
+      }
+      document.getElementById('pc-custom')?.classList.remove('active');
+      const p = card.dataset.preset;
+      if (state.preset === p) {
+        setPresetButtons(p);
+      } else {
+        setPreset(p);
+      }
+    });
+  });
+
+  // Custom preset card click
+  document.getElementById('pc-custom')?.addEventListener('click', () => {
+    document.querySelectorAll('.preset-card[data-preset]').forEach(c => c.classList.remove('active'));
+    document.getElementById('pc-custom').classList.add('active');
+    renderCustomPresetActive();
   });
 
   // Activate / Revert
@@ -302,6 +331,8 @@ function setPresetButtons(preset) {
   document.querySelectorAll('.preset-card[data-preset]').forEach(card => {
     card.classList.toggle('active', card.dataset.preset === preset);
   });
+  const customCard = document.getElementById('pc-custom');
+  if (customCard) customCard.classList.remove('active');
 }
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
@@ -409,6 +440,119 @@ function renderPresetActive() {
     return;
   }
   active.forEach(t => container.appendChild(buildTweakRow(t, true)));
+}
+
+function renderCustomRules() {
+  const container = document.getElementById('cr-list');
+  const countEl = document.getElementById('cr-active-count');
+  if (!container || typeof CUSTOM_RULES === 'undefined') return;
+
+  container.innerHTML = '';
+  let activeCount = 0;
+
+  const iconMap = {
+    cr_teams: 'brand-teams', cr_phonelink: 'device-mobile', cr_copilot: 'robot',
+    cr_widgets: 'layout-dashboard', cr_epicgames: 'device-gamepad-2',
+    cr_eaapp: 'device-gamepad', cr_spotify: 'brand-spotify', cr_gamesprior: 'cpu'
+  };
+
+  CUSTOM_RULES.forEach(r => {
+    const isOn = !!customRulesState[r.id];
+    if (isOn) activeCount++;
+    const icon = iconMap[r.id] || 'settings';
+    const tagCls = r.tag === 'r' ? 'tag-r' : 'tag-s';
+    const tagLabel = r.tag === 'r' ? 'Registry' : 'No admin';
+    const checkedAttr = isOn ? 'checked' : '';
+    const activeCls = isOn ? ' active' : '';
+
+    const row = document.createElement('div');
+    row.className = 'tweak-row' + activeCls;
+    row.id = 'cr-' + r.id;
+    row.innerHTML = `
+      <div class="tr-icon"><i class="ti ti-${icon}"></i></div>
+      <div class="tr-info">
+        <div class="tr-name">${r.name} <span class="tag ${tagCls}">${tagLabel}</span></div>
+        <div class="tr-desc">${r.desc}</div>
+      </div>
+      <label class="tog">
+        <input type="checkbox" data-cr="${r.id}" ${checkedAttr}>
+        <div class="tog-track"></div>
+        <div class="tog-thumb"></div>
+      </label>`;
+    container.appendChild(row);
+  });
+
+  // Bind events after render
+  container.querySelectorAll('input[data-cr]').forEach(cb => {
+    cb.addEventListener('change', (e) => toggleCustomRule(e.target.dataset.cr, e.target.checked));
+  });
+
+  if (countEl) countEl.textContent = activeCount + ' active';
+  updateCustomPresetCard(activeCount);
+}
+
+function toggleCustomRule(id, val) {
+  customRulesState[id] = val;
+  const row = document.getElementById('cr-' + id);
+  if (row) row.className = 'tweak-row' + (val ? ' active' : '');
+  const activeCount = Object.values(customRulesState).filter(Boolean).length;
+  const countEl = document.getElementById('cr-active-count');
+  if (countEl) countEl.textContent = activeCount + ' active';
+  updateCustomPresetCard(activeCount);
+
+  if (activeCount > 0) {
+    // Auto-highlight Custom card
+    document.querySelectorAll('.preset-card[data-preset]').forEach(c => c.classList.remove('active'));
+    document.getElementById('pc-custom')?.classList.add('active');
+  } else {
+    // Restore previous preset highlight
+    document.getElementById('pc-custom')?.classList.remove('active');
+    setPresetButtons(state.preset);
+  }
+
+  persistConfig();
+}
+
+function renderCustomPresetActive() {
+  const container = document.getElementById('preset-active-list');
+  const countEl = document.getElementById('active-count');
+  if (!container) return;
+
+  container.innerHTML = '';
+  const activeTweaks = ALL_TWEAKS.filter(t => state.tweaks[t.id] === true || state.tweaks[t.id] === 1);
+  const activeCustom = typeof CUSTOM_RULES !== 'undefined' ? CUSTOM_RULES.filter(r => customRulesState[r.id]) : [];
+  const total = activeTweaks.length + activeCustom.length;
+
+  if (countEl) countEl.textContent = total + ' tweak' + (total !== 1 ? 's' : '');
+
+  if (!total) {
+    container.innerHTML = '<div class="empty-state">No tweaks selected.</div>';
+    return;
+  }
+
+  activeTweaks.forEach(t => container.appendChild(buildTweakRow(t, true)));
+
+  activeCustom.forEach(r => {
+    const row = document.createElement('div');
+    row.className = 'tweak-row active';
+    row.innerHTML = `
+      <div class="tr-icon"><i class="ti ti-puzzle"></i></div>
+      <div class="tr-info"><div class="tr-name">${r.name} <span class="tag tag-s">Custom</span></div></div>`;
+    container.appendChild(row);
+  });
+}
+
+function updateCustomPresetCard(activeCount) {
+  const card = document.getElementById('pc-custom');
+  if (!card) return;
+
+  if (activeCount > 0) {
+    card.style.display = '';
+    card.querySelector('.pc-sub').textContent = activeCount + ' rule' + (activeCount !== 1 ? 's' : '') + ' active';
+  } else {
+    card.style.display = 'none';
+    card.classList.remove('active');
+  }
 }
 
 function renderRules() {
@@ -551,6 +695,7 @@ function updateMetricsUI(data) {
 function renderAll() {
   renderTweaks();
   renderPresetActive();
+  renderCustomRules();
   renderRules();
   renderStats();
 }

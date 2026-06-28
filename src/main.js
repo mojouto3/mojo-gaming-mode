@@ -327,6 +327,42 @@ ipcMain.handle('create-restore-point', async () => {
   });
 });
 
+// Custom Rules definitions (mirrored from renderer for execution)
+const CUSTOM_RULE_CMDS = {
+  cr_teams: {
+    apply: `Get-Process -Name 'Teams','ms-teams' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revert: `$t = "$env:LOCALAPPDATA\Microsoft\Teams\Update.exe"; If (Test-Path $t) { Start-Process $t -ArgumentList '--processStart Teams.exe' -ErrorAction SilentlyContinue }; Exit 0`
+  },
+  cr_phonelink: {
+    apply: `Get-Process -Name 'PhoneExperienceHost' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revert: `Exit 0`
+  },
+  cr_copilot: {
+    apply: `Get-Process -Name 'Copilot' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revert: `Exit 0`
+  },
+  cr_widgets: {
+    apply: `Get-Process -Name 'Widgets' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revert: `Exit 0`
+  },
+  cr_epicgames: {
+    apply: `Get-Process -Name 'EpicGamesLauncher','EpicWebHelper' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revert: `$e = "C:\Program Files (x86)\Epic Games\Launcher\Portal\Binaries\Win32\EpicGamesLauncher.exe"; If (Test-Path $e) { Start-Process $e -ErrorAction SilentlyContinue }; Exit 0`
+  },
+  cr_eaapp: {
+    apply: `Get-Process -Name 'EABackgroundService','EAGD' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revert: `Exit 0`
+  },
+  cr_spotify: {
+    apply: `Get-Process -Name 'Spotify' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revert: `$s = "$env:APPDATA\Spotify\Spotify.exe"; If (Test-Path $s) { Start-Process $s -ErrorAction SilentlyContinue }; Exit 0`
+  },
+  cr_gamesprior: {
+    apply: `$p = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games'; If (!(Test-Path $p)) { New-Item -Path $p -Force | Out-Null }; Set-ItemProperty -Path $p -Name 'GPU Priority' -Value 8 -Type DWord; Set-ItemProperty -Path $p -Name 'Priority' -Value 6 -Type DWord; Set-ItemProperty -Path $p -Name 'Scheduling Category' -Value 'High' -Type String; Set-ItemProperty -Path $p -Name 'SFIO Priority' -Value 'High' -Type String; Exit 0`,
+    revert: `$p = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games'; Set-ItemProperty -Path $p -Name 'GPU Priority' -Value 2 -Type DWord -ErrorAction SilentlyContinue; Set-ItemProperty -Path $p -Name 'Priority' -Value 2 -Type DWord -ErrorAction SilentlyContinue; Set-ItemProperty -Path $p -Name 'Scheduling Category' -Value 'Medium' -Type String -ErrorAction SilentlyContinue; Set-ItemProperty -Path $p -Name 'SFIO Priority' -Value 'Normal' -Type String -ErrorAction SilentlyContinue; Exit 0`
+  }
+};
+
 ipcMain.handle('apply-mode', async (e, config) => {
   try {
     // Get list of enabled tweak IDs
@@ -347,6 +383,15 @@ ipcMain.handle('apply-mode', async (e, config) => {
       return { success: false, error: ex.message };
     }
     const failed = results.filter(r => !r.success && !r.skipped);
+
+    // Execute active custom rules
+    if (config.customRulesActive) {
+      for (const [id, active] of Object.entries(config.customRulesActive)) {
+        if (active && CUSTOM_RULE_CMDS[id]) {
+          try { await executor.run(CUSTOM_RULE_CMDS[id].apply); } catch(e) {}
+        }
+      }
+    }
 
     gamingModeActive = true;
     if (config.preset) currentPreset = config.preset;
@@ -393,6 +438,16 @@ ipcMain.handle('revert-mode', async (e, config) => {
     revertConfig.wasActive = false;
     revertConfig.activeTweakIds = [];
     saveConfig(revertConfig);
+
+    // Revert active custom rules
+    const savedConfig = loadConfig();
+    if (savedConfig.customRulesActive) {
+      for (const [id, active] of Object.entries(savedConfig.customRulesActive)) {
+        if (active && CUSTOM_RULE_CMDS[id]) {
+          try { await executor.run(CUSTOM_RULE_CMDS[id].revert); } catch(e) {}
+        }
+      }
+    }
 
     gamingModeActive = false;
     updateTrayMenu();
