@@ -1,155 +1,165 @@
 # Changelog
 
-All notable changes to Mojo Gaming Mode will be documented here.
+All notable changes to Mojo Gaming Mode are documented here.
 
-## [1.0.1] - 2026-06-28
+---
 
-### Added
+## [1.2.0] - 2026-06-28
 
-- Auto-updater via electron-updater with automatic download and install on quit
-- Manual "Check for updates" button in Settings tab
-- Tweak rows show ON status with pulsing dot when gaming mode is active
-- Update available and update downloaded toast notifications
+### Changed
+
+- Upgraded Electron from v28 to v42
+- Upgraded electron-builder from v24 to v26
+- Fixed 6 high severity vulnerabilities (ASAR integrity, use-after-free, registry injection and more)
+
+---
+
+## [1.1.2] - 2026-06-28
+
+### Changed
+
+- Install and Restart prompts user to quit app from tray before installer runs
+
+---
+
+## [1.1.1] - 2026-06-28
 
 ### Fixed
 
+- Auto-updater test release
+
+---
+
+## [1.1.0] - 2026-06-28
+
+### Added
+
+- Auto-updater via electron-updater with download progress bar
+- Install and Restart button after download completes
+- onUpdaterStatus IPC event for real-time update status in renderer
+
+---
+
+## [1.0.9] - 2026-06-28
+
+### Fixed
+
+- Installer uses PowerShell Stop-Process to kill running instances before install and uninstall
+
+---
+
+## [1.0.8] - 2026-06-28
+
+### Fixed
+
+- Installer kills running app instances via taskkill before install and uninstall
+
+---
+
+## [1.0.7] - 2026-06-28
+
+### Fixed
+
+- Download button in update bar now opens browser correctly via IPC open-external handler
+- Update bar redesigned as pill shape with fade-in animation
+
+---
+
+## [1.0.6] - 2026-06-28
+
+### Fixed
+
+- Proper cleanup on app quit via metrics.stop()
+
+---
+
+## [1.0.5] - 2026-06-28
+
+### Added
+
+- Single instance lock prevents multiple app instances running simultaneously
+- Check for updates button in Settings tab
+- Tweak rows show live ON status with pulsing dot when gaming mode is active
+- Update available notification in titlebar pill bar
+
+### Fixed
+
+- Dynamic version display loaded from package.json via IPC
 - Tabler icons bundled locally in renderer/fonts for correct display in installed app
-- Version display updated to v1.0.0 in sidebar
+
+---
 
 ## [1.0.0] - 2026-06-28
 
 ### Added
 
-- NSIS installer with per-user or per-machine installation
+- NSIS installer with per-user installation
 - System Restore Point created automatically during installation
 - Windows shutdown script registered on install for safe tweak revert on system shutdown
 - Shutdown script reverts all active tweaks when Windows shuts down or restarts
-- Shutdown script unregistered and all app data removed on uninstall
-- Installer supports 10 languages matching app i18n
-- Desktop shortcut optional during install
+- Shutdown script unregistered and app data removed on uninstall
+- Desktop shortcut created by default
 - Start menu shortcut created by default
 - App launches after install completes
 
-### Changed
-
-- App version bumped to 1.0.0
-- Package.json updated with full NSIS configuration
+---
 
 ## [0.4.1] - 2026-06-27
 
 ### Fixed
 
 - Revert system now uses activeTweakIds stored at apply time instead of config file
-- Service revert uses sc.exe instead of Set-Service/reg add for reliable startup type change
+- Service revert uses sc.exe instead of Set-Service for reliable startup type change
 - Executor elevation wrapper removed — app runs as admin via manifest, no per-command elevation needed
 - All tweak commands rewritten as single-line with Exit 0 and ErrorAction SilentlyContinue
 - Auto-revert on tray Quit via before-quit event
 - Crash recovery on next boot via wasActive flag in config.json
 
+---
+
 ## [0.4.0] - 2026-06-27
 
 ### Added
 
-- Settings tab: manual vendor theme override (Auto / NVIDIA / AMD / Intel) with vendor logos
-- Settings tab: language selection with 10 languages (EN, GR, DE, ES, RU, IT, FR, PT-BR, PL, TR)
-- Full i18n system via translations.js with t() helper function
-- Language applies immediately without restart
-- Performance tab: live CPU, RAM, GPU gauges with real-time data via persistent PowerShell process
-- Performance tab: mini sparkline history per gauge (20 readings)
-- Performance tab: GPU usage % via nvidia-smi when available, VRAM fallback otherwise
-- Performance tab: Applied Changes collapsible section with count badge, closed by default
-- Performance tab: LIVE pill badge next to System Resources header
-- Metrics polling starts only when Performance tab is open, stops on tab switch (zero idle overhead)
-- Vendor theme sidebar branding: vendor logo + vendor subtitle (NVIDIA Control Panel / AMD Adrenalin Edition / Intel Arc Control)
-- Topbar badge always shows real detected GPU model regardless of manual theme
+- Theme override in Settings — manual vendor theme selection (Auto, NVIDIA, AMD, Intel)
+- i18n support for 10 languages: English, Greek, German, Spanish, Russian, Italian, French, Portuguese BR, Polish, Turkish
+- Live CPU, RAM and GPU performance metrics tab with persistent PowerShell process
+- Collapsible Applied Changes section in Presets tab
+- ON status badges with pulsing dot on active tweak rows
 
-### Changed
-
-- Performance tab completely redesigned: bigger 36px gauge values, thicker bars, sparklines
-- Applied Changes moved to collapsible section to give more space to live metrics
-- Sidebar subtitle changes based on active theme vendor, not GPU model
-
-### Fixed
-
-- GPU gauge shows N/A gracefully when nvidia-smi is unavailable
-- Metrics process stops cleanly when window is hidden to tray
+---
 
 ## [0.3.0] - 2026-06-27
 
 ### Added
 
-- Settings tab in sidebar navigation, positioned below Performance as standalone item
-- System Restore Point creation on demand via Settings tab with timestamp display
-- Start with Windows autostart toggle in Settings (opens minimized to tray)
-- Vendor theme section in Settings showing vendor logo and name
-- Settings state persisted in config.json (autostart, lastRestorePoint)
+- Settings tab with System Restore Point creation
+- Start with Windows autostart toggle
+- Settings persistence across sessions
 
-### Changed
-
-- Settings tab positioned at bottom of sidebar before status chip for cleaner separation
-- Vendor theme badge in Settings shows vendor name only (NVIDIA/AMD/Intel), not GPU model
-
-### Fixed
-
-- System Restore Point command now suppresses CLIXML progress output for reliable execution
+---
 
 ## [0.2.0] - 2026-06-27
 
 ### Added
 
-- PowerShell action executor with Base64 encoded commands for reliable silent execution
-- Real system tweak execution for all 15 tweaks across Windows system, overlays, and network
-- Parallel tweak execution via Promise.all for maximum speed
-- Auto-elevation on app startup via app manifest (single UAC prompt on first launch)
-- Windows native notifications on activate and deactivate showing preset name
-- Auto-switch between presets when gaming mode is active (revert old, apply new)
-- Loading state on preset cards during auto-switch to prevent double-click
-- Toast repositioned to bottom center to avoid overlapping buttons
-- Silent mode for applyMode and revertMode during auto-switch
+- Real PowerShell execution via Base64-encoded silent commands
+- Parallel tweak execution
+- Windows native notifications on activate and deactivate
+- Auto-switch presets without manual deactivate
+- Config persistence with preset and manual override architecture
 
-### Changed
-
-- Config architecture: now stores preset + manualOverrides only, not full tweak state
-- Preset switch clears manual overrides
-- Tweaks always derive from preset defaults on load, manual overrides applied on top
-
-### Fixed
-
-- OneDrive tweak no longer fails when OneDrive is not running
-- Xbox Game Bar tweak creates registry path if missing
-- GPU vendor overlay tweak handles missing processes gracefully
-- SysMain, WSearch, DiagTrack service commands converted to single-line for reliable elevation
+---
 
 ## [0.1.0] - 2026-06-27
 
 ### Added
 
-- Electron app shell for Windows (frameless window, custom titlebar)
-- Automatic GPU vendor detection via PowerShell Get-WmiObject (Windows 11 compatible)
-- NVIDIA theme: dark charcoal background, neon green #76b900 accents
-- AMD theme: dark charcoal background, red #ED1C24 accents
-- Intel theme: dark background, blue #0071C5 accents
-- Theme auto-loads on startup based on detected GPU
-- Detected GPU model displayed in sidebar (e.g. NVIDIA GeForce RTX 4080)
-- Official vendor logos in sidebar and titlebar area (NVIDIA, AMD, Intel)
+- Initial release
+- Frameless Electron window with GPU vendor theme detection (NVIDIA, AMD, Intel)
 - Three presets: Balanced, Performance, Esports
-- Full tweak library with 15 safe revertible tweaks across three categories
-- Windows system tweaks: Game Mode, SysMain, power plan, Windows Search, fullscreen opt, HPET, MSI mode
-- Overlay tweaks: Xbox Game Bar, Steam overlay, GPU vendor overlay, OneDrive, Discord GPU accel, telemetry
-- Network tweaks: Nagle algorithm, QoS packet scheduling
-- Per-tweak tags: No admin / Admin / Registry
-- Custom rules engine UI: add and delete rules (kill process, set CPU priority, registry tweak, disable service)
-- Performance tab with FPS target, active tweaks count, sessions count, rules count
-- Config persistence via JSON at %APPDATA%\mojo-gaming-mode\config.json
-- System tray with MGM icon (gray when off, neon green when active)
-- Tray context menu: Gaming Mode status, Activate/Deactivate, Open, Quit
-- Tray icon swaps between off/on states when gaming mode is toggled
-- Window closes to tray instead of exiting
-- VS Code launch configuration for F5 debugging workflow
-- Trademark disclaimer for NVIDIA, AMD and Intel logos in README
-
-### Notes
-
-- v0.1.0 is a UI shell only. Tweaks are saved to config but not yet executed on the system.
-- PowerShell action execution arrives in v0.2.0.
-- System Restore Point integration arrives in v0.3.0.
+- 15 tweak definitions with apply and revert commands
+- System tray with status icon and context menu
+- IPC bridge via contextBridge and preload
+- Single instance lock
+- Config file at AppData/mojo-gaming-mode/config.json
