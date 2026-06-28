@@ -242,6 +242,11 @@ app.whenReady().then(async () => {
     }
   });
 
+  // Preset shortcuts
+  globalShortcut.register('CommandOrControl+B', () => switchPresetFromTray('balanced'));
+  globalShortcut.register('CommandOrControl+P', () => switchPresetFromTray('performance'));
+  globalShortcut.register('CommandOrControl+E', () => switchPresetFromTray('esports'));
+
   // Init auto-updater and check on startup
   initAutoUpdater();
   setTimeout(() => autoUpdater.checkForUpdates().catch(() => {}), 4000);
@@ -471,6 +476,11 @@ function initAutoUpdater() {
   autoUpdater.on('update-available', (info) => {
     if (mainWindow && !mainWindow.isDestroyed())
       mainWindow.webContents.send('updater-status', { status: 'available', version: info.version });
+    new Notification({
+      title: 'Mojo Gaming Mode',
+      body: `v${info.version} is available. Open the app to download.`,
+      icon: path.join(ASSETS_PATH, 'icons', 'icon.ico')
+    }).show();
   });
 
   autoUpdater.on('update-not-available', () => {
