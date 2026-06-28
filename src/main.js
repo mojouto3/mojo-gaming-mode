@@ -211,6 +211,8 @@ app.whenReady().then(async () => {
   // Auto-updater
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.allowPrerelease = true;
+  Object.defineProperty(app, 'isPackaged', { get: () => true });
 
   autoUpdater.on('update-available', (info) => {
     if (mainWindow && !mainWindow.isDestroyed()) {
