@@ -612,7 +612,7 @@ function handleUpdaterStatus(data) {
       btn.textContent = 'Download';
       btn.onclick = () => {
         const url = data.downloadUrl || 'https://github.com/mojouto3/mojo-gaming-mode/releases/latest';
-        require('electron').shell.openExternal(url);
+        window.mgm.openExternal(url);
       };
       progress.style.display = 'none';
       if (statusEl) statusEl.textContent = 'Update v' + data.version + ' available';

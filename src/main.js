@@ -393,6 +393,11 @@ ipcMain.handle('set-autostart', (e, enabled) => {
   return { success: true };
 });
 
+ipcMain.handle('open-external', (e, url) => {
+  const { shell } = require('electron');
+  shell.openExternal(url);
+});
+
 ipcMain.handle('get-version', () => {
   return APP_VERSION;
 });
