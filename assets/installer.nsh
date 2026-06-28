@@ -1,10 +1,8 @@
 ; Mojo Gaming Mode - NSIS Custom Install Script
 
 !macro customInstall
-  ; Kill any running instances before install
-  nsExec::ExecToLog 'taskkill /F /IM "Mojo Gaming Mode.exe" /T'
-  nsExec::ExecToLog 'taskkill /F /IM "mojo-gaming-mode.exe" /T'
-  Sleep 2000
+  ; Kill any running instances before install using PowerShell as admin
+  nsExec::ExecToLog 'powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "Stop-Process -Name ''Mojo Gaming Mode'' -Force -ErrorAction SilentlyContinue; Start-Sleep -Milliseconds 2000"'
 
   ; Register shutdown script in Windows
   WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\Scripts\Shutdown\0\0" "Script" "$INSTDIR\resources\assets\scripts\revert-on-shutdown.ps1"
@@ -19,16 +17,14 @@
 
 !macro customUninstall
   ; Kill running instances before uninstall
-  nsExec::ExecToLog 'taskkill /F /IM "Mojo Gaming Mode.exe" /T'
-  nsExec::ExecToLog 'taskkill /F /IM "mojo-gaming-mode.exe" /T'
-  Sleep 2000
+  nsExec::ExecToLog 'powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "Stop-Process -Name ''Mojo Gaming Mode'' -Force -ErrorAction SilentlyContinue; Start-Sleep -Milliseconds 2000"'
 
   ; Run revert script before uninstall
   nsExec::ExecToLog 'powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$INSTDIR\resources\assets\scripts\revert-on-shutdown.ps1"'
-  
+
   ; Remove shutdown registry entries
   DeleteRegKey HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\Scripts\Shutdown\0"
-  
+
   ; Remove app data
   RMDir /r "$APPDATA\mojo-gaming-mode"
 !macroend
