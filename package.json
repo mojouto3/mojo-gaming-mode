@@ -29,25 +29,13 @@
       "installerIcon": "assets/icons/icon.ico",
       "uninstallerIcon": "assets/icons/icon.ico",
       "installerHeaderIcon": "assets/icons/icon.ico",
-      "createDesktopShortcut": "ask",
+      "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Mojo Gaming Mode",
       "runAfterFinish": true,
       "perMachine": false,
       "deleteAppDataOnUninstall": true,
-      "include": "assets/installer.nsh",
-      "installerLanguages": [
-        "English",
-        "Greek",
-        "German",
-        "Spanish",
-        "Russian",
-        "Italian",
-        "French",
-        "PortugueseBR",
-        "Polish",
-        "Turkish"
-      ]
+      "include": "assets/installer.nsh"
     },
     "files": [
       "src/**/*",
