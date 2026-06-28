@@ -4,6 +4,19 @@ All notable changes to Mojo Gaming Mode are documented here.
 
 ---
 
+## [1.4.0] - 2026-06-28
+
+### Added
+
+- Custom Rules engine with 8 ready-made quick rules (Microsoft Teams, Phone Link, Windows Copilot, Windows Widgets, Epic Games Launcher, EA App, Spotify, Windows games scheduling priority)
+- Dynamic Custom preset card in Presets tab - appears only when at least one rule is active
+- Custom card auto-highlights when a rule is enabled
+- Switching to another preset automatically disables all custom rules
+- Preset keyboard shortcuts Ctrl+B (Balanced), Ctrl+P (Performance), Ctrl+E (Esports)
+- Reset to defaults button in Settings
+- Active tweak count per category in Tweaks tab header
+- Windows toast notification when a new update is available
+
 ## [1.3.0] - 2026-06-28
 
 ### Added
