@@ -611,8 +611,9 @@ function handleUpdaterStatus(data) {
       btn.style.display = 'block';
       btn.textContent = 'Download';
       btn.onclick = () => {
-        const url = data.downloadUrl || 'https://github.com/mojouto3/mojo-gaming-mode/releases/latest';
-        window.mgm.openExternal(url);
+        btn.disabled = true;
+        btn.textContent = 'Downloading...';
+        window.mgm.downloadUpdate();
       };
       progress.style.display = 'none';
       if (statusEl) statusEl.textContent = 'Update v' + data.version + ' available';
@@ -633,6 +634,17 @@ function handleUpdaterStatus(data) {
       break;
 
 
+
+    case 'downloaded':
+      bar.style.display = 'flex';
+      msg.textContent = 'v' + data.version + ' ready';
+      btn.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Install & Restart';
+      btn.onclick = () => window.mgm.installUpdate();
+      progress.style.display = 'none';
+      if (statusEl) statusEl.textContent = 'v' + data.version + ' ready to install';
+      break;
 
     case 'error':
       bar.style.display = 'none';

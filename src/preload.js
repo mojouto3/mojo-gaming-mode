@@ -19,5 +19,7 @@ contextBridge.exposeInMainWorld('mgm', {
   onUpdaterStatus: (cb) => ipcRenderer.on('updater-status', (e, data) => cb(data)),
   openExternal: (url) => ipcRenderer.invoke('open-external', url),
   checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+  downloadUpdate: () => ipcRenderer.invoke('download-update'),
+  installUpdate: () => ipcRenderer.invoke('install-update'),
   getVersion: () => ipcRenderer.invoke('get-version')
 });

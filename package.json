@@ -58,5 +58,8 @@
       "repo": "mojo-gaming-mode",
       "releaseType": "prerelease"
     }
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.9"
   }
 }
