@@ -1,0 +1,45 @@
+name: Discord Release Notification
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Discord notification
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_URL: ${{ github.event.release.html_url }}
+          RELEASE_NAME: ${{ github.event.release.name }}
+          RELEASE_BODY: ${{ github.event.release.body }}
+        run: |
+          BODY=$(echo "$RELEASE_BODY" | head -c 1000)
+          curl -s -X POST "$DISCORD_WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"embeds\": [{
+                \"title\": \"🎮 Mojo Gaming Mode $RELEASE_TAG\",
+                \"description\": \"$BODY\",
+                \"url\": \"$RELEASE_URL\",
+                \"color\": 7843072,
+                \"fields\": [
+                  {
+                    \"name\": \"Download\",
+                    \"value\": \"[Get the installer]($RELEASE_URL)\",
+                    \"inline\": true
+                  },
+                  {
+                    \"name\": \"Repository\",
+                    \"value\": \"[mojouto3/mojo-gaming-mode](https://github.com/mojouto3/mojo-gaming-mode)\",
+                    \"inline\": true
+                  }
+                ],
+                \"footer\": {
+                  \"text\": \"mojomultimedia\"
+                },
+                \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
+              }]
+            }"
