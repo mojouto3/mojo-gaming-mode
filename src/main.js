@@ -6,7 +6,7 @@ const fs = require('fs');
 const { exec } = require('child_process');
 const { executeTweaks } = require('./executor');
 const metrics = require('./metrics');
-const { autoUpdater } = require('electron-updater');
+
 const { TWEAK_DEFINITIONS } = require('./tweaks');
 
 const CONFIG_PATH = path.join(app.getPath('userData'), 'config.json');
@@ -199,6 +199,18 @@ function updateTrayMenu() {
   tray.setContextMenu(menu);
 }
 
+// Single instance lock
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.exit(0);
+}
+app.on('second-instance', () => {
+  if (mainWindow) {
+    if (mainWindow.isMinimized() || !mainWindow.isVisible()) mainWindow.show();
+    mainWindow.focus();
+  }
+});
+
 // Suppress GPU cache errors when running as Administrator
 app.commandLine.appendSwitch('disable-gpu-shader-disk-cache');
 app.commandLine.appendSwitch('no-sandbox');
@@ -208,47 +220,8 @@ app.commandLine.appendSwitch('no-sandbox');
 app.whenReady().then(async () => {
   detectedGPU = await detectGPU();
 
-  // Auto-updater
-  autoUpdater.autoDownload = false;
-  autoUpdater.autoInstallOnAppQuit = true;
-  autoUpdater.allowPrerelease = true;
-
-  autoUpdater.on('checking-for-update', () => {
-    if (mainWindow && !mainWindow.isDestroyed())
-      mainWindow.webContents.send('updater-status', { status: 'checking' });
-  });
-
-  autoUpdater.on('update-available', (info) => {
-    if (mainWindow && !mainWindow.isDestroyed())
-      mainWindow.webContents.send('updater-status', { status: 'available', version: info.version });
-  });
-
-  autoUpdater.on('update-not-available', () => {
-    if (mainWindow && !mainWindow.isDestroyed())
-      mainWindow.webContents.send('updater-status', { status: 'up-to-date' });
-  });
-
-  autoUpdater.on('download-progress', (progress) => {
-    if (mainWindow && !mainWindow.isDestroyed())
-      mainWindow.webContents.send('updater-status', {
-        status: 'downloading',
-        percent: Math.round(progress.percent)
-      });
-  });
-
-  autoUpdater.on('update-downloaded', async (info) => {
-    if (mainWindow && !mainWindow.isDestroyed())
-      mainWindow.webContents.send('updater-status', { status: 'downloaded', version: info.version });
-  });
-
-  autoUpdater.on('error', (err) => {
-    const isCheckError = err.message?.includes('latest.yml') || err.message?.includes('404');
-    if (!isCheckError && mainWindow && !mainWindow.isDestroyed())
-      mainWindow.webContents.send('updater-status', { status: 'error', message: err.message });
-  });
-
   // Silent check on startup after 4 seconds
-  setTimeout(() => autoUpdater.checkForUpdates().catch(() => {}), 4000);
+  setTimeout(() => checkForUpdatesGitHub(), 4000);
 
   // Check if app crashed while active and auto-revert
   const startupConfig = loadConfig();
@@ -420,27 +393,62 @@ ipcMain.handle('get-version', () => {
   return app.getVersion();
 });
 
+// GitHub API update check
+const https = require('https');
+const APP_VERSION = require('./package.json').version;
+const UPDATE_REPO = 'mojouto3/mojo-gaming-mode';
+
+function compareVersions(a, b) {
+  const pa = a.replace(/^v/i, '').split('.').map(n => parseInt(n, 10) || 0);
+  const pb = b.replace(/^v/i, '').split('.').map(n => parseInt(n, 10) || 0);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const x = pa[i] || 0, y = pb[i] || 0;
+    if (x > y) return 1;
+    if (x < y) return -1;
+  }
+  return 0;
+}
+
+async function checkForUpdatesGitHub() {
+  return new Promise((resolve) => {
+    const options = {
+      hostname: 'api.github.com',
+      path: `/repos/${UPDATE_REPO}/releases`,
+      headers: { 'User-Agent': 'mojo-gaming-mode' },
+      timeout: 8000
+    };
+    const req = https.get(options, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          const releases = JSON.parse(data);
+          const latest = releases.find(r => r.prerelease || !r.draft);
+          if (!latest) return resolve(null);
+          const latestVersion = (latest.tag_name || '').replace(/^v/i, '');
+          const updateAvailable = compareVersions(latestVersion, APP_VERSION) > 0;
+          if (updateAvailable && mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('updater-status', {
+              status: 'available',
+              version: latestVersion,
+              downloadUrl: latest.assets?.find(a => a.name.endsWith('.exe'))?.browser_download_url
+            });
+          } else if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('updater-status', { status: 'up-to-date' });
+          }
+          resolve({ updateAvailable, latestVersion });
+        } catch (e) { resolve(null); }
+      });
+    });
+    req.on('error', () => resolve(null));
+    req.on('timeout', () => { req.destroy(); resolve(null); });
+  });
+}
+
 ipcMain.handle('check-for-updates', async () => {
-  try {
-    await autoUpdater.checkForUpdates();
-    return { success: true };
-  } catch (e) {
-    return { success: false, error: e.message };
-  }
-});
-
-ipcMain.handle('download-update', async () => {
-  try {
-    await autoUpdater.downloadUpdate();
-    return { success: true };
-  } catch (e) {
-    return { success: false, error: e.message };
-  }
-});
-
-ipcMain.handle('install-update', async () => {
-  await revertOnExit();
-  autoUpdater.quitAndInstall(false, true);
+  mainWindow.webContents.send('updater-status', { status: 'checking' });
+  await checkForUpdatesGitHub();
+  return { success: true };
 });
 
 ipcMain.on('metrics-start', () => {
