@@ -6,6 +6,7 @@ const fs = require('fs');
 const { exec } = require('child_process');
 const { executeTweaks } = require('./executor');
 const metrics = require('./metrics');
+const { autoUpdater } = require('electron-updater');
 const { TWEAK_DEFINITIONS } = require('./tweaks');
 
 const CONFIG_PATH = path.join(app.getPath('userData'), 'config.json');
@@ -206,6 +207,24 @@ app.commandLine.appendSwitch('no-sandbox');
 
 app.whenReady().then(async () => {
   detectedGPU = await detectGPU();
+
+  // Auto-updater
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+
+  autoUpdater.on('update-available', (info) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('update-available', info.version);
+    }
+  });
+
+  autoUpdater.on('update-downloaded', (info) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('update-downloaded', info.version);
+    }
+  });
+
+  autoUpdater.checkForUpdatesAndNotify().catch(() => {});
 
   // Check if app crashed while active and auto-revert
   const startupConfig = loadConfig();

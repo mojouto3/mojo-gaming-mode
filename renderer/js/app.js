@@ -62,6 +62,15 @@ async function init() {
   window.mgm.onMetricsData((data) => {
     updateMetricsUI(data);
   });
+
+  // Auto-updater notifications
+  window.mgm.onUpdateAvailable((version) => {
+    showToast('Update v' + version + ' available — downloading...');
+  });
+
+  window.mgm.onUpdateDownloaded((version) => {
+    showToast('v' + version + ' ready — will install on next quit');
+  });
 }
 
 // ── Bind all events (no inline onclick) ──────────────────────────────────────
