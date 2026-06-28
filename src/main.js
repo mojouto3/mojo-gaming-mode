@@ -252,6 +252,10 @@ app.on('window-all-closed', (e) => {
   e.preventDefault();
 });
 
+app.on('quit', () => {
+  try { metrics.stop(); } catch(e) {}
+});
+
 app.on('activate', () => {
   if (!mainWindow) createWindow();
 });
