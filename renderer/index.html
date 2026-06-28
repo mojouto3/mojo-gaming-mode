@@ -122,6 +122,12 @@
                 <div class="pc-name">Esports</div>
                 <div class="pc-sub">Ultra low latency, all tweaks</div>
               </div>
+              <div class="preset-card" id="pc-custom" data-preset="custom" style="display:none">
+                <div class="pc-check"><i class="ti ti-check"></i></div>
+                <i class="ti ti-puzzle pc-icon"></i>
+                <div class="pc-name">Custom</div>
+                <div class="pc-sub">Your saved rule combination</div>
+              </div>
             </div>
             <div class="section-header">
               <span class="sh-title">ACTIVE IN THIS PRESET</span>
@@ -146,7 +152,14 @@
           </div>
 
           <div id="tab-rules" class="tab-panel">
-            <div class="section-header">
+            <div class="section-header" style="margin-bottom:8px">
+              <span class="sh-title">QUICK RULES</span>
+              <span class="sh-count" id="cr-active-count">0 active</span>
+            </div>
+            <div class="rules-info" style="margin-bottom:12px">Enable rules to add them to your Custom preset. They will run alongside your active preset when gaming mode is on.</div>
+            <div id="cr-list"></div>
+
+            <div class="section-header" style="margin-top:16px">
               <span class="sh-title">CUSTOM RULES</span>
               <span class="sh-count" id="rules-count">0</span>
             </div>
@@ -154,9 +167,6 @@
             <button class="btn-add-rule" id="btn-add-rule">
               <i class="ti ti-plus"></i> Add custom rule
             </button>
-            <div class="rules-info">
-              Rules are saved and will execute when gaming mode is activated. Execution engine arrives in v0.2.0.
-            </div>
           </div>
 
           <div id="tab-settings" class="tab-panel">
