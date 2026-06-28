@@ -51,6 +51,12 @@
           "**/*"
         ]
       }
-    ]
+    ],
+    "publish": {
+      "provider": "github",
+      "owner": "mojouto3",
+      "repo": "mojo-gaming-mode",
+      "releaseType": "prerelease"
+    }
   }
 }
