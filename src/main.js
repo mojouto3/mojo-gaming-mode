@@ -466,7 +466,13 @@ ipcMain.handle('download-update', async () => {
 
 ipcMain.handle('install-update', async () => {
   await revertOnExit();
-  autoUpdater.quitAndInstall(false, true);
+  // Close window first, then install after a short delay
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.hide();
+  }
+  setTimeout(() => {
+    autoUpdater.quitAndInstall(false, true);
+  }, 1000);
 });
 
 ipcMain.on('metrics-start', () => {
