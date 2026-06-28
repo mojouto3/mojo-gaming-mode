@@ -11,10 +11,13 @@ A lightweight Windows gaming optimizer that automatically detects your GPU vendo
 - 15 safe and fully revertible system tweaks
 - Custom rules engine for power users
 - Auto-switch between presets without manual revert
+- Auto-updater with download progress bar and one-click install
 - Windows native notifications on activate and deactivate
-- System tray with live status icon
+- System tray with live status icon and auto-revert on quit
+- Crash recovery — reverts tweaks automatically on next boot if app was force-closed
 - Silent execution — no PowerShell windows, no popups after first launch
 - Config persistence with preset-based architecture
+- i18n support for 10 languages
 - Near-zero idle footprint when minimized to tray
 
 ---
@@ -75,7 +78,13 @@ Windows Audio, Plug and Play, Cryptographic Services, Windows Defender, GPU driv
 
 ## Installation
 
-Download `MojoGamingModeSetup.exe` from the [latest release](https://github.com/mojouto3/mojo-gaming-mode/releases/latest) and run the installer.
+Download `Mojo-Gaming-Mode-Setup-x.x.x.exe` from the [latest release](https://github.com/mojouto3/mojo-gaming-mode/releases/latest) and run the installer.
+
+---
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a full version history.
 
 ---
 
@@ -87,7 +96,7 @@ cd mojo-gaming-mode
 npm install
 ```
 
-Copy the Electron binary manually into `node_modules/electron/dist/` then open in VS Code and press **F5** to launch (run VS Code as Administrator for full tweak support).
+Open in VS Code and press **F5** to launch (run VS Code as Administrator for full tweak support).
 
 ---
 
@@ -95,10 +104,11 @@ Copy the Electron binary manually into `node_modules/electron/dist/` then open i
 
 ```
 src/
-  main.js          Electron main process, IPC, tray, GPU detection
+  main.js          Electron main process, IPC, tray, GPU detection, auto-updater
   preload.js       contextBridge API surface
   executor.js      PowerShell runner with silent execution
   tweaks.js        Tweak library with apply and revert commands
+  metrics.js       Live CPU / RAM / GPU metrics
 renderer/
   index.html
   css/
@@ -107,9 +117,13 @@ renderer/
   js/
     tweaks.js      Tweak definitions and preset configuration
     app.js         Renderer logic, state, IPC calls
+    translations.js  i18n strings for 10 languages
 assets/
   icons/           App, tray, and vendor logo icons
   app.manifest     Windows manifest requiring Administrator
+  installer.nsh    NSIS custom install/uninstall script
+  scripts/
+    revert-on-shutdown.ps1  Windows shutdown revert script
 ```
 
 ---
@@ -128,13 +142,16 @@ All PRs target `main` and require 1 review before merge.
 
 ## Roadmap
 
-| Version | Scope |
-|---------|-------|
-| v0.1.0 | UI shell, GPU detection, themes, preset system |
-| v0.2.0 | Real PowerShell actions, parallel execution, notifications |
-| v0.3.0 | System Restore Point, safety layer |
-| v0.4.0 | Settings tab (theme picker, language, autostart) |
-| v1.0.0 | NSIS installer, auto-updater, stable release |
+| Version | Scope | Status |
+|---------|-------|--------|
+| v0.1.0 | UI shell, GPU detection, themes, preset system | Done |
+| v0.2.0 | Real PowerShell actions, parallel execution, notifications | Done |
+| v0.3.0 | System Restore Point, safety layer | Done |
+| v0.4.0 | Settings tab, theme picker, language, autostart | Done |
+| v1.0.0 | NSIS installer, shutdown revert script | Done |
+| v1.1.0 | Auto-updater with progress bar | Done |
+| v1.2.0 | Electron v42 upgrade, security fixes | Done |
+| v2.0.0 | Scheduled optimization, game detection, custom tweak builder | Planned |
 
 ---
 
