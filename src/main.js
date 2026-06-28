@@ -390,12 +390,12 @@ ipcMain.handle('set-autostart', (e, enabled) => {
 });
 
 ipcMain.handle('get-version', () => {
-  return app.getVersion();
+  return APP_VERSION;
 });
 
 // GitHub API update check
 const https = require('https');
-const APP_VERSION = require('./package.json').version;
+const APP_VERSION = require('../package.json').version;
 const UPDATE_REPO = 'mojouto3/mojo-gaming-mode';
 
 function compareVersions(a, b) {
