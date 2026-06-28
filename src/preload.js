@@ -16,8 +16,9 @@ contextBridge.exposeInMainWorld('mgm', {
   metricsStart: () => ipcRenderer.send('metrics-start'),
   metricsStop: () => ipcRenderer.send('metrics-stop'),
   onMetricsData: (cb) => ipcRenderer.on('metrics-data', (e, data) => cb(data)),
-  onUpdateAvailable: (cb) => ipcRenderer.on('update-available', (e, version) => cb(version)),
-  onUpdateDownloaded: (cb) => ipcRenderer.on('update-downloaded', (e, version) => cb(version)),
+  onUpdaterStatus: (cb) => ipcRenderer.on('updater-status', (e, data) => cb(data)),
   checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+  downloadUpdate: () => ipcRenderer.invoke('download-update'),
+  installUpdate: () => ipcRenderer.invoke('install-update'),
   getVersion: () => ipcRenderer.invoke('get-version')
 });

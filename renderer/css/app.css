@@ -1460,3 +1460,54 @@ html, body {
   background: var(--acc);
   animation: ldpulse 1.5s ease-in-out infinite;
 }
+
+/* Update bar in titlebar */
+.update-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  background: rgba(var(--acc-rgb), .1);
+  border: 1px solid rgba(var(--acc-rgb), .25);
+  border-radius: 4px;
+  height: 24px;
+  margin-right: 8px;
+  -webkit-app-region: no-drag;
+}
+
+.update-msg {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--acc);
+  white-space: nowrap;
+}
+
+.update-btn {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--bg);
+  background: var(--acc);
+  border: none;
+  border-radius: 3px;
+  padding: 2px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.update-btn:hover { opacity: .85; }
+
+.update-progress {
+  width: 80px;
+  height: 4px;
+  background: rgba(var(--acc-rgb), .2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.update-progress-fill {
+  height: 100%;
+  background: var(--acc);
+  border-radius: 2px;
+  transition: width .3s;
+  width: 0%;
+}

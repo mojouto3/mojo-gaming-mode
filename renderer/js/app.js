@@ -70,13 +70,9 @@ async function init() {
     updateMetricsUI(data);
   });
 
-  // Auto-updater notifications
-  window.mgm.onUpdateAvailable((version) => {
-    showToast('Update v' + version + ' available — downloading...');
-  });
-
-  window.mgm.onUpdateDownloaded((version) => {
-    showToast('v' + version + ' downloaded — installing in 5 seconds...');
+  // Auto-updater status handler
+  window.mgm.onUpdaterStatus((data) => {
+    handleUpdaterStatus(data);
   });
 }
 
@@ -590,6 +586,70 @@ function deleteRule(index) {
 
 // ── Settings ─────────────────────────────────────────────────────────────────
 
+function handleUpdaterStatus(data) {
+  const bar = document.getElementById('update-bar');
+  const msg = document.getElementById('update-msg');
+  const btn = document.getElementById('update-btn');
+  const progress = document.getElementById('update-progress');
+  const fill = document.getElementById('update-progress-fill');
+  const statusEl = document.getElementById('update-status');
+
+  if (!bar) return;
+
+  switch (data.status) {
+    case 'checking':
+      bar.style.display = 'flex';
+      msg.textContent = 'Checking for updates...';
+      btn.style.display = 'none';
+      progress.style.display = 'none';
+      if (statusEl) statusEl.textContent = 'Checking...';
+      break;
+
+    case 'available':
+      bar.style.display = 'flex';
+      msg.textContent = 'v' + data.version + ' available';
+      btn.style.display = 'block';
+      btn.textContent = 'Download';
+      btn.onclick = () => {
+        btn.style.display = 'none';
+        progress.style.display = 'block';
+        window.mgm.downloadUpdate();
+      };
+      progress.style.display = 'none';
+      if (statusEl) statusEl.textContent = 'Update v' + data.version + ' available';
+      break;
+
+    case 'up-to-date':
+      bar.style.display = 'none';
+      if (statusEl) statusEl.textContent = 'You are on the latest version.';
+      setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 3000);
+      break;
+
+    case 'downloading':
+      bar.style.display = 'flex';
+      msg.textContent = 'Downloading ' + data.percent + '%';
+      btn.style.display = 'none';
+      progress.style.display = 'block';
+      if (fill) fill.style.width = data.percent + '%';
+      break;
+
+    case 'downloaded':
+      bar.style.display = 'flex';
+      msg.textContent = 'v' + data.version + ' ready';
+      btn.style.display = 'block';
+      btn.textContent = 'Install & Restart';
+      btn.onclick = () => window.mgm.installUpdate();
+      progress.style.display = 'none';
+      if (statusEl) statusEl.textContent = 'v' + data.version + ' ready to install';
+      break;
+
+    case 'error':
+      bar.style.display = 'none';
+      if (statusEl) statusEl.textContent = 'Update check failed.';
+      break;
+  }
+}
+
 async function checkForUpdates() {
   const btn = document.getElementById('btn-check-update');
   const status = document.getElementById('update-status');
@@ -597,12 +657,8 @@ async function checkForUpdates() {
   if (status) status.textContent = '';
 
   try {
-    const result = await window.mgm.checkForUpdates();
-    if (result.success && result.version) {
-      if (status) status.textContent = 'Update v' + result.version + ' found — downloading...';
-    } else {
-      if (status) status.textContent = 'You are on the latest version.';
-    }
+    await window.mgm.checkForUpdates();
+    // Response comes via onUpdaterStatus
   } catch (e) {
     if (status) status.textContent = 'Could not check for updates.';
   }
