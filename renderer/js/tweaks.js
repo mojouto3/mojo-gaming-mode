@@ -130,3 +130,78 @@ const TWEAKS = {
 };
 
 const ALL_TWEAKS = [...TWEAKS.win, ...TWEAKS.ov, ...TWEAKS.net];
+
+const CUSTOM_RULES = [
+  {
+    id: 'cr_teams',
+    name: 'Microsoft Teams off',
+    desc: 'Closes Microsoft Teams during gaming. Restarts automatically after.',
+    cmd: 'Stop-Process: Teams.exe',
+    tag: 's',
+    applyCmd: `Get-Process -Name 'Teams','ms-teams' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revertCmd: `$t = "$env:LOCALAPPDATA\\Microsoft\\Teams\\Update.exe"; If (Test-Path $t) { Start-Process $t -ArgumentList '--processStart Teams.exe' -ErrorAction SilentlyContinue }; Exit 0`
+  },
+  {
+    id: 'cr_phonelink',
+    name: 'Phone Link off',
+    desc: 'Closes the Phone Link app (formerly Your Phone) during gaming.',
+    cmd: 'Stop-Process: PhoneExperienceHost.exe',
+    tag: 's',
+    applyCmd: `Get-Process -Name 'PhoneExperienceHost' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revertCmd: `Start-Process 'explorer.exe' 'shell:appsFolder\\Microsoft.YourPhone_8wekyb3d8bbwe!App' -ErrorAction SilentlyContinue; Exit 0`
+  },
+  {
+    id: 'cr_copilot',
+    name: 'Windows Copilot off',
+    desc: 'Closes the Windows Copilot sidebar during gaming.',
+    cmd: 'Stop-Process: Copilot.exe',
+    tag: 's',
+    applyCmd: `Get-Process -Name 'Copilot' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revertCmd: `Exit 0`
+  },
+  {
+    id: 'cr_widgets',
+    name: 'Windows Widgets off',
+    desc: 'Closes the Windows Widgets panel during gaming.',
+    cmd: 'Stop-Process: Widgets.exe',
+    tag: 's',
+    applyCmd: `Get-Process -Name 'Widgets' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revertCmd: `Exit 0`
+  },
+  {
+    id: 'cr_epicgames',
+    name: 'Epic Games Launcher off',
+    desc: 'Closes the Epic Games Launcher background process during gaming.',
+    cmd: 'Stop-Process: EpicGamesLauncher.exe',
+    tag: 's',
+    applyCmd: `Get-Process -Name 'EpicGamesLauncher','EpicWebHelper' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revertCmd: `$e = "C:\\Program Files (x86)\\Epic Games\\Launcher\\Portal\\Binaries\\Win32\\EpicGamesLauncher.exe"; If (Test-Path $e) { Start-Process $e -ErrorAction SilentlyContinue }; Exit 0`
+  },
+  {
+    id: 'cr_eaapp',
+    name: 'EA App off',
+    desc: 'Closes the EA App background process during gaming.',
+    cmd: 'Stop-Process: EABackgroundService.exe',
+    tag: 's',
+    applyCmd: `Get-Process -Name 'EABackgroundService','EAGD' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revertCmd: `$e = "C:\\Program Files\\Electronic Arts\\EA Desktop\\EA Desktop\\EADesktop.exe"; If (Test-Path $e) { Start-Process $e -ErrorAction SilentlyContinue }; Exit 0`
+  },
+  {
+    id: 'cr_spotify',
+    name: 'Spotify off',
+    desc: 'Closes Spotify during gaming to free up RAM and CPU.',
+    cmd: 'Stop-Process: Spotify.exe',
+    tag: 's',
+    applyCmd: `Get-Process -Name 'Spotify' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revertCmd: `$s = "$env:APPDATA\\Spotify\\Spotify.exe"; If (Test-Path $s) { Start-Process $s -ErrorAction SilentlyContinue }; Exit 0`
+  },
+  {
+    id: 'cr_gamesprior',
+    name: 'Windows games scheduling priority',
+    desc: 'Sets high CPU scheduling priority for games via Windows Multimedia registry.',
+    cmd: 'Registry: HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games',
+    tag: 'r',
+    applyCmd: `$p = 'HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games'; If (!(Test-Path $p)) { New-Item -Path $p -Force | Out-Null }; Set-ItemProperty -Path $p -Name 'GPU Priority' -Value 8 -Type DWord; Set-ItemProperty -Path $p -Name 'Priority' -Value 6 -Type DWord; Set-ItemProperty -Path $p -Name 'Scheduling Category' -Value 'High' -Type String; Set-ItemProperty -Path $p -Name 'SFIO Priority' -Value 'High' -Type String; Exit 0`,
+    revertCmd: `$p = 'HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games'; Set-ItemProperty -Path $p -Name 'GPU Priority' -Value 2 -Type DWord -ErrorAction SilentlyContinue; Set-ItemProperty -Path $p -Name 'Priority' -Value 2 -Type DWord -ErrorAction SilentlyContinue; Set-ItemProperty -Path $p -Name 'Scheduling Category' -Value 'Medium' -Type String -ErrorAction SilentlyContinue; Set-ItemProperty -Path $p -Name 'SFIO Priority' -Value 'Normal' -Type String -ErrorAction SilentlyContinue; Exit 0`
+  }
+];
