@@ -1,5 +1,10 @@
 # Mojo Gaming Mode
 
+[![Latest Release](https://img.shields.io/github/v/release/mojouto3/mojo-gaming-mode?include_prereleases&label=version&color=76b900)](https://github.com/mojouto3/mojo-gaming-mode/releases/latest)
+[![License](https://img.shields.io/github/license/mojouto3/mojo-gaming-mode?color=76b900)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Windows-76b900)](https://github.com/mojouto3/mojo-gaming-mode)
+[![Electron](https://img.shields.io/badge/Electron-v42-76b900)](https://www.electronjs.org)
+
 A lightweight Windows gaming optimizer that automatically detects your GPU vendor and applies a matching native-style UI. One click to apply a curated set of proven, safe, and fully revertible system tweaks. One click to restore everything.
 
 ---
