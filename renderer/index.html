@@ -137,11 +137,11 @@
               <button class="tweak-search-clear" id="tweak-search-clear" style="display:none"><i class="ti ti-x"></i></button>
             </div>
             <div id="tweak-no-results" class="tweak-no-results" style="display:none">No tweaks match your search.</div>
-            <div class="section-header" id="sh-win"><span class="sh-title">WINDOWS SYSTEM</span></div>
+            <div class="section-header" id="sh-win"><span class="sh-title">WINDOWS SYSTEM</span><span class="sh-count" id="count-win"></span></div>
             <div id="tw-win"></div>
-            <div class="section-header" style="margin-top:14px"><span class="sh-title">OVERLAYS AND APPS</span></div>
+            <div class="section-header" style="margin-top:14px"><span class="sh-title">OVERLAYS AND APPS</span><span class="sh-count" id="count-ov"></span></div>
             <div id="tw-ov"></div>
-            <div class="section-header" style="margin-top:14px"><span class="sh-title">NETWORK</span></div>
+            <div class="section-header" style="margin-top:14px"><span class="sh-title">NETWORK</span><span class="sh-count" id="count-net"></span></div>
             <div id="tw-net"></div>
           </div>
 
@@ -226,6 +226,17 @@
                   <img src="../assets/icons/intel_logo.png" class="theme-btn-icon">
                   Intel
                 </button>
+              </div>
+            </div>
+
+            <div class="section-header" style="margin-top:16px"><span class="sh-title">RESET</span></div>
+            <div class="settings-card" style="margin-top:0">
+              <div class="settings-row">
+                <div class="settings-info">
+                  <div class="settings-label">Reset to defaults</div>
+                  <div class="settings-desc">Restore all tweaks and settings to their default values. Balanced preset will be selected.</div>
+                </div>
+                <button class="btn-reset-defaults" id="btn-reset-defaults"><i class="ti ti-refresh"></i> Reset</button>
               </div>
             </div>
 

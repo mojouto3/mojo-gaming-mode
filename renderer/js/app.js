@@ -167,6 +167,13 @@ function bindEvents() {
   const btnUpdate = document.getElementById('btn-check-update');
   if (btnUpdate) btnUpdate.addEventListener('click', checkForUpdates);
 
+  // Reset to defaults
+  document.getElementById('btn-reset-defaults')?.addEventListener('click', () => {
+    if (!confirm('Reset all tweaks and settings to defaults?')) return;
+    setPreset('balanced');
+    showToast('Reset to defaults');
+  });
+
   // Tweak search
   const searchInput = document.getElementById('tweak-search');
   const searchClear = document.getElementById('tweak-search-clear');
@@ -375,11 +382,21 @@ function buildTweakRow(t, mini = false) {
   return row;
 }
 
+function updateCategoryCount(category, tweaks) {
+  const active = tweaks.filter(t => state.tweaks[t.id]).length;
+  const total = tweaks.length;
+  const el = document.getElementById('count-' + category);
+  if (el) el.textContent = active + '/' + total;
+}
+
 function renderTweaks() {
   ['tw-win', 'tw-ov', 'tw-net'].forEach(id => document.getElementById(id).innerHTML = '');
   TWEAKS.win.forEach(t => document.getElementById('tw-win').appendChild(buildTweakRow(t)));
   TWEAKS.ov.forEach(t => document.getElementById('tw-ov').appendChild(buildTweakRow(t)));
   TWEAKS.net.forEach(t => document.getElementById('tw-net').appendChild(buildTweakRow(t)));
+  updateCategoryCount('win', TWEAKS.win);
+  updateCategoryCount('ov', TWEAKS.ov);
+  updateCategoryCount('net', TWEAKS.net);
 }
 
 function renderPresetActive() {
