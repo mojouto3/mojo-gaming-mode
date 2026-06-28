@@ -47,6 +47,14 @@ async function init() {
     applyLanguage(state.lang);
     if (state.manualTheme) applyGPUTheme(state.manualTheme);
     renderAll();
+
+    // Show onboarding on first launch
+    if (!config.onboardingComplete) {
+      initOnboarding(state.gpu.vendor, state.gpu.model, (selectedPreset) => {
+        setPreset(selectedPreset);
+        window.mgm.saveConfig({ ...config, onboardingComplete: true, preset: selectedPreset });
+      });
+    }
   } catch (e) {
     // Fallback - apply balanced defaults
     ALL_TWEAKS.forEach(t => { state.tweaks[t.id] = t.presets.balanced; });
@@ -816,5 +824,56 @@ function showToast(msg) {
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
+
+// ── Onboarding ──────────────────────────────────────────────────
+
+let obSelectedPreset = 'esports';
+
+function initOnboarding(vendor, gpuModel, onComplete) {
+  const overlay = document.getElementById('ob-overlay');
+  if (!overlay) return;
+
+  // Set GPU info
+  const gpuEl = document.getElementById('ob-gpu-detected');
+  if (gpuEl) gpuEl.textContent = gpuModel || (vendor.toUpperCase() + ' GPU detected');
+
+  // Set vendor logo
+  const logoImg = document.getElementById('ob-vendor-logo');
+  if (logoImg) logoImg.src = '../assets/icons/' + vendor + '_logo.png';
+
+  // Preset selection
+  document.querySelectorAll('.ob-preset').forEach(p => {
+    p.addEventListener('click', () => {
+      document.querySelectorAll('.ob-preset').forEach(x => x.classList.remove('selected'));
+      p.classList.add('selected');
+      obSelectedPreset = p.dataset.preset;
+    });
+  });
+
+  // Navigation
+  document.getElementById('ob-next-1')?.addEventListener('click', () => obGoTo(2));
+  document.getElementById('ob-next-2')?.addEventListener('click', () => {
+    const names = { balanced: 'Balanced', performance: 'Performance', esports: 'Esports' };
+    const sub = document.getElementById('ob-ready-sub');
+    if (sub) sub.textContent = (names[obSelectedPreset] || obSelectedPreset) + ' preset selected';
+    obGoTo(3);
+  });
+  document.getElementById('ob-next-3')?.addEventListener('click', () => obGoTo(4));
+  document.getElementById('ob-back-2')?.addEventListener('click', () => obGoTo(1));
+  document.getElementById('ob-back-3')?.addEventListener('click', () => obGoTo(2));
+  document.getElementById('ob-back-4')?.addEventListener('click', () => obGoTo(3));
+  document.getElementById('ob-finish')?.addEventListener('click', () => {
+    overlay.classList.remove('open');
+    onComplete(obSelectedPreset);
+  });
+
+  // Open
+  overlay.classList.add('open');
+}
+
+function obGoTo(step) {
+  document.querySelectorAll('.ob-step').forEach(s => s.classList.remove('active'));
+  document.getElementById('ob-step-' + step)?.classList.add('active');
+}
 
 document.addEventListener('DOMContentLoaded', init);

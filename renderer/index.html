@@ -324,6 +324,106 @@
   </div>
 
   <script src="js/translations.js"></script>
+  <!-- Onboarding Modal -->
+  <div class="ob-overlay" id="ob-overlay">
+    <div class="ob-modal" id="ob-modal">
+
+      <!-- Step 1: Welcome -->
+      <div class="ob-step active" id="ob-step-1">
+        <div class="ob-logo" id="ob-logo">
+          <img id="ob-vendor-logo" src="" alt="">
+        </div>
+        <div class="ob-title">Welcome to Mojo Gaming Mode</div>
+        <div class="ob-sub" id="ob-gpu-detected">Detecting your GPU...</div>
+        <div class="ob-desc">A lightweight gaming optimizer that applies safe, fully revertible system tweaks with one click.</div>
+        <div class="ob-actions">
+          <button class="ob-btn-next" id="ob-next-1">Get started <i class="ti ti-arrow-right"></i></button>
+        </div>
+        <div class="ob-dots">
+          <span class="ob-dot active"></span>
+          <span class="ob-dot"></span>
+          <span class="ob-dot"></span>
+          <span class="ob-dot"></span>
+        </div>
+      </div>
+
+      <!-- Step 2: Presets -->
+      <div class="ob-step" id="ob-step-2">
+        <div class="ob-title">Choose your preset</div>
+        <div class="ob-desc">Pick a preset that matches how you game. You can change it anytime.</div>
+        <div class="ob-presets">
+          <div class="ob-preset" data-preset="balanced">
+            <i class="ti ti-adjustments ob-preset-icon"></i>
+            <div class="ob-preset-name">Balanced</div>
+            <div class="ob-preset-sub">Safe defaults, no admin needed</div>
+          </div>
+          <div class="ob-preset" data-preset="performance">
+            <i class="ti ti-rocket ob-preset-icon"></i>
+            <div class="ob-preset-name">Performance</div>
+            <div class="ob-preset-sub">Max FPS, some admin tweaks</div>
+          </div>
+          <div class="ob-preset selected" data-preset="esports">
+            <i class="ti ti-trophy ob-preset-icon"></i>
+            <div class="ob-preset-name">Esports</div>
+            <div class="ob-preset-sub">Ultra low latency, all tweaks</div>
+          </div>
+        </div>
+        <div class="ob-actions">
+          <button class="ob-btn-back" id="ob-back-2"><i class="ti ti-arrow-left"></i> Back</button>
+          <button class="ob-btn-next" id="ob-next-2">Next <i class="ti ti-arrow-right"></i></button>
+        </div>
+        <div class="ob-dots">
+          <span class="ob-dot"></span>
+          <span class="ob-dot active"></span>
+          <span class="ob-dot"></span>
+          <span class="ob-dot"></span>
+        </div>
+      </div>
+
+      <!-- Step 3: Safety -->
+      <div class="ob-step" id="ob-step-3">
+        <div class="ob-icon-large"><i class="ti ti-shield-check"></i></div>
+        <div class="ob-title">Always safe to revert</div>
+        <div class="ob-desc">Every tweak has a matching revert command. Deactivating restores your system exactly as it was.</div>
+        <div class="ob-safety-list">
+          <div class="ob-safety-item"><i class="ti ti-check"></i> Auto-revert when you quit the app</div>
+          <div class="ob-safety-item"><i class="ti ti-check"></i> Crash recovery on next boot</div>
+          <div class="ob-safety-item"><i class="ti ti-check"></i> Windows shutdown script included</div>
+          <div class="ob-safety-item"><i class="ti ti-check"></i> System Restore Point on install</div>
+        </div>
+        <div class="ob-actions">
+          <button class="ob-btn-back" id="ob-back-3"><i class="ti ti-arrow-left"></i> Back</button>
+          <button class="ob-btn-next" id="ob-next-3">Next <i class="ti ti-arrow-right"></i></button>
+        </div>
+        <div class="ob-dots">
+          <span class="ob-dot"></span>
+          <span class="ob-dot"></span>
+          <span class="ob-dot active"></span>
+          <span class="ob-dot"></span>
+        </div>
+      </div>
+
+      <!-- Step 4: Ready -->
+      <div class="ob-step" id="ob-step-4">
+        <div class="ob-icon-large accent"><i class="ti ti-bolt"></i></div>
+        <div class="ob-title">You're ready</div>
+        <div class="ob-sub" id="ob-ready-sub">Balanced preset selected</div>
+        <div class="ob-desc">Hit Activate whenever you're about to game. One click to optimize, one click to restore.</div>
+        <div class="ob-actions">
+          <button class="ob-btn-back" id="ob-back-4"><i class="ti ti-arrow-left"></i> Back</button>
+          <button class="ob-btn-finish" id="ob-finish">Let's game <i class="ti ti-bolt"></i></button>
+        </div>
+        <div class="ob-dots">
+          <span class="ob-dot"></span>
+          <span class="ob-dot"></span>
+          <span class="ob-dot"></span>
+          <span class="ob-dot active"></span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <script src="js/tweaks.js"></script>
   <script src="js/app.js"></script>
 </body>
