@@ -1,13 +1,5 @@
 'use strict';
 
-const _fs_log = require('fs');
-const _log_path = require('path').join(require('os').tmpdir(), 'mgm-debug.log');
-function flog(...args) {
-  const line = new Date().toISOString() + ' ' + args.join(' ') + '\n';
-  _fs_log.appendFileSync(_log_path, line);
-  console.log(...args);
-}
-
 const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, Notification } = require('electron');
 const path = require('path');
 const fs = require('fs');
@@ -218,18 +210,18 @@ app.whenReady().then(async () => {
   // Check if app crashed while active and auto-revert
   const startupConfig = loadConfig();
   if (startupConfig.wasActive && startupConfig.activeTweakIds && startupConfig.activeTweakIds.length > 0) {
-    flog('Crash recovery: reverting', JSON.stringify(startupConfig.activeTweakIds));
+    
     activeTweakIds = [...startupConfig.activeTweakIds];
     try {
       await executeTweaks(activeTweakIds, TWEAK_DEFINITIONS, 'revert');
     } catch(e) {
-      flog('Crash recovery error:', e.message);
+      
     }
     activeTweakIds = [];
     startupConfig.wasActive = false;
     startupConfig.activeTweakIds = [];
     saveConfig(startupConfig);
-    flog('Crash recovery complete');
+    
   }
   const config = loadConfig();
   if (!config.gpu) {
@@ -292,7 +284,7 @@ ipcMain.handle('apply-mode', async (e, config) => {
 
     // Store active tweaks for revert
     activeTweakIds = [...enabledTweaks];
-    flog('apply-mode: storing activeTweakIds:', JSON.stringify(activeTweakIds));
+    
 
     // Execute all enabled tweaks
     let results;
@@ -339,7 +331,7 @@ ipcMain.handle('revert-mode', async (e, config) => {
   try {
     // Use the tweaks that were actually applied, not the config
     const tweaksToRevert = [...activeTweakIds];
-    flog('revert-mode: activeTweakIds:', JSON.stringify(tweaksToRevert));
+    
 
     const results = await executeTweaks(tweaksToRevert, TWEAK_DEFINITIONS, 'revert');
     activeTweakIds = []; // clear after revert
@@ -400,7 +392,7 @@ ipcMain.on('window-close', () => {
 // Auto-revert on app quit (tray Quit or system shutdown)
 async function revertOnExit() {
   if (gamingModeActive && activeTweakIds.length > 0) {
-    flog('Auto-revert on exit, tweaks:', JSON.stringify(activeTweakIds));
+    
     try {
       await executeTweaks([...activeTweakIds], TWEAK_DEFINITIONS, 'revert');
       activeTweakIds = [];
@@ -410,7 +402,7 @@ async function revertOnExit() {
       config.wasActive = false;
       saveConfig(config);
     } catch(e) {
-      flog('Auto-revert error:', e.message);
+      
     }
   }
 }

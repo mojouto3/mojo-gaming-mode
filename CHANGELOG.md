@@ -2,6 +2,25 @@
 
 All notable changes to Mojo Gaming Mode will be documented here.
 
+## [1.0.0] - 2026-06-28
+
+### Added
+
+- NSIS installer with per-user or per-machine installation
+- System Restore Point created automatically during installation
+- Windows shutdown script registered on install for safe tweak revert on system shutdown
+- Shutdown script reverts all active tweaks when Windows shuts down or restarts
+- Shutdown script unregistered and all app data removed on uninstall
+- Installer supports 10 languages matching app i18n
+- Desktop shortcut optional during install
+- Start menu shortcut created by default
+- App launches after install completes
+
+### Changed
+
+- App version bumped to 1.0.0
+- Package.json updated with full NSIS configuration
+
 ## [0.4.1] - 2026-06-27
 
 ### Fixed

@@ -54,10 +54,8 @@ async function executeTweaks(tweakIds, tweak_definitions, mode = 'apply') {
 
     try {
       const result = await runPS(command);
-      console.log(`[${mode}] ${id}: ${result.success ? 'OK' : 'FAIL'} ${result.error ? result.error.slice(0, 80) : ''}`);
       return { id, success: result.success, error: result.error };
     } catch (e) {
-      console.log(`[${mode}] ${id}: EXCEPTION ${e.message}`);
       return { id, success: false, error: e.message };
     }
   });

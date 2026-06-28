@@ -1,6 +1,6 @@
 {
   "name": "mojo-gaming-mode",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "A lightweight Windows gaming optimizer with GPU vendor themes and safe system tweaks",
   "main": "src/main.js",
   "author": "mojouto3",
@@ -8,7 +8,8 @@
   "scripts": {
     "start": "electron .",
     "build": "electron-builder --win --x64",
-    "dev": "electron . --inspect"
+    "dev": "electron . --inspect",
+    "release": "electron-builder --win --x64 --publish always"
   },
   "devDependencies": {
     "electron": "^28.0.0",
@@ -23,18 +24,45 @@
       "requestedExecutionLevel": "requireAdministrator"
     },
     "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
       "installerIcon": "assets/icons/icon.ico",
+      "uninstallerIcon": "assets/icons/icon.ico",
       "installerHeaderIcon": "assets/icons/icon.ico",
       "createDesktopShortcut": "ask",
+      "createStartMenuShortcut": true,
+      "shortcutName": "Mojo Gaming Mode",
       "runAfterFinish": true,
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "perMachine": false,
+      "deleteAppDataOnUninstall": true,
+      "include": "assets/installer.nsh",
+      "installerLanguages": [
+        "English",
+        "Greek",
+        "German",
+        "Spanish",
+        "Russian",
+        "Italian",
+        "French",
+        "PortugueseBR",
+        "Polish",
+        "Turkish"
+      ]
     },
     "files": [
       "src/**/*",
       "renderer/**/*",
       "assets/**/*",
       "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "assets/",
+        "to": "assets/",
+        "filter": [
+          "**/*"
+        ]
+      }
     ]
   }
 }
