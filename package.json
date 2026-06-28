@@ -1,6 +1,6 @@
 {
   "name": "mojo-gaming-mode",
-  "version": "1.0.2",
+  "version": "1.0.1",
   "description": "A lightweight Windows gaming optimizer with GPU vendor themes and safe system tweaks",
   "main": "src/main.js",
   "author": "mojouto3",
@@ -58,9 +58,5 @@
       "repo": "mojo-gaming-mode",
       "releaseType": "prerelease"
     }
-  },
-  "dependencies": {
-    "electron-updater": "^6.8.9"
   }
 }
-

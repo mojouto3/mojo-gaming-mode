@@ -220,10 +220,15 @@ app.whenReady().then(async () => {
     }
   });
 
-  autoUpdater.on('update-downloaded', (info) => {
+  autoUpdater.on('update-downloaded', async (info) => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('update-downloaded', info.version);
     }
+    // Auto-revert and quit after 5 seconds to install update
+    setTimeout(async () => {
+      await revertOnExit();
+      autoUpdater.quitAndInstall(false, true);
+    }, 5000);
   });
 
   autoUpdater.checkForUpdatesAndNotify().catch(() => {});
@@ -392,6 +397,10 @@ ipcMain.handle('set-autostart', (e, enabled) => {
     name: 'Mojo Gaming Mode'
   });
   return { success: true };
+});
+
+ipcMain.handle('get-version', () => {
+  return app.getVersion();
 });
 
 ipcMain.handle('check-for-updates', async () => {

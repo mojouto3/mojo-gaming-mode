@@ -54,6 +54,13 @@ async function init() {
     renderAll();
   }
 
+  // Load version dynamically
+  try {
+    const version = await window.mgm.getVersion();
+    const verEl = document.querySelector('.version-label');
+    if (verEl) verEl.textContent = 'v' + version;
+  } catch(e) {}
+
   window.mgm.onTrayToggle((val) => {
     val ? applyMode() : revertMode();
   });
@@ -69,7 +76,7 @@ async function init() {
   });
 
   window.mgm.onUpdateDownloaded((version) => {
-    showToast('v' + version + ' ready — will install on next quit');
+    showToast('v' + version + ' downloaded — installing in 5 seconds...');
   });
 }
 
