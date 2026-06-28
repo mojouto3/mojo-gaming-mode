@@ -1433,3 +1433,30 @@ html, body {
 }
 
 .collapsible-body.collapsed { max-height: 0; }
+
+/* Tweak status tag ON/OFF */
+.status-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .8px;
+  border-radius: 4px;
+  padding: 3px 8px;
+  flex-shrink: 0;
+}
+
+.status-tag.on {
+  background: rgba(var(--acc-rgb), .12);
+  color: var(--acc);
+  border: 1px solid rgba(var(--acc-rgb), .3);
+}
+
+.status-tag-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--acc);
+  animation: ldpulse 1.5s ease-in-out infinite;
+}

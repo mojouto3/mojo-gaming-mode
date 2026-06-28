@@ -394,6 +394,15 @@ ipcMain.handle('set-autostart', (e, enabled) => {
   return { success: true };
 });
 
+ipcMain.handle('check-for-updates', async () => {
+  try {
+    const result = await autoUpdater.checkForUpdates();
+    return { success: true, version: result?.updateInfo?.version };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
 ipcMain.on('metrics-start', () => {
   metrics.start((data) => {
     if (mainWindow && !mainWindow.isDestroyed()) {

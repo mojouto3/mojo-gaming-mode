@@ -2,6 +2,20 @@
 
 All notable changes to Mojo Gaming Mode will be documented here.
 
+## [1.0.1] - 2026-06-28
+
+### Added
+
+- Auto-updater via electron-updater with automatic download and install on quit
+- Manual "Check for updates" button in Settings tab
+- Tweak rows show ON status with pulsing dot when gaming mode is active
+- Update available and update downloaded toast notifications
+
+### Fixed
+
+- Tabler icons bundled locally in renderer/fonts for correct display in installed app
+- Version display updated to v1.0.0 in sidebar
+
 ## [1.0.0] - 2026-06-28
 
 ### Added

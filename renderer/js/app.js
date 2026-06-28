@@ -115,6 +115,10 @@ function bindEvents() {
     btn.addEventListener('click', () => setLanguage(btn.dataset.lang));
   });
 
+  // Check for updates button
+  const btnUpdate = document.getElementById('btn-check-update');
+  if (btnUpdate) btnUpdate.addEventListener('click', checkForUpdates);
+
   // Applied Changes collapsible
   const changesToggle = document.getElementById('changes-toggle');
   if (changesToggle) changesToggle.addEventListener('click', toggleChanges);
@@ -264,6 +268,13 @@ function iconFor(id) {
   return map[id] || 'settings';
 }
 
+function statusHtml(id) {
+  if (state.active) {
+    return `<span class="status-tag on"><span class="status-tag-dot"></span>ON</span>`;
+  }
+  return tagHtml(ALL_TWEAKS.find(t => t.id === id)?.tag || '');
+}
+
 function buildTweakRow(t, mini = false) {
   const row = document.createElement('div');
   row.className = 'tweak-row' + (state.tweaks[t.id] ? ' active' : '');
@@ -273,7 +284,7 @@ function buildTweakRow(t, mini = false) {
     row.innerHTML = `
       <div class="tr-icon"><i class="ti ti-${iconFor(t.id)}"></i></div>
       <div class="tr-info"><div class="tr-name">${t.name}</div></div>
-      ${tagHtml(t.tag)}`;
+      ${statusHtml(t.id)}`;
     row.style.cursor = 'default';
   } else {
     const cb = document.createElement('input');
@@ -511,6 +522,7 @@ async function applyMode(silent = false) {
   }
 
   renderStats();
+  renderPresetActive(); // re-render to show ON status
 }
 
 async function revertMode(silent = false) {
@@ -532,6 +544,7 @@ async function revertMode(silent = false) {
   btn.addEventListener('click', applyMode);
 
   renderStats();
+  renderPresetActive(); // re-render to show tag status
   if (!silent) showToast('Reverted to normal');
 }
 
@@ -569,6 +582,26 @@ function deleteRule(index) {
 }
 
 // ── Settings ─────────────────────────────────────────────────────────────────
+
+async function checkForUpdates() {
+  const btn = document.getElementById('btn-check-update');
+  const status = document.getElementById('update-status');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader"></i> Checking...'; }
+  if (status) status.textContent = '';
+
+  try {
+    const result = await window.mgm.checkForUpdates();
+    if (result.success && result.version) {
+      if (status) status.textContent = 'Update v' + result.version + ' found — downloading...';
+    } else {
+      if (status) status.textContent = 'You are on the latest version.';
+    }
+  } catch (e) {
+    if (status) status.textContent = 'Could not check for updates.';
+  }
+
+  if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-refresh"></i> Check for updates'; }
+}
 
 function setManualTheme(theme) {
   state.manualTheme = theme === 'auto' ? null : theme;
