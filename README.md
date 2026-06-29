@@ -1,6 +1,6 @@
 # Mojo Gaming Mode
 
-[![Latest Release](https://img.shields.io/github/v/release/mojouto3/mojo-gaming-mode?include_prereleases&label=version&color=76b900)](https://github.com/mojouto3/mojo-gaming-mode/releases/latest)
+[![Latest Release](https://img.shields.io/github/v/release/mojouto3/mojo-gaming-mode?label=version&color=76b900)](https://github.com/mojouto3/mojo-gaming-mode/releases/latest)
 [![License](https://img.shields.io/github/license/mojouto3/mojo-gaming-mode?color=76b900)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows-76b900)](https://github.com/mojouto3/mojo-gaming-mode)
 [![Electron](https://img.shields.io/badge/Electron-v42-76b900)](https://www.electronjs.org)
@@ -12,15 +12,19 @@ A lightweight Windows gaming optimizer that automatically detects your GPU vendo
 ## Features
 
 - GPU auto-detection (NVIDIA, AMD, Intel) with matching vendor theme
-- Three presets: Balanced, Performance, Esports
+- Three presets: Balanced, Performance, Esports + dynamic Custom preset
 - 15 safe and fully revertible system tweaks
-- Custom rules engine for power users
-- Auto-switch between presets without manual revert
+- Custom Rules engine with 25 quick rules in 5 categories
+- Global keyboard shortcuts: Ctrl+G (toggle), Ctrl+B/P/E (presets)
+- Tray menu preset quick-switch with active tweak count in tooltip
+- First-launch onboarding with GPU detection and preset selection
+- What's new badge in sidebar after updates
 - Auto-updater with download progress bar and one-click install
-- Windows native notifications on activate and deactivate
+- Windows toast notification when a new update is available
 - System tray with live status icon and auto-revert on quit
 - Crash recovery - reverts tweaks automatically on next boot if app was force-closed
 - Silent execution - no PowerShell windows, no popups after first launch
+- GPU temperature monitoring in Performance tab
 - Config persistence with preset-based architecture
 - i18n support for 10 languages
 - Near-zero idle footprint when minimized to tray
@@ -34,6 +38,7 @@ A lightweight Windows gaming optimizer that automatically detects your GPU vendo
 | Balanced | Safe daily use with basic optimizations | No |
 | Performance | Maximum FPS, disables overlays and indexing | Yes |
 | Esports | Ultra low latency, all tweaks enabled | Yes |
+| Custom | Your saved combination of tweaks and custom rules | Yes |
 
 ---
 
@@ -61,6 +66,33 @@ A lightweight Windows gaming optimizer that automatically detects your GPU vendo
 - Nagle algorithm disable
 
 All tweaks are revertible. Every apply has a matching revert command.
+
+---
+
+## Custom Rules
+
+25 ready-made rules organized in 5 categories. Enable any combination and they run automatically on Activate, reverting on Deactivate.
+
+| Category | Rules |
+|----------|-------|
+| Game Launchers | Epic Games, EA App, Battle.net, Ubisoft Connect, GOG Galaxy, Xbox App, Rockstar, Riot Client, Minecraft |
+| Communication | Microsoft Teams, Slack, Zoom, WhatsApp, Telegram, Skype |
+| Media | Spotify, iTunes |
+| Cloud Storage | Google Drive, Dropbox, OneDrive, iCloud |
+| System | Phone Link, Copilot, Widgets, Windows games scheduling priority |
+
+Active custom rules combine with the selected preset into a dynamic Custom preset card.
+
+---
+
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| Ctrl+G | Toggle gaming mode |
+| Ctrl+B | Switch to Balanced preset |
+| Ctrl+P | Switch to Performance preset |
+| Ctrl+E | Switch to Esports preset |
 
 ---
 
@@ -120,7 +152,7 @@ renderer/
     theme.css      GPU vendor CSS variables (NVIDIA, AMD, Intel)
     app.css        Full UI styles
   js/
-    tweaks.js      Tweak definitions and preset configuration
+    tweaks.js      Tweak and custom rule definitions
     app.js         Renderer logic, state, IPC calls
     translations.js  i18n strings for 10 languages
 assets/
@@ -149,13 +181,12 @@ All PRs target `main` and require 1 review before merge.
 
 | Version | Scope | Status |
 |---------|-------|--------|
-| v0.1.0 | UI shell, GPU detection, themes, preset system | Done |
-| v0.2.0 | Real PowerShell actions, parallel execution, notifications | Done |
-| v0.3.0 | System Restore Point, safety layer | Done |
-| v0.4.0 | Settings tab, theme picker, language, autostart | Done |
 | v1.0.0 | NSIS installer, shutdown revert script | Done |
 | v1.1.0 | Auto-updater with progress bar | Done |
-| v1.5.0 | Electron v42 upgrade, security fixes | Done |
+| v1.2.0 | Electron v42 upgrade, security fixes | Done |
+| v1.3.0 | Tray enhancements, keyboard shortcuts, onboarding, what's new badge | Done |
+| v1.4.0 | Custom Rules engine UI, quick rules, dynamic Custom preset | Done |
+| v1.5.0 | Custom Rules execution, GPU temperature, extra rules | Done |
 | v2.0.0 | Scheduled optimization, game detection, custom tweak builder | Planned |
 
 ---
