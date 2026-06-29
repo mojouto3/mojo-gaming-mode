@@ -22,19 +22,27 @@ while ($true) {
   $gpuVramUsed = 0
   $gpuVramPct = 0
   $nvidiaSmi = Get-Command 'nvidia-smi' -ErrorAction SilentlyContinue
+  $gpuTemp = 0
   if ($nvidiaSmi) {
-    $smi = & nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total --format=csv,noheader,nounits 2>$null
+    $smi = & nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total,temperature.gpu --format=csv,noheader,nounits 2>$null
     if ($smi) {
       $parts = $smi.Trim().Split(',')
-      if ($parts.Count -ge 3) {
+      if ($parts.Count -ge 4) {
         $gpuUsage = [int]$parts[0].Trim()
         $gpuVramUsed = [math]::Round([int]$parts[1].Trim() / 1024, 1)
         $gpuVramTotal = [math]::Round([int]$parts[2].Trim() / 1024, 1)
         $gpuVramPct = if ($gpuVramTotal -gt 0) { [math]::Round(($gpuVramUsed / $gpuVramTotal) * 100, 1) } else { 0 }
+        $gpuTemp = [int]$parts[3].Trim()
       }
     }
+  } else {
+    # Try AMD/Intel via WMI MSAcpi_ThermalZoneTemperature (approximate)
+    Try {
+      $temp = Get-CimInstance -Namespace root/WMI -ClassName MSAcpi_ThermalZoneTemperature -ErrorAction SilentlyContinue | Select-Object -First 1
+      if ($temp) { $gpuTemp = [math]::Round(($temp.CurrentTemperature / 10) - 273.15, 0) }
+    } Catch {}
   }
-  $result = @{ cpu=$cpu; ramPct=$ramPct; ramUsed=$ramUsed; ramTotal=$ramTotal; gpuName=$gpuName; gpuUsage=$gpuUsage; gpuVramUsed=$gpuVramUsed; gpuVramTotal=$gpuVramTotal; gpuVramPct=$gpuVramPct } | ConvertTo-Json -Compress
+  $result = @{ cpu=$cpu; ramPct=$ramPct; ramUsed=$ramUsed; ramTotal=$ramTotal; gpuName=$gpuName; gpuUsage=$gpuUsage; gpuVramUsed=$gpuVramUsed; gpuVramTotal=$gpuVramTotal; gpuVramPct=$gpuVramPct; gpuTemp=$gpuTemp } | ConvertTo-Json -Compress
   Write-Output $result
   Start-Sleep -Seconds 2
 }
