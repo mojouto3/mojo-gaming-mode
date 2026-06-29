@@ -313,6 +313,66 @@ const CUSTOM_RULES = [
     revertCmd: `$d = "$env:LOCALAPPDATA\Dropbox\client\Dropbox.exe"; If (Test-Path $d) { Start-Process $d -ErrorAction SilentlyContinue }; Exit 0`
   },
   {
+    id: 'cr_minecraft',
+    name: 'Minecraft Launcher off',
+    desc: 'Closes the Minecraft Launcher during gaming.',
+    cmd: 'Stop-Process: MinecraftLauncher.exe',
+    tag: 's',
+    category: 'launchers',
+    applyCmd: `Get-Process -Name 'MinecraftLauncher','Minecraft' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revertCmd: `Exit 0`
+  },
+  {
+    id: 'cr_itunes',
+    name: 'iTunes / Apple Music off',
+    desc: 'Closes iTunes or Apple Music during gaming.',
+    cmd: 'Stop-Process: iTunes.exe',
+    tag: 's',
+    category: 'media',
+    applyCmd: `Get-Process -Name 'iTunes','AppleMusic' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revertCmd: `Exit 0`
+  },
+  {
+    id: 'cr_riot',
+    name: 'Riot Games Client off',
+    desc: 'Closes the Riot Games client during gaming (Valorant, League of Legends).',
+    cmd: 'Stop-Process: RiotClientServices.exe',
+    tag: 's',
+    category: 'launchers',
+    applyCmd: `Get-Process -Name 'RiotClientServices','RiotClientUx','RiotClientUxRender' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revertCmd: `Exit 0`
+  },
+  {
+    id: 'cr_onedrive_close',
+    name: 'OneDrive close',
+    desc: 'Closes OneDrive completely during gaming. Unlike the main tweak, this kills the process entirely.',
+    cmd: 'Stop-Process: OneDrive.exe',
+    tag: 's',
+    category: 'cloud',
+    applyCmd: `Get-Process -Name 'OneDrive' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revertCmd: `$o = "$env:LOCALAPPDATA\Microsoft\OneDrive\OneDrive.exe"; If (Test-Path $o) { Start-Process $o -ErrorAction SilentlyContinue }; Exit 0`
+  },
+  {
+    id: 'cr_icloud',
+    name: 'iCloud off',
+    desc: 'Closes iCloud sync during gaming.',
+    cmd: 'Stop-Process: iCloudDrive.exe',
+    tag: 's',
+    category: 'cloud',
+    applyCmd: `Get-Process -Name 'iCloudDrive','iCloudPhotos','iCloudServices' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revertCmd: `$i = "C:\Program Files (x86)\Common Files\Apple\Internet Services\iCloudDrive.exe"; If (Test-Path $i) { Start-Process $i -ErrorAction SilentlyContinue }; Exit 0`
+  },
+  {
+    id: 'cr_skype',
+    name: 'Skype off',
+    desc: 'Closes Skype during gaming.',
+    cmd: 'Stop-Process: Skype.exe',
+    tag: 's',
+    category: 'communication',
+    applyCmd: `Get-Process -Name 'Skype' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revertCmd: `$s = "$env:APPDATA\Microsoft\Skype\Skype.exe"; If (Test-Path $s) { Start-Process $s -ErrorAction SilentlyContinue }; Exit 0`
+  },
+  {
     id: 'cr_gamesprior',
     category: 'system',
     name: 'Windows games scheduling priority',
