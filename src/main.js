@@ -357,6 +357,30 @@ const CUSTOM_RULE_CMDS = {
     apply: `Get-Process -Name 'Spotify' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
     revert: `$s = "$env:APPDATA\Spotify\Spotify.exe"; If (Test-Path $s) { Start-Process $s -ErrorAction SilentlyContinue }; Exit 0`
   },
+  cr_minecraft: {
+    apply: `Get-Process -Name 'MinecraftLauncher','Minecraft' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revert: `Exit 0`
+  },
+  cr_itunes: {
+    apply: `Get-Process -Name 'iTunes','AppleMusic' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revert: `Exit 0`
+  },
+  cr_riot: {
+    apply: `Get-Process -Name 'RiotClientServices','RiotClientUx','RiotClientUxRender' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revert: `Exit 0`
+  },
+  cr_onedrive_close: {
+    apply: `Get-Process -Name 'OneDrive' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revert: `$o = "$env:LOCALAPPDATA\Microsoft\OneDrive\OneDrive.exe"; If (Test-Path $o) { Start-Process $o -ErrorAction SilentlyContinue }; Exit 0`
+  },
+  cr_icloud: {
+    apply: `Get-Process -Name 'iCloudDrive','iCloudPhotos','iCloudServices' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revert: `Exit 0`
+  },
+  cr_skype: {
+    apply: `Get-Process -Name 'Skype' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revert: `Exit 0`
+  },
   cr_slack: {
     apply: `Get-Process -Name 'slack' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
     revert: `$s = "$env:LOCALAPPDATA\slack\slack.exe"; If (Test-Path $s) { Start-Process $s -ErrorAction SilentlyContinue }; Exit 0`
