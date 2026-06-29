@@ -1,8 +1,7 @@
 <p align="center">
   <img src="https://raw.githubusercontent.com/mojouto3/mojo-gaming-mode/main/assets/icons/icon.png" width="80" alt="Mojo Gaming Mode">
+  <h1 align="center">Mojo Gaming Mode</h1>
 </p>
-
-# Mojo Gaming Mode
 
 [![Latest Release](https://img.shields.io/github/v/release/mojouto3/mojo-gaming-mode?label=version&color=76b900)](https://github.com/mojouto3/mojo-gaming-mode/releases/latest)
 [![License](https://img.shields.io/github/license/mojouto3/mojo-gaming-mode?color=76b900)](LICENSE)
