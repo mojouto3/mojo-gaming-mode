@@ -453,38 +453,89 @@ function renderCustomRules() {
   const iconMap = {
     cr_teams: 'brand-teams', cr_phonelink: 'device-mobile', cr_copilot: 'robot',
     cr_widgets: 'layout-dashboard', cr_epicgames: 'device-gamepad-2',
-    cr_eaapp: 'device-gamepad', cr_spotify: 'brand-spotify', cr_gamesprior: 'cpu'
+    cr_eaapp: 'device-gamepad', cr_spotify: 'brand-spotify', cr_gamesprior: 'cpu',
+    cr_battlenet: 'device-gamepad', cr_ubisoft: 'device-gamepad', cr_gog: 'device-gamepad',
+    cr_xbox: 'brand-xbox', cr_rockstar: 'device-gamepad',
+    cr_slack: 'brand-slack', cr_zoom: 'video', cr_whatsapp: 'brand-whatsapp',
+    cr_telegram: 'brand-telegram', cr_googledrive: 'brand-google-drive', cr_dropbox: 'brand-dropbox'
   };
 
-  CUSTOM_RULES.forEach(r => {
-    const isOn = !!customRulesState[r.id];
-    if (isOn) activeCount++;
-    const icon = iconMap[r.id] || 'settings';
-    const tagCls = r.tag === 'r' ? 'tag-r' : 'tag-s';
-    const tagLabel = r.tag === 'r' ? 'Registry' : 'No admin';
-    const checkedAttr = isOn ? 'checked' : '';
-    const activeCls = isOn ? ' active' : '';
+  const categoryLabels = {
+    launchers: 'Game Launchers',
+    communication: 'Communication',
+    system: 'System',
+    media: 'Media',
+    cloud: 'Cloud Storage'
+  };
 
-    const row = document.createElement('div');
-    row.className = 'tweak-row' + activeCls;
-    row.id = 'cr-' + r.id;
-    row.innerHTML = `
-      <div class="tr-icon"><i class="ti ti-${icon}"></i></div>
-      <div class="tr-info">
-        <div class="tr-name">${r.name} <span class="tag ${tagCls}">${tagLabel}</span></div>
-        <div class="tr-desc">${r.desc}</div>
-      </div>
-      <label class="tog">
-        <input type="checkbox" data-cr="${r.id}" ${checkedAttr}>
+  const categoryOrder = ['launchers', 'communication', 'media', 'cloud', 'system'];
+
+  // Group by category
+  const grouped = {};
+  CUSTOM_RULES.forEach(r => {
+    const cat = r.category || 'system';
+    if (!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push(r);
+  });
+
+  categoryOrder.forEach(cat => {
+    if (!grouped[cat]) return;
+    const rules = grouped[cat];
+
+    // Category header with "Close all" toggle
+    const allOn = rules.every(r => customRulesState[r.id]);
+    const header = document.createElement('div');
+    header.className = 'cr-category-header';
+    header.innerHTML = `
+      <span class="cr-category-label">${categoryLabels[cat] || cat}</span>
+      <label class="tog tog-sm">
+        <input type="checkbox" data-cat="${cat}" ${allOn ? 'checked' : ''}>
         <div class="tog-track"></div>
         <div class="tog-thumb"></div>
       </label>`;
-    container.appendChild(row);
+    container.appendChild(header);
+
+    // Rules in category
+    rules.forEach(r => {
+      const isOn = !!customRulesState[r.id];
+      if (isOn) activeCount++;
+      const icon = iconMap[r.id] || 'settings';
+      const tagCls = r.tag === 'r' ? 'tag-r' : 'tag-s';
+      const tagLabel = r.tag === 'r' ? 'Registry' : 'No admin';
+
+      const row = document.createElement('div');
+      row.className = 'tweak-row' + (isOn ? ' active' : '');
+      row.id = 'cr-' + r.id;
+      row.innerHTML = `
+        <div class="tr-icon"><i class="ti ti-${icon}"></i></div>
+        <div class="tr-info">
+          <div class="tr-name">${r.name} <span class="tag ${tagCls}">${tagLabel}</span></div>
+          <div class="tr-desc">${r.desc}</div>
+        </div>
+        <label class="tog">
+          <input type="checkbox" data-cr="${r.id}" ${isOn ? 'checked' : ''}>
+          <div class="tog-track"></div>
+          <div class="tog-thumb"></div>
+        </label>`;
+      container.appendChild(row);
+    });
   });
 
-  // Bind events after render
+  // Bind individual rule toggles
   container.querySelectorAll('input[data-cr]').forEach(cb => {
     cb.addEventListener('change', (e) => toggleCustomRule(e.target.dataset.cr, e.target.checked));
+  });
+
+  // Bind category "Close all" toggles
+  container.querySelectorAll('input[data-cat]').forEach(cb => {
+    cb.addEventListener('change', (e) => {
+      const cat = e.target.dataset.cat;
+      const val = e.target.checked;
+      CUSTOM_RULES.filter(r => (r.category || 'system') === cat).forEach(r => {
+        toggleCustomRule(r.id, val);
+      });
+      renderCustomRules();
+    });
   });
 
   if (countEl) countEl.textContent = activeCount + ' active';

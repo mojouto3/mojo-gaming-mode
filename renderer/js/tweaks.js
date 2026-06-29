@@ -134,6 +134,7 @@ const ALL_TWEAKS = [...TWEAKS.win, ...TWEAKS.ov, ...TWEAKS.net];
 const CUSTOM_RULES = [
   {
     id: 'cr_teams',
+    category: 'communication',
     name: 'Microsoft Teams off',
     desc: 'Closes Microsoft Teams during gaming. Restarts automatically after.',
     cmd: 'Stop-Process: Teams.exe',
@@ -143,6 +144,7 @@ const CUSTOM_RULES = [
   },
   {
     id: 'cr_phonelink',
+    category: 'system',
     name: 'Phone Link off',
     desc: 'Closes the Phone Link app (formerly Your Phone) during gaming.',
     cmd: 'Stop-Process: PhoneExperienceHost.exe',
@@ -152,6 +154,7 @@ const CUSTOM_RULES = [
   },
   {
     id: 'cr_copilot',
+    category: 'system',
     name: 'Windows Copilot off',
     desc: 'Closes the Windows Copilot sidebar during gaming.',
     cmd: 'Stop-Process: Copilot.exe',
@@ -161,6 +164,7 @@ const CUSTOM_RULES = [
   },
   {
     id: 'cr_widgets',
+    category: 'system',
     name: 'Windows Widgets off',
     desc: 'Closes the Windows Widgets panel during gaming.',
     cmd: 'Stop-Process: Widgets.exe',
@@ -170,6 +174,7 @@ const CUSTOM_RULES = [
   },
   {
     id: 'cr_epicgames',
+    category: 'launchers',
     name: 'Epic Games Launcher off',
     desc: 'Closes the Epic Games Launcher background process during gaming.',
     cmd: 'Stop-Process: EpicGamesLauncher.exe',
@@ -179,6 +184,7 @@ const CUSTOM_RULES = [
   },
   {
     id: 'cr_eaapp',
+    category: 'launchers',
     name: 'EA App off',
     desc: 'Closes the EA App background process during gaming.',
     cmd: 'Stop-Process: EABackgroundService.exe',
@@ -188,6 +194,7 @@ const CUSTOM_RULES = [
   },
   {
     id: 'cr_spotify',
+    category: 'media',
     name: 'Spotify off',
     desc: 'Closes Spotify during gaming to free up RAM and CPU.',
     cmd: 'Stop-Process: Spotify.exe',
@@ -196,7 +203,118 @@ const CUSTOM_RULES = [
     revertCmd: `$s = "$env:APPDATA\\Spotify\\Spotify.exe"; If (Test-Path $s) { Start-Process $s -ErrorAction SilentlyContinue }; Exit 0`
   },
   {
+    id: 'cr_battlenet',
+    category: 'launchers',
+    name: 'Battle.net off',
+    desc: 'Closes the Battle.net launcher during gaming.',
+    cmd: 'Stop-Process: Battle.net.exe',
+    tag: 's',
+    applyCmd: `Get-Process -Name 'Battle.net','Battle.net Helper' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revertCmd: `$b = "C:\Program Files (x86)\Battle.net\Battle.net.exe"; If (Test-Path $b) { Start-Process $b -ErrorAction SilentlyContinue }; Exit 0`
+  },
+  {
+    id: 'cr_ubisoft',
+    category: 'launchers',
+    name: 'Ubisoft Connect off',
+    desc: 'Closes the Ubisoft Connect launcher during gaming.',
+    cmd: 'Stop-Process: UbisoftConnect.exe',
+    tag: 's',
+    applyCmd: `Get-Process -Name 'UbisoftConnect','UplayWebCore' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revertCmd: `$u = "C:\Program Files (x86)\Ubisoft\Ubisoft Game Launcher\UbisoftConnect.exe"; If (Test-Path $u) { Start-Process $u -ErrorAction SilentlyContinue }; Exit 0`
+  },
+  {
+    id: 'cr_gog',
+    category: 'launchers',
+    name: 'GOG Galaxy off',
+    desc: 'Closes the GOG Galaxy launcher during gaming.',
+    cmd: 'Stop-Process: GalaxyClient.exe',
+    tag: 's',
+    applyCmd: `Get-Process -Name 'GalaxyClient','GalaxyClientService' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revertCmd: `$g = "C:\Program Files (x86)\GOG Galaxy\GalaxyClient.exe"; If (Test-Path $g) { Start-Process $g -ErrorAction SilentlyContinue }; Exit 0`
+  },
+  {
+    id: 'cr_xbox',
+    category: 'launchers',
+    name: 'Xbox App off',
+    desc: 'Closes the Xbox App background process during gaming.',
+    cmd: 'Stop-Process: XboxApp.exe',
+    tag: 's',
+    applyCmd: `Get-Process -Name 'XboxApp','GameBar' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revertCmd: `Exit 0`
+  },
+  {
+    id: 'cr_rockstar',
+    category: 'launchers',
+    name: 'Rockstar Games Launcher off',
+    desc: 'Closes the Rockstar Games Launcher during gaming.',
+    cmd: 'Stop-Process: RockstarService.exe',
+    tag: 's',
+    applyCmd: `Get-Process -Name 'RockstarService','Launcher' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revertCmd: `$r = "C:\Program Files\Rockstar Games\Launcher\Launcher.exe"; If (Test-Path $r) { Start-Process $r -ErrorAction SilentlyContinue }; Exit 0`
+  },
+  {
+    id: 'cr_slack',
+    name: 'Slack off',
+    desc: 'Closes Slack during gaming to free up RAM.',
+    cmd: 'Stop-Process: slack.exe',
+    tag: 's',
+    category: 'communication',
+    applyCmd: `Get-Process -Name 'slack' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revertCmd: `$s = "$env:LOCALAPPDATA\slack\slack.exe"; If (Test-Path $s) { Start-Process $s -ErrorAction SilentlyContinue }; Exit 0`
+  },
+  {
+    id: 'cr_zoom',
+    name: 'Zoom off',
+    desc: 'Closes Zoom during gaming.',
+    cmd: 'Stop-Process: Zoom.exe',
+    tag: 's',
+    category: 'communication',
+    applyCmd: `Get-Process -Name 'Zoom','ZoomOutlookIMPlugin' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revertCmd: `Exit 0`
+  },
+  {
+    id: 'cr_whatsapp',
+    name: 'WhatsApp Desktop off',
+    desc: 'Closes WhatsApp Desktop during gaming.',
+    cmd: 'Stop-Process: WhatsApp.exe',
+    tag: 's',
+    category: 'communication',
+    applyCmd: `Get-Process -Name 'WhatsApp' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revertCmd: `$w = "$env:LOCALAPPDATA\WhatsApp\WhatsApp.exe"; If (Test-Path $w) { Start-Process $w -ErrorAction SilentlyContinue }; Exit 0`
+  },
+  {
+    id: 'cr_telegram',
+    name: 'Telegram Desktop off',
+    desc: 'Closes Telegram Desktop during gaming.',
+    cmd: 'Stop-Process: Telegram.exe',
+    tag: 's',
+    category: 'communication',
+    applyCmd: `Get-Process -Name 'Telegram' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revertCmd: `$t = "$env:APPDATA\Telegram Desktop\Telegram.exe"; If (Test-Path $t) { Start-Process $t -ErrorAction SilentlyContinue }; Exit 0`
+  },
+  {
+    id: 'cr_googledrive',
+    name: 'Google Drive off',
+    desc: 'Closes Google Drive sync during gaming.',
+    cmd: 'Stop-Process: GoogleDriveFS.exe',
+    tag: 's',
+    category: 'cloud',
+    applyCmd: `Get-Process -Name 'GoogleDriveFS','GoogleDrive' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revertCmd: `$g = "C:\Program Files\Google\Drive File Stream\GoogleDriveFS.exe"; If (Test-Path $g) { Start-Process $g -ErrorAction SilentlyContinue }; Exit 0`
+  },
+  {
+    id: 'cr_dropbox',
+    name: 'Dropbox off',
+    desc: 'Closes Dropbox sync during gaming.',
+    cmd: 'Stop-Process: Dropbox.exe',
+    tag: 's',
+    category: 'cloud',
+    applyCmd: `Get-Process -Name 'Dropbox' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revertCmd: `$d = "$env:LOCALAPPDATA\Dropbox\client\Dropbox.exe"; If (Test-Path $d) { Start-Process $d -ErrorAction SilentlyContinue }; Exit 0`
+  },
+  {
     id: 'cr_gamesprior',
+    category: 'system',
     name: 'Windows games scheduling priority',
     desc: 'Sets high CPU scheduling priority for games via Windows Multimedia registry.',
     cmd: 'Registry: HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games',
