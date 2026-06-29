@@ -1735,3 +1735,22 @@ html, body {
 .btn-reset-defaults:hover {
   background: rgba(231,76,60,.08);
 }
+
+/* Custom Rules categories */
+.cr-category-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0 6px;
+  margin-top: 8px;
+  border-bottom: 1px solid var(--bord);
+  margin-bottom: 4px;
+}
+.cr-category-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+  color: var(--text3);
+}
+.tog-sm { transform: scale(.8); transform-origin: right center; }
