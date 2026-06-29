@@ -4,6 +4,27 @@ All notable changes to Mojo Gaming Mode are documented here.
 
 ---
 
+## [1.5.0] - 2026-06-29
+
+### Added
+
+- Custom Rules execution engine - rules now run on Activate and revert on Deactivate
+- 25 quick rules organized in 5 categories: Game Launchers, Communication, Media, Cloud Storage, System
+- Close-all toggle per category in Custom Rules tab
+- Dynamic Custom preset card - appears only when at least one rule is active
+- GPU temperature monitoring in Performance tab
+- Preset keyboard shortcuts Ctrl+B (Balanced), Ctrl+P (Performance), Ctrl+E (Esports)
+- Reset to defaults button in Settings
+- Active tweak count per category in Tweaks tab
+- Windows toast notification when a new update is available
+- What's new badge in sidebar after updates
+- Version number shown in tray menu
+
+### Fixed
+
+- Custom Rules now correctly pass state to apply-mode handler
+- Xbox App process names updated to match actual Windows processes
+
 ## [1.4.0] - 2026-06-28
 
 ### Added
