@@ -24,5 +24,7 @@ contextBridge.exposeInMainWorld('mgm', {
   downloadUpdate: () => ipcRenderer.invoke('download-update'),
   installUpdate: () => ipcRenderer.invoke('install-update'),
   getVersion: () => ipcRenderer.invoke('get-version'),
-  getWhatsNew: () => ipcRenderer.invoke('get-whats-new')
+  getWhatsNew: () => ipcRenderer.invoke('get-whats-new'),
+  getStartupApps: () => ipcRenderer.invoke('get-startup-apps'),
+  toggleStartupApp: (name, location, enable) => ipcRenderer.invoke('toggle-startup-app', name, location, enable)
 });
