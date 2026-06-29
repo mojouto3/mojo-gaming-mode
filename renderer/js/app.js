@@ -457,7 +457,9 @@ function renderCustomRules() {
     cr_battlenet: 'device-gamepad', cr_ubisoft: 'device-gamepad', cr_gog: 'device-gamepad',
     cr_xbox: 'brand-xbox', cr_rockstar: 'device-gamepad',
     cr_slack: 'brand-slack', cr_zoom: 'video', cr_whatsapp: 'brand-whatsapp',
-    cr_telegram: 'brand-telegram', cr_googledrive: 'brand-google-drive', cr_dropbox: 'brand-dropbox'
+    cr_telegram: 'brand-telegram', cr_googledrive: 'brand-google-drive', cr_dropbox: 'brand-dropbox',
+    cr_riot: 'device-gamepad-2', cr_onedrive_close: 'cloud-off', cr_icloud: 'cloud-off', cr_skype: 'brand-skype',
+    cr_minecraft: 'device-gamepad', cr_itunes: 'music'
   };
 
   const categoryLabels = {
