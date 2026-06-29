@@ -4,7 +4,7 @@ const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, Notification, glob
 const path = require('path');
 const fs = require('fs');
 const { exec } = require('child_process');
-const { executeTweaks } = require('./executor');
+const { executeTweaks, runPS } = require('./executor');
 const metrics = require('./metrics');
 const { autoUpdater } = require('electron-updater');
 
@@ -418,7 +418,7 @@ const CUSTOM_RULE_CMDS = {
     revert: `$g = "C:\Program Files (x86)\GOG Galaxy\GalaxyClient.exe"; If (Test-Path $g) { Start-Process $g -ErrorAction SilentlyContinue }; Exit 0`
   },
   cr_xbox: {
-    apply: `Get-Process -Name 'XboxApp','GameBar' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    apply: `Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.Name -like "Xbox*" -or $_.Name -like "GameBar*" } | Stop-Process -Force -ErrorAction SilentlyContinue; Exit 0`,
     revert: `Exit 0`
   },
   cr_rockstar: {
@@ -456,7 +456,7 @@ ipcMain.handle('apply-mode', async (e, config) => {
     if (config.customRulesActive) {
       for (const [id, active] of Object.entries(config.customRulesActive)) {
         if (active && CUSTOM_RULE_CMDS[id]) {
-          try { await executor.run(CUSTOM_RULE_CMDS[id].apply); } catch(e) {}
+          try { await runPS(CUSTOM_RULE_CMDS[id].apply); } catch(e) {}
         }
       }
     }
@@ -512,7 +512,7 @@ ipcMain.handle('revert-mode', async (e, config) => {
     if (savedConfig.customRulesActive) {
       for (const [id, active] of Object.entries(savedConfig.customRulesActive)) {
         if (active && CUSTOM_RULE_CMDS[id]) {
-          try { await executor.run(CUSTOM_RULE_CMDS[id].revert); } catch(e) {}
+          try { await runPS(CUSTOM_RULE_CMDS[id].revert); } catch(e) {}
         }
       }
     }

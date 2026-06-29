@@ -743,6 +743,22 @@ function updateMetricsUI(data) {
       if (gpuSubLive && data.gpuName) gpuSubLive.textContent = data.gpuName;
     }
   }
+
+  // GPU Temperature
+  const gpuTempVal = document.getElementById('gpu-temp-val');
+  const gpuTempBar = document.getElementById('gpu-temp-bar');
+  const gpuTempSub = document.getElementById('gpu-temp-sub');
+  if (gpuTempVal && data.gpuTemp !== undefined && data.gpuTemp > 0) {
+    const t = data.gpuTemp;
+    gpuTempVal.textContent = t + '°C';
+    gpuTempVal.className = 'gauge-big-val' + (t > 85 ? ' danger' : t > 70 ? ' warn' : '');
+    const pct = Math.min(Math.round((t / 100) * 100), 100);
+    if (gpuTempBar) { gpuTempBar.style.width = pct + '%'; gpuTempBar.style.background = t > 85 ? '#ed1c24' : t > 70 ? '#f0a500' : 'var(--acc)'; }
+    if (gpuTempSub) gpuTempSub.textContent = t > 85 ? 'Hot' : t > 70 ? 'Warm' : 'Normal';
+  } else if (gpuTempVal) {
+    gpuTempVal.textContent = 'N/A';
+    if (gpuTempSub) gpuTempSub.textContent = 'Not available';
+  }
 }
 
 function renderAll() {
@@ -777,7 +793,7 @@ async function applyMode(silent = false) {
   btn.innerHTML = '<i class="ti ti-loader"></i> Applying...';
   if (!silent) showToast('Applying tweaks...');
 
-  const result = await window.mgm.applyMode({ tweaks: state.tweaks, rules: state.rules, preset: state.preset });
+  const result = await window.mgm.applyMode({ tweaks: state.tweaks, rules: state.rules, preset: state.preset, customRulesActive: customRulesState });
   btn.disabled = false;
 
   if (!result.success) {
@@ -1102,6 +1118,7 @@ async function persistConfig() {
     preset: state.preset,
     manualOverrides: state.manualOverrides,
     customRules: state.rules,
+    customRulesActive: customRulesState,
     autostart: state.autostart,
     lastRestorePoint: state.lastRestorePoint,
     lang: state.lang,
