@@ -203,7 +203,7 @@ All trademarks are the property of their respective owners. Mojo Gaming Mode is 
 
 ## Publisher
 
-**mojomultimedia** - [github.com/mojouto3](https://github.com/mojouto3)
+[![mojomultimedia](https://github.com/mojouto3.png?size=40)](https://github.com/mojouto3) **mojomultimedia**
 
 ---
 
