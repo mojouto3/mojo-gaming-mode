@@ -239,7 +239,7 @@ const CUSTOM_RULES = [
     desc: 'Closes the Xbox App background process during gaming.',
     cmd: 'Stop-Process: XboxApp.exe',
     tag: 's',
-    applyCmd: `Get-Process -Name 'XboxApp','GameBar' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    applyCmd: `Get-Process -Name 'XboxApp','GameBar','XboxGameBarWidgets','XboxPcApp','XboxPcAppFT','XboxPcTray','XboxGameBar' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
     revertCmd: `Exit 0`
   },
   {
