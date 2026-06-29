@@ -155,7 +155,7 @@ All PRs target `main` and require 1 review before merge.
 | v0.4.0 | Settings tab, theme picker, language, autostart | Done |
 | v1.0.0 | NSIS installer, shutdown revert script | Done |
 | v1.1.0 | Auto-updater with progress bar | Done |
-| v1.2.0 | Electron v42 upgrade, security fixes | Done |
+| v1.5.0 | Electron v42 upgrade, security fixes | Done |
 | v2.0.0 | Scheduled optimization, game detection, custom tweak builder | Planned |
 
 ---
