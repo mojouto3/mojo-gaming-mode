@@ -4,6 +4,24 @@ All notable changes to Mojo Gaming Mode are documented here.
 
 ---
 
+## [1.7.0] - 2026-07-08
+
+### Added
+
+- Bar mode: new thin, draggable, always-on-top overlay for in-game use, showing preset name, status dot, and live CPU / RAM / GPU stats
+- Live window opacity control, accessible from mini mode and bar mode, persisted across restarts
+- Mini mode: color-coded CPU / RAM / GPU stats (amber past 50 to 60 percent, red past 80 percent) with mini sparkline history under each stat
+- Mini mode: green glow border while gaming mode is active
+- Mini mode and bar mode: click the stats row to jump straight to the Performance tab
+- Always-on-top behavior for mini mode and bar mode so they stay visible over games
+
+### Fixed
+
+- Mini mode CPU / RAM / GPU stats were never updating and stayed stuck at "--"
+- Mini mode window could not shrink to its compact size because a leftover minimum-size constraint from normal mode blocked it
+- Deactivate button in mini mode was nearly invisible against the background
+- Default browser focus outline looked out of place on the mini mode activate and deactivate button
+
 ## [1.6.0] - 2026-06-29
 
 ### Added

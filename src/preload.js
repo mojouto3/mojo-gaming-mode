@@ -27,6 +27,9 @@ contextBridge.exposeInMainWorld('mgm', {
   getWhatsNew: () => ipcRenderer.invoke('get-whats-new'),
   minimizeToTray: () => ipcRenderer.send('window-minimize'),
   setNotifPrefs: (prefs) => ipcRenderer.send('set-notif-prefs', prefs),
+  setMiniMode: (enabled) => ipcRenderer.send('set-mini-mode', enabled),
+  setBarMode: (enabled) => ipcRenderer.send('set-bar-mode', enabled),
+  setWindowOpacity: (value) => ipcRenderer.send('set-window-opacity', value),
   getStartupApps: () => ipcRenderer.invoke('get-startup-apps'),
   toggleStartupApp: (name, location, enable) => ipcRenderer.invoke('toggle-startup-app', name, location, enable)
 });

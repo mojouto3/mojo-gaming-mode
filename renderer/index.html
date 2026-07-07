@@ -26,6 +26,7 @@
         </div>
       </div>
       <div class="titlebar-controls">
+        <button class="tb-btn" id="btn-mini-mode" title="Mini mode"><i class="ti ti-layout-sidebar"></i></button>
         <button class="tb-btn tb-min" id="btn-minimize" title="Minimize"><i class="ti ti-minus"></i></button>
         <button class="tb-btn tb-close" id="btn-close" title="Close to tray"><i class="ti ti-x"></i></button>
       </div>
@@ -411,6 +412,75 @@
   </div>
 
   <script src="js/translations.js"></script>
+  <!-- Mini Mode -->
+  <div class="mini-mode" id="mini-mode" style="display:none">
+    <div class="mm-header">
+      <div class="mm-title">
+        <img src="../assets/icons/icon.png" width="16" height="16" alt="MGM">
+        <span>MGM</span>
+      </div>
+      <div class="mm-header-actions">
+        <button class="mm-icon-btn" id="mm-opacity-btn" title="Opacity"><i class="ti ti-droplet-half-2"></i></button>
+        <button class="mm-icon-btn" id="mm-bar-btn" title="Bar mode"><i class="ti ti-layout-navbar"></i></button>
+        <button class="mm-expand" id="mm-expand" title="Exit mini mode"><i class="ti ti-layout-sidebar"></i></button>
+      </div>
+    </div>
+    <div class="mm-body">
+      <div class="mm-info">
+        <div class="mm-info-left">
+          <div class="mm-preset" id="mm-preset">Esports</div>
+          <div class="mm-tweaks" id="mm-tweaks">0 tweaks selected</div>
+        </div>
+      </div>
+      <div class="mm-status" id="mm-status">● Gaming mode off</div>
+      <button class="mm-activate-btn" id="mm-activate-btn">Activate</button>
+      <div class="mm-stats">
+        <div class="mm-stat">
+          <div class="mm-stat-label">CPU</div>
+          <div class="mm-stat-val" id="mm-cpu">--</div>
+          <div class="mm-spark" id="mm-cpu-spark"></div>
+        </div>
+        <div class="mm-stat">
+          <div class="mm-stat-label">RAM</div>
+          <div class="mm-stat-val" id="mm-ram">--</div>
+          <div class="mm-spark" id="mm-ram-spark"></div>
+        </div>
+        <div class="mm-stat">
+          <div class="mm-stat-label">GPU</div>
+          <div class="mm-stat-val" id="mm-gpu">--</div>
+          <div class="mm-spark" id="mm-gpu-spark"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bar Mode -->
+  <div class="bar-mode" id="bar-mode" style="display:none">
+    <div class="bar-drag" id="bar-drag">
+      <i class="ti ti-grip-vertical bar-grip" aria-hidden="true"></i>
+      <span class="bar-dot" id="bar-dot"></span>
+      <span class="bar-preset" id="bar-preset">Esports</span>
+    </div>
+    <div class="bar-stats">
+      <div class="bar-stat"><span class="bar-stat-label">CPU</span><span class="bar-stat-val" id="bar-cpu">--</span></div>
+      <div class="bar-stat"><span class="bar-stat-label">RAM</span><span class="bar-stat-val" id="bar-ram">--</span></div>
+      <div class="bar-stat"><span class="bar-stat-label">GPU</span><span class="bar-stat-val" id="bar-gpu">--</span></div>
+    </div>
+    <div class="bar-controls">
+      <button class="bar-icon-btn" id="bar-opacity-btn" title="Opacity"><i class="ti ti-droplet-half-2"></i></button>
+      <button class="bar-icon-btn" id="bar-expand" title="Card view"><i class="ti ti-layout-sidebar"></i></button>
+      <button class="bar-icon-btn" id="bar-close" title="Exit"><i class="ti ti-x"></i></button>
+    </div>
+  </div>
+
+  <!-- Shared opacity popover, used by both mini card and bar mode -->
+  <div class="opacity-popover" id="opacity-popover" style="display:none">
+    <i class="ti ti-droplet-half-2"></i>
+    <input type="range" id="opacity-slider" min="30" max="100" value="100">
+    <span id="opacity-val">100%</span>
+    <button class="opacity-popover-close" id="opacity-popover-close" title="Close"><i class="ti ti-x"></i></button>
+  </div>
+
   <!-- Onboarding Modal -->
   <div class="ob-overlay" id="ob-overlay">
     <div class="ob-modal" id="ob-modal">
