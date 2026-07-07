@@ -190,6 +190,7 @@ All PRs target `main` and require 1 review before merge.
 | v1.3.0 | Tray enhancements, keyboard shortcuts, onboarding, what's new badge | Done |
 | v1.4.0 | Custom Rules engine UI, quick rules, dynamic Custom preset | Done |
 | v1.5.0 | Custom Rules execution, GPU temperature, extra rules | Done |
+| v1.6.0 | Auto-minimize, notification preferences, session timer, tray animation | Done |
 | v2.0.0 | Scheduled optimization, game detection, custom tweak builder | Planned |
 
 ---
