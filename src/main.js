@@ -1,6 +1,57 @@
 'use strict';
 
 const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, Notification, globalShortcut, shell, dialog } = require('electron');
+
+// Discord Rich Presence
+let discordRPC = null;
+let rpcClient = null;
+const DISCORD_CLIENT_ID = '1524081804619808768';
+
+function initDiscordRPC() {
+  try {
+    discordRPC = require('discord-rpc');
+    discordRPC.register(DISCORD_CLIENT_ID);
+    rpcClient = new discordRPC.Client({ transport: 'ipc' });
+    rpcClient.on('ready', () => {
+      console.log('Discord RPC connected!');
+      updateDiscordPresence();
+    });
+    rpcClient.login({ clientId: DISCORD_CLIENT_ID }).catch((e) => {
+      console.log('Discord RPC error:', e.message);
+    });
+  } catch(e) {
+    console.log('Discord RPC init error:', e.message);
+  }
+}
+
+function updateDiscordPresence(preset, tweakCount, sessionStart) {
+  if (!rpcClient) return;
+  try {
+    if (gamingModeActive) {
+      rpcClient.setActivity({
+        details: `Gaming Mode: ON`,
+        state: `${preset || currentPreset || 'Balanced'} preset - ${tweakCount || activeTweakIds.length} tweaks active`,
+        startTimestamp: sessionStart || Date.now(),
+        largeImageKey: 'mgm_logo',
+        largeImageText: 'Mojo Gaming Mode',
+        instance: false
+      });
+    } else {
+      rpcClient.setActivity({
+        details: 'Gaming Mode: OFF',
+        state: 'Ready to optimize',
+        largeImageKey: 'mgm_logo',
+        largeImageText: 'Mojo Gaming Mode',
+        instance: false
+      });
+    }
+  } catch(e) {}
+}
+
+function clearDiscordPresence() {
+  if (!rpcClient) return;
+  try { rpcClient.clearActivity(); } catch(e) {}
+}
 const path = require('path');
 const fs = require('fs');
 const { exec } = require('child_process');
@@ -249,6 +300,9 @@ app.whenReady().then(async () => {
   globalShortcut.register('CommandOrControl+P', () => switchPresetFromTray('performance'));
   globalShortcut.register('CommandOrControl+E', () => switchPresetFromTray('esports'));
 
+  // Init Discord Rich Presence
+  initDiscordRPC();
+
   // Init auto-updater and check on startup
   initAutoUpdater();
   setTimeout(() => autoUpdater.checkForUpdates().catch(() => {}), 4000);
@@ -466,6 +520,7 @@ ipcMain.handle('apply-mode', async (e, config) => {
     gamingModeActive = true;
     if (config.preset) currentPreset = config.preset;
     updateTrayMenu();
+    updateDiscordPresence(config.preset, activeTweakIds.length, Date.now());
     // Save active state to config for crash recovery
     const activeConfig = loadConfig();
     activeConfig.wasActive = true;
@@ -530,6 +585,7 @@ ipcMain.handle('revert-mode', async (e, config) => {
 
     gamingModeActive = false;
     updateTrayMenu();
+    updateDiscordPresence();
     if (tray) {
       // Stop blink animation
       if (trayAnimInterval) { clearInterval(trayAnimInterval); trayAnimInterval = null; }
