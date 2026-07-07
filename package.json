@@ -18,6 +18,7 @@
   "build": {
     "appId": "com.mojomultimedia.gaming-mode",
     "productName": "Mojo Gaming Mode",
+    "npmRebuild": false,
     "win": {
       "target": "nsis",
       "icon": "assets/icons/icon.ico",
