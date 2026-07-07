@@ -820,9 +820,16 @@ async function applyMode(silent = false) {
 
   renderStats();
   renderPresetActive(); // re-render to show ON status
+
+  // Auto-minimize to tray
+  setTimeout(() => window.mgm.minimizeToTray(), 800);
+
+  // Start session timer
+  startSessionTimer();
 }
 
 async function revertMode(silent = false) {
+  stopSessionTimer();
   const btn = document.getElementById('btn-activate');
   btn.disabled = true;
   btn.innerHTML = '<i class="ti ti-loader"></i> Reverting...';
@@ -1129,6 +1136,31 @@ async function persistConfig() {
 // ── Toast ─────────────────────────────────────────────────────────────────────
 
 let toastTimer = null;
+
+// Session timer
+let sessionTimerInterval = null;
+let sessionStartTime = null;
+
+function startSessionTimer() {
+  sessionStartTime = Date.now();
+  sessionTimerInterval = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
+    const h = String(Math.floor(elapsed / 3600)).padStart(2, '0');
+    const m = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
+    const s = String(elapsed % 60).padStart(2, '0');
+    const el = document.getElementById('sv-timer');
+    if (el) el.textContent = `${h}:${m}:${s}`;
+  }, 1000);
+}
+
+function stopSessionTimer() {
+  clearInterval(sessionTimerInterval);
+  sessionTimerInterval = null;
+  sessionStartTime = null;
+  const el = document.getElementById('sv-timer');
+  if (el) el.textContent = '00:00:00';
+}
+
 function showToast(msg) {
   const el = document.getElementById('toast');
   el.textContent = msg;
