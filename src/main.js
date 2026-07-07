@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, Notification, globalShortcut, shell, dialog } = require('electron');
+const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, Notification, globalShortcut, shell, dialog, screen } = require('electron');
 
 // Discord Rich Presence
 let discordRPC = null;
@@ -9,14 +9,13 @@ const DISCORD_CLIENT_ID = '1524081804619808768';
 
 function initDiscordRPC() {
   try {
-    discordRPC = require('discord-rpc');
-    discordRPC.register(DISCORD_CLIENT_ID);
-    rpcClient = new discordRPC.Client({ transport: 'ipc' });
+    const { Client } = require('@xhayper/discord-rpc');
+    rpcClient = new Client({ clientId: DISCORD_CLIENT_ID });
     rpcClient.on('ready', () => {
       console.log('Discord RPC connected!');
       updateDiscordPresence();
     });
-    rpcClient.login({ clientId: DISCORD_CLIENT_ID }).catch((e) => {
+    rpcClient.login().catch((e) => {
       console.log('Discord RPC error:', e.message);
     });
   } catch(e) {
@@ -27,8 +26,9 @@ function initDiscordRPC() {
 function updateDiscordPresence(preset, tweakCount, sessionStart) {
   if (!rpcClient) return;
   try {
+    if (!rpcClient) return;
     if (gamingModeActive) {
-      rpcClient.setActivity({
+      rpcClient.user?.setActivity({
         details: `Gaming Mode: ON`,
         state: `${preset || currentPreset || 'Balanced'} preset - ${tweakCount || activeTweakIds.length} tweaks active`,
         startTimestamp: sessionStart || Date.now(),
@@ -37,7 +37,7 @@ function updateDiscordPresence(preset, tweakCount, sessionStart) {
         instance: false
       });
     } else {
-      rpcClient.setActivity({
+      rpcClient.user?.setActivity({
         details: 'Gaming Mode: OFF',
         state: 'Ready to optimize',
         largeImageKey: 'mgm_logo',
@@ -50,7 +50,7 @@ function updateDiscordPresence(preset, tweakCount, sessionStart) {
 
 function clearDiscordPresence() {
   if (!rpcClient) return;
-  try { rpcClient.clearActivity(); } catch(e) {}
+  try { rpcClient.user?.clearActivity(); } catch(e) {}
 }
 const path = require('path');
 const fs = require('fs');
@@ -73,9 +73,16 @@ let trayAnimInterval = null;
 let notifPrefs = { activate: true, deactivate: true, update: true };
 let currentPreset = 'balanced';
 
+// Window size constants — keep createWindow() and the mini-mode toggle in sync
+const NORMAL_MIN_SIZE = { width: 760, height: 580 };
+const NORMAL_SIZE = { width: 860, height: 680 };
+const MINI_SIZE = { width: 220, height: 280 };
+const BAR_SIZE = { width: 420, height: 44 };
+
 const DEFAULT_CONFIG = {
   gpu: null,
   preset: 'balanced',
+  windowOpacity: 1,
   tweaks: {
     gm: true,
     sysmain: true,
@@ -149,10 +156,10 @@ function detectGPU() {
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 860,
-    height: 680,
-    minWidth: 760,
-    minHeight: 580,
+    width: NORMAL_SIZE.width,
+    height: NORMAL_SIZE.height,
+    minWidth: NORMAL_MIN_SIZE.width,
+    minHeight: NORMAL_MIN_SIZE.height,
     frame: false,
     backgroundColor: detectedGPU.vendor === 'amd' ? '#1c1c1e' : '#1a1a1a',
     webPreferences: {
@@ -169,6 +176,8 @@ function createWindow() {
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
+    const savedOpacity = loadConfig().windowOpacity;
+    if (typeof savedOpacity === 'number') mainWindow.setOpacity(savedOpacity);
   });
 
   mainWindow.on('close', (e) => {
@@ -746,6 +755,56 @@ ipcMain.on('metrics-start', () => {
 
 ipcMain.on('metrics-stop', () => {
   metrics.stop();
+});
+
+ipcMain.on('set-mini-mode', (e, enabled) => {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  if (enabled) {
+    // Must lower the minimum size FIRST — Electron clamps setSize() to
+    // whatever minWidth/minHeight is currently set, so without this the
+    // window stayed stuck at the normal-mode minimum (760x580) instead of
+    // shrinking down to the mini-mode size.
+    mainWindow.setMinimumSize(MINI_SIZE.width, MINI_SIZE.height);
+    mainWindow.setSize(MINI_SIZE.width, MINI_SIZE.height);
+    mainWindow.setResizable(false);
+    // Mini-mode is meant to float over a game, so keep it on top
+    mainWindow.setAlwaysOnTop(true, 'floating');
+  } else {
+    mainWindow.setMinimumSize(NORMAL_MIN_SIZE.width, NORMAL_MIN_SIZE.height);
+    mainWindow.setSize(NORMAL_SIZE.width, NORMAL_SIZE.height);
+    mainWindow.setResizable(true);
+    mainWindow.setAlwaysOnTop(false);
+  }
+});
+
+ipcMain.on('set-bar-mode', (e, enabled) => {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  if (enabled) {
+    mainWindow.setMinimumSize(BAR_SIZE.width, BAR_SIZE.height);
+    mainWindow.setSize(BAR_SIZE.width, BAR_SIZE.height);
+    mainWindow.setResizable(false);
+    mainWindow.setAlwaysOnTop(true, 'floating');
+    // Start centered near the top of the primary display; the user can
+    // then drag it wherever they like for the rest of the session.
+    const display = screen.getPrimaryDisplay();
+    const x = Math.round(display.workArea.x + (display.workArea.width - BAR_SIZE.width) / 2);
+    const y = display.workArea.y + 12;
+    mainWindow.setPosition(x, y);
+  } else {
+    mainWindow.setMinimumSize(NORMAL_MIN_SIZE.width, NORMAL_MIN_SIZE.height);
+    mainWindow.setSize(NORMAL_SIZE.width, NORMAL_SIZE.height);
+    mainWindow.setResizable(true);
+    mainWindow.setAlwaysOnTop(false);
+  }
+});
+
+ipcMain.on('set-window-opacity', (e, value) => {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  const v = Math.min(1, Math.max(0.3, value));
+  mainWindow.setOpacity(v);
+  const cfg = loadConfig();
+  cfg.windowOpacity = v;
+  saveConfig(cfg);
 });
 
 ipcMain.on('window-close', () => {

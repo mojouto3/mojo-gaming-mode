@@ -21,6 +21,179 @@ ALL_TWEAKS.forEach(t => { state.tweaks[t.id] = t.presets.balanced; });
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 
+let miniModeActive = false;
+let barModeActive = false;
+let lastMetrics = {};
+
+function anyLiveViewActive() {
+  const statsTabActive = document.getElementById('tab-stats')?.classList.contains('active');
+  return !!statsTabActive || miniModeActive || barModeActive;
+}
+
+function stopMetricsIfIdle() {
+  if (!anyLiveViewActive()) window.mgm.metricsStop();
+}
+
+function hideNormalApp() {
+  const appEl = document.getElementById('app');
+  if (appEl) appEl.style.display = 'none';
+}
+
+function showNormalAppIfIdle() {
+  if (miniModeActive || barModeActive) return;
+  const appEl = document.getElementById('app');
+  if (appEl) appEl.style.display = '';
+}
+
+function enterMiniMode() {
+  exitBarMode(true); // switching from bar to card view keeps polling alive
+  hideNormalApp();
+  miniModeActive = true;
+  const mini = document.getElementById('mini-mode');
+  mini.style.display = 'flex';
+  const vendor = state.gpu?.vendor || 'nvidia';
+  mini.className = 'mini-mode theme-' + (state.manualTheme || vendor);
+  updateLiveViews();
+  window.mgm.setMiniMode(true);
+  window.mgm.metricsStart();
+}
+
+function exitMiniMode(skipWindowReset) {
+  miniModeActive = false;
+  document.getElementById('mini-mode').style.display = 'none';
+  showNormalAppIfIdle();
+  if (!skipWindowReset) window.mgm.setMiniMode(false);
+  stopMetricsIfIdle();
+}
+
+function enterBarMode() {
+  exitMiniMode(true); // switching from card to bar keeps polling alive
+  hideNormalApp();
+  barModeActive = true;
+  const bar = document.getElementById('bar-mode');
+  bar.style.display = 'flex';
+  const vendor = state.gpu?.vendor || 'nvidia';
+  bar.className = 'bar-mode theme-' + (state.manualTheme || vendor);
+  updateLiveViews();
+  window.mgm.setBarMode(true);
+  window.mgm.metricsStart();
+}
+
+function exitBarMode(skipWindowReset) {
+  barModeActive = false;
+  document.getElementById('bar-mode').style.display = 'none';
+  showNormalAppIfIdle();
+  if (!skipWindowReset) window.mgm.setBarMode(false);
+  stopMetricsIfIdle();
+}
+
+function toggleOpacityPopover(anchorEl) {
+  const pop = document.getElementById('opacity-popover');
+  if (!pop || !anchorEl) return;
+  const isOpen = pop.style.display === 'flex';
+  if (isOpen) {
+    pop.style.display = 'none';
+    return;
+  }
+  const rect = anchorEl.getBoundingClientRect();
+  pop.style.display = 'flex';
+  // Popover is roughly 36px tall — flip above the button if there isn't
+  // enough room below within these small windows.
+  const popHeight = 36;
+  const fitsBelow = (rect.bottom + 6 + popHeight) <= window.innerHeight;
+  pop.style.top = fitsBelow ? (rect.bottom + 6) + 'px' : Math.max(6, rect.top - popHeight - 6) + 'px';
+  let left = rect.left - 80;
+  left = Math.max(6, Math.min(left, window.innerWidth - 200));
+  pop.style.left = left + 'px';
+}
+
+function updateLiveViews() {
+  updateMiniMode();
+  updateBarMode();
+}
+
+function statClass(v, warnAt, dangerAt) {
+  return v > dangerAt ? ' danger' : v > warnAt ? ' warn' : '';
+}
+
+function updateBarMode() {
+  if (!barModeActive) return;
+  const barEl = document.getElementById('bar-mode');
+  const dotEl = document.getElementById('bar-dot');
+  const presetEl = document.getElementById('bar-preset');
+  const cpuEl = document.getElementById('bar-cpu');
+  const ramEl = document.getElementById('bar-ram');
+  const gpuEl = document.getElementById('bar-gpu');
+
+  if (barEl) barEl.classList.toggle('active', !!state.active);
+  if (dotEl) dotEl.classList.toggle('on', !!state.active);
+  if (presetEl) presetEl.textContent = (state.preset || 'balanced').charAt(0).toUpperCase() + (state.preset || 'balanced').slice(1);
+
+  if (cpuEl && lastMetrics.cpu !== undefined) {
+    const v = Math.round(lastMetrics.cpu);
+    cpuEl.textContent = v + '%';
+    cpuEl.className = 'bar-stat-val' + statClass(v, 50, 80);
+  }
+  if (ramEl && lastMetrics.ramPct !== undefined) {
+    const v = Math.round(lastMetrics.ramPct);
+    ramEl.textContent = v + '%';
+    ramEl.className = 'bar-stat-val' + statClass(v, 60, 80);
+  }
+  if (gpuEl && lastMetrics.gpuUsage !== undefined && lastMetrics.gpuUsage > 0) {
+    const v = Math.round(lastMetrics.gpuUsage);
+    gpuEl.textContent = v + '%';
+    gpuEl.className = 'bar-stat-val' + statClass(v, 50, 80);
+  }
+}
+
+function updateMiniMode() {
+  if (!miniModeActive) return;
+  const miniEl = document.getElementById('mini-mode');
+  const presetEl = document.getElementById('mm-preset');
+  const tweaksEl = document.getElementById('mm-tweaks');
+  const statusEl = document.getElementById('mm-status');
+  const btnEl = document.getElementById('mm-activate-btn');
+  const cpuEl = document.getElementById('mm-cpu');
+  const ramEl = document.getElementById('mm-ram');
+  const gpuEl = document.getElementById('mm-gpu');
+
+  // Glow border while gaming mode is on
+  if (miniEl) miniEl.classList.toggle('active', !!state.active);
+
+  if (presetEl) presetEl.textContent = (state.preset || 'balanced').charAt(0).toUpperCase() + (state.preset || 'balanced').slice(1);
+  if (tweaksEl) {
+    const count = Object.values(state.tweaks).filter(Boolean).length;
+    tweaksEl.textContent = count + ' tweak' + (count !== 1 ? 's' : '') + ' selected';
+  }
+  if (statusEl) {
+    statusEl.textContent = state.active ? '● Gaming mode on' : '● Gaming mode off';
+    statusEl.className = 'mm-status' + (state.active ? ' active' : '');
+  }
+  if (btnEl) {
+    btnEl.textContent = state.active ? 'Deactivate' : 'Activate';
+    btnEl.className = 'mm-activate-btn' + (state.active ? ' deact' : '');
+  }
+
+  if (cpuEl && lastMetrics.cpu !== undefined) {
+    const v = Math.round(lastMetrics.cpu);
+    cpuEl.textContent = v + '%';
+    cpuEl.className = 'mm-stat-val' + (v > 80 ? ' danger' : v > 50 ? ' warn' : '');
+    renderSparkline('mm-cpu-spark', cpuHistory, v > 80 ? '#ed1c24' : v > 50 ? '#f0a500' : 'var(--acc)', 12);
+  }
+  if (ramEl && lastMetrics.ramPct !== undefined) {
+    const v = Math.round(lastMetrics.ramPct);
+    ramEl.textContent = v + '%';
+    ramEl.className = 'mm-stat-val' + (v > 80 ? ' danger' : v > 60 ? ' warn' : '');
+    renderSparkline('mm-ram-spark', ramHistory, v > 80 ? '#ed1c24' : v > 60 ? '#f0a500' : 'var(--acc)', 12);
+  }
+  if (gpuEl && lastMetrics.gpuUsage !== undefined && lastMetrics.gpuUsage > 0) {
+    const v = Math.round(lastMetrics.gpuUsage);
+    gpuEl.textContent = v + '%';
+    gpuEl.className = 'mm-stat-val' + (v > 80 ? ' danger' : v > 50 ? ' warn' : '');
+    renderSparkline('mm-gpu-spark', gpuHistory, v > 80 ? '#ed1c24' : v > 50 ? '#f0a500' : 'var(--acc)', 12);
+  }
+}
+
 async function init() {
   bindEvents();
 
@@ -41,6 +214,13 @@ async function init() {
     state.manualOverrides = config.manualOverrides || {};
     Object.assign(state.tweaks, state.manualOverrides);
     if (config.customRules) state.rules = config.customRules;
+    if (typeof config.windowOpacity === 'number') {
+      const pct = Math.round(config.windowOpacity * 100);
+      const slider = document.getElementById('opacity-slider');
+      const val = document.getElementById('opacity-val');
+      if (slider) slider.value = pct;
+      if (val) val.textContent = pct + '%';
+    }
     // Init custom rules state
     if (typeof CUSTOM_RULES !== 'undefined') {
       CUSTOM_RULES.forEach(r => {
@@ -121,7 +301,9 @@ async function init() {
 
   // Live metrics listener
   window.mgm.onMetricsData((data) => {
+    lastMetrics = data;
     updateMetricsUI(data);
+    updateLiveViews();
   });
 
   // Auto-updater status handler
@@ -195,6 +377,51 @@ function bindEvents() {
   // Check for updates button
   const btnUpdate = document.getElementById('btn-check-update');
   if (btnUpdate) btnUpdate.addEventListener('click', checkForUpdates);
+
+  // Mini mode toggle
+  document.getElementById('btn-mini-mode')?.addEventListener('click', enterMiniMode);
+  document.getElementById('mm-expand')?.addEventListener('click', () => exitMiniMode());
+  document.getElementById('mm-bar-btn')?.addEventListener('click', enterBarMode);
+  document.querySelector('.mm-stats')?.addEventListener('click', () => {
+    exitMiniMode();
+    const statsNav = document.getElementById('ni-stats');
+    if (statsNav) switchTab('stats', statsNav);
+  });
+  document.getElementById('mm-activate-btn')?.addEventListener('click', async () => {
+    if (state.active) {
+      await revertMode();
+    } else {
+      await applyMode();
+    }
+    updateLiveViews();
+  });
+
+  // Bar mode toggle
+  document.getElementById('bar-expand')?.addEventListener('click', enterMiniMode);
+  document.getElementById('bar-close')?.addEventListener('click', () => exitBarMode());
+  document.querySelector('.bar-stats')?.addEventListener('click', () => {
+    exitBarMode();
+    const statsNav = document.getElementById('ni-stats');
+    if (statsNav) switchTab('stats', statsNav);
+  });
+
+  // Quick-access opacity popover, shared between mini card and bar
+  document.getElementById('mm-opacity-btn')?.addEventListener('click', (e) => toggleOpacityPopover(e.currentTarget));
+  document.getElementById('bar-opacity-btn')?.addEventListener('click', (e) => toggleOpacityPopover(e.currentTarget));
+  document.getElementById('opacity-slider')?.addEventListener('input', (e) => {
+    const pct = parseInt(e.target.value, 10);
+    document.getElementById('opacity-val').textContent = pct + '%';
+    window.mgm.setWindowOpacity(pct / 100);
+  });
+  document.getElementById('opacity-popover-close')?.addEventListener('click', () => {
+    document.getElementById('opacity-popover').style.display = 'none';
+  });
+  document.addEventListener('click', (e) => {
+    const pop = document.getElementById('opacity-popover');
+    if (!pop || pop.style.display === 'none') return;
+    if (e.target.closest('#opacity-popover') || e.target.closest('#mm-opacity-btn') || e.target.closest('#bar-opacity-btn')) return;
+    pop.style.display = 'none';
+  });
 
   // Reset to defaults
   document.getElementById('btn-reset-defaults')?.addEventListener('click', () => {
@@ -346,7 +573,7 @@ function switchTab(name, el) {
   document.getElementById('page-title').textContent = titles[name] || name;
   if (name === 'settings') initSettingsTab();
   // Start/stop metrics polling based on active tab
-  if (name === 'stats') {
+  if (name === 'stats' || miniModeActive || barModeActive) {
     window.mgm.metricsStart();
   } else {
     window.mgm.metricsStop();
@@ -661,12 +888,12 @@ const cpuHistory = Array(20).fill(0);
 const ramHistory = Array(20).fill(0);
 const gpuHistory = Array(20).fill(0);
 
-function renderSparkline(containerId, history, color) {
+function renderSparkline(containerId, history, color, maxHeight = 28) {
   const el = document.getElementById(containerId);
   if (!el) return;
   const max = Math.max(...history, 1);
   el.innerHTML = history.map(v => {
-    const h = Math.max(2, Math.round((v / max) * 28));
+    const h = Math.max(2, Math.round((v / max) * maxHeight));
     return `<div class="spark-bar" style="height:${h}px;background:${color}"></div>`;
   }).join('');
 }
@@ -820,6 +1047,7 @@ async function applyMode(silent = false) {
 
   renderStats();
   renderPresetActive(); // re-render to show ON status
+  updateLiveViews();
 
   // Auto-minimize to tray
   setTimeout(() => window.mgm.minimizeToTray(), 800);
@@ -849,6 +1077,7 @@ async function revertMode(silent = false) {
 
   renderStats();
   renderPresetActive(); // re-render to show tag status
+  updateLiveViews();
   if (!silent) showToast('Reverted to normal');
 }
 
