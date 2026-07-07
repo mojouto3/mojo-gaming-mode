@@ -4,6 +4,19 @@ All notable changes to Mojo Gaming Mode are documented here.
 
 ---
 
+## [1.6.0] - 2026-06-29
+
+### Added
+
+- Auto-minimize to tray after Activate (0.8s delay)
+- Notification preferences in Settings - toggle activate, deactivate and update notifications independently
+- Session timer in Performance tab showing elapsed gaming session time in HH:MM:SS
+- Animated tray icon - blinks between on/off states while gaming mode is active
+
+### Notes
+
+- Minimize to tray on close and Start with Windows were already implemented in previous versions
+
 ## [1.5.0] - 2026-06-29
 
 ### Added
