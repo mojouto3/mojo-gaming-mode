@@ -239,6 +239,43 @@
               </div>
             </div>
 
+            <div class="section-header" style="margin-top:16px"><span class="sh-title">NOTIFICATIONS</span></div>
+            <div class="settings-card">
+              <div class="settings-row">
+                <div class="settings-info">
+                  <div class="settings-label">Gaming mode activated</div>
+                  <div class="settings-desc">Show notification when gaming mode is turned on.</div>
+                </div>
+                <label class="tog" id="tog-notif-activate">
+                  <input type="checkbox" id="cb-notif-activate" checked>
+                  <div class="tog-track"></div>
+                  <div class="tog-thumb"></div>
+                </label>
+              </div>
+              <div class="settings-row" style="margin-top:12px">
+                <div class="settings-info">
+                  <div class="settings-label">Gaming mode deactivated</div>
+                  <div class="settings-desc">Show notification when gaming mode is turned off.</div>
+                </div>
+                <label class="tog" id="tog-notif-deactivate">
+                  <input type="checkbox" id="cb-notif-deactivate" checked>
+                  <div class="tog-track"></div>
+                  <div class="tog-thumb"></div>
+                </label>
+              </div>
+              <div class="settings-row" style="margin-top:12px">
+                <div class="settings-info">
+                  <div class="settings-label">Update available</div>
+                  <div class="settings-desc">Show notification when a new version is available.</div>
+                </div>
+                <label class="tog" id="tog-notif-update">
+                  <input type="checkbox" id="cb-notif-update" checked>
+                  <div class="tog-track"></div>
+                  <div class="tog-thumb"></div>
+                </label>
+              </div>
+            </div>
+
             <div class="section-header" style="margin-top:16px"><span class="sh-title">RESET</span></div>
             <div class="settings-card" style="margin-top:0">
               <div class="settings-row">
@@ -325,6 +362,10 @@
               <div class="metric">
                 <div class="metric-val" id="sv-rules">0</div>
                 <div class="metric-label">Custom rules</div>
+              </div>
+              <div class="metric">
+                <div class="metric-val" id="sv-timer">00:00:00</div>
+                <div class="metric-label">Session time</div>
               </div>
             </div>
 

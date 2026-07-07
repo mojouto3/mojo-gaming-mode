@@ -25,6 +25,8 @@ contextBridge.exposeInMainWorld('mgm', {
   installUpdate: () => ipcRenderer.invoke('install-update'),
   getVersion: () => ipcRenderer.invoke('get-version'),
   getWhatsNew: () => ipcRenderer.invoke('get-whats-new'),
+  minimizeToTray: () => ipcRenderer.send('window-minimize'),
+  setNotifPrefs: (prefs) => ipcRenderer.send('set-notif-prefs', prefs),
   getStartupApps: () => ipcRenderer.invoke('get-startup-apps'),
   toggleStartupApp: (name, location, enable) => ipcRenderer.invoke('toggle-startup-app', name, location, enable)
 });
