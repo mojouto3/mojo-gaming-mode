@@ -19,6 +19,9 @@ A lightweight Windows gaming optimizer that automatically detects your GPU vendo
 - 15 safe and fully revertible system tweaks
 - Custom Rules engine with 25 quick rules in 5 categories
 - Global keyboard shortcuts: Ctrl+G (toggle), Ctrl+B/P/E (presets)
+- Mini mode: compact always-on-top card with live CPU / RAM / GPU stats
+- Bar mode: thin, draggable, always-on-top overlay for in-game use
+- Live window opacity control in mini mode and bar mode, remembered across restarts
 - Tray menu preset quick-switch with active tweak count in tooltip
 - First-launch onboarding with GPU detection and preset selection
 - What's new badge in sidebar after updates
@@ -96,6 +99,19 @@ Active custom rules combine with the selected preset into a dynamic Custom prese
 | Ctrl+B | Switch to Balanced preset |
 | Ctrl+P | Switch to Performance preset |
 | Ctrl+E | Switch to Esports preset |
+
+---
+
+## Overlay modes
+
+Two compact, always-on-top views for keeping an eye on your system while gaming.
+
+| Mode | Size | Use case |
+|------|------|----------|
+| Mini mode | 220x280, fixed position | Compact card with preset, status, and live CPU / RAM / GPU stats plus history sparklines |
+| Bar mode | 420x44, draggable | Thin overlay strip, grab it anywhere and drop it wherever suits your game's HUD |
+
+Both modes stay on top of other windows, and both share a live opacity slider (30 to 100 percent) accessible from the small droplet icon in either view. The opacity level is remembered the next time the app starts. Clicking the CPU / RAM / GPU stats in either mode jumps straight to the Performance tab in normal mode.
 
 ---
 
@@ -191,6 +207,7 @@ All PRs target `main` and require 1 review before merge.
 | v1.4.0 | Custom Rules engine UI, quick rules, dynamic Custom preset | Done |
 | v1.5.0 | Custom Rules execution, GPU temperature, extra rules | Done |
 | v1.6.0 | Auto-minimize, notification preferences, session timer, tray animation | Done |
+| v1.7.0 | Bar mode overlay, live opacity control, mini mode stats and polish | Done |
 | v2.0.0 | Scheduled optimization, game detection, custom tweak builder | Planned |
 
 ---

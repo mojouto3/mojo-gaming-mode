@@ -1754,3 +1754,331 @@ html, body {
   color: var(--text3);
 }
 .tog-sm { transform: scale(.8); transform-origin: right center; }
+
+/* Mini mode */
+.mini-mode {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid transparent;
+  transition: box-shadow .25s, border-color .25s;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Green glow while gaming mode is active */
+.mini-mode.active {
+  border-color: var(--acc);
+  box-shadow: 0 0 0 1px var(--acc), 0 0 18px rgba(var(--acc-rgb), 0.35);
+}
+
+.mm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--bord);
+  -webkit-app-region: drag;
+  flex-shrink: 0;
+}
+
+.mm-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text1);
+}
+
+.mm-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  -webkit-app-region: no-drag;
+}
+
+.mm-icon-btn {
+  background: none;
+  border: none;
+  color: var(--text3);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+}
+.mm-icon-btn:hover { color: var(--text1); }
+
+.mm-expand {
+  background: none;
+  border: none;
+  color: var(--text3);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px;
+  -webkit-app-region: no-drag;
+  display: flex;
+  align-items: center;
+}
+.mm-expand:hover { color: var(--text1); }
+
+.mm-body {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.mm-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mm-info-left { display: flex; flex-direction: column; gap: 2px; }
+
+.mm-preset {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text1);
+}
+
+.mm-tweaks {
+  font-size: 11px;
+  color: var(--text3);
+}
+
+.mm-status {
+  font-size: 11px;
+  color: var(--text3);
+}
+.mm-status.active { color: var(--acc); }
+
+.mm-activate-btn {
+  width: 100%;
+  background: var(--acc);
+  color: var(--bg);
+  border: none;
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity .15s;
+}
+.mm-activate-btn:hover { opacity: .85; }
+.mm-activate-btn:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: 2px;
+}
+.mm-activate-btn.deact {
+  background: #3a3d42;
+  border: none;
+  color: #f2f2f2;
+}
+.mm-activate-btn.deact:hover { background: #46494f; }
+
+.mm-stats {
+  display: flex;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.mm-stats:hover .mm-stat {
+  border-color: var(--acc);
+}
+
+.mm-stat {
+  flex: 1;
+  background: var(--bg2);
+  border-radius: 6px;
+  padding: 6px;
+  text-align: center;
+  border: 1px solid var(--bord);
+}
+
+.mm-stat-label {
+  font-size: 9px;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+
+.mm-stat-val {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text1);
+  margin-top: 2px;
+}
+.mm-stat-val.warn { color: #f0a500; }
+.mm-stat-val.danger { color: #ed1c24; }
+
+.mm-spark {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 1px;
+  height: 12px;
+  margin-top: 4px;
+  opacity: .7;
+}
+
+/* Bar mode: thin, draggable, always-on-top strip for in-game overlay use */
+.bar-mode {
+  position: fixed;
+  inset: 0;
+  background: var(--bg2);
+  z-index: 900;
+  border-radius: 8px;
+  border: 1px solid var(--bord);
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 12px;
+  padding: 0 10px;
+  overflow: hidden;
+  box-sizing: border-box;
+  -webkit-app-region: drag;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.bar-mode.active {
+  border-color: var(--acc);
+  box-shadow: 0 0 0 1px var(--acc), 0 0 14px rgba(var(--acc-rgb), 0.3);
+}
+
+.bar-drag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.bar-grip {
+  font-size: 13px;
+  color: var(--text3);
+  flex-shrink: 0;
+}
+
+.bar-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text3);
+  display: inline-block;
+  flex-shrink: 0;
+}
+.bar-dot.on { background: var(--acc); }
+
+.bar-preset {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 90px;
+}
+
+.bar-stats {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: baseline;
+  gap: 14px;
+  flex: 1 1 auto;
+  min-width: 0;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.bar-stat {
+  display: flex;
+  flex-shrink: 0;
+  align-items: baseline;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.bar-stat-label {
+  font-size: 10px;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: .3px;
+  white-space: nowrap;
+}
+
+.bar-stat-val {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text1);
+  white-space: nowrap;
+}
+.bar-stat-val.warn { color: #f0a500; }
+.bar-stat-val.danger { color: #ed1c24; }
+
+.bar-controls {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  -webkit-app-region: no-drag;
+}
+
+.bar-icon-btn {
+  background: none;
+  border: none;
+  color: var(--text3);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 2px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+.bar-icon-btn:hover { color: var(--text1); }
+
+/* Shared opacity popover for mini card + bar mode */
+.opacity-popover {
+  position: fixed;
+  z-index: 1000;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg2);
+  border: 1px solid var(--bord);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 11px;
+  color: var(--text2);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  -webkit-app-region: no-drag;
+}
+
+.opacity-popover input[type="range"] {
+  width: 100px;
+  accent-color: var(--acc);
+}
+
+.opacity-popover-close {
+  background: none;
+  border: none;
+  color: var(--text3);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.opacity-popover-close:hover { color: var(--text1); }
