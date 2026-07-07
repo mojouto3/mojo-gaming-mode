@@ -18,6 +18,8 @@ let tray = null;
 let gamingModeActive = false;
 let detectedGPU = { vendor: 'nvidia', model: 'Unknown GPU' };
 let activeTweakIds = []; // tweaks currently applied, used for revert
+let trayAnimInterval = null;
+let notifPrefs = { activate: true, deactivate: true, update: true };
 let currentPreset = 'balanced';
 
 const DEFAULT_CONFIG = {
@@ -471,8 +473,15 @@ ipcMain.handle('apply-mode', async (e, config) => {
     saveConfig(activeConfig);
     if (tray) {
       const onIcon = nativeImage.createFromPath(path.join(ASSETS_PATH, 'icons', 'tray-on.png'));
+      const offIcon = nativeImage.createFromPath(path.join(ASSETS_PATH, 'icons', 'tray-off.png'));
       tray.setImage(onIcon);
       tray.setToolTip(`Mojo Gaming Mode: ${activeTweakIds.length} tweaks active`);
+      // Start blink animation
+      let blinkState = true;
+      trayAnimInterval = setInterval(() => {
+        blinkState = !blinkState;
+        tray.setImage(blinkState ? onIcon : offIcon);
+      }, 800);
     }
 
     // Windows native notification
@@ -480,12 +489,14 @@ ipcMain.handle('apply-mode', async (e, config) => {
     const presetName = config.preset
       ? config.preset.charAt(0).toUpperCase() + config.preset.slice(1)
       : 'Gaming';
-    new Notification({
-      title: `Gaming Mode Activated: ${presetName}`,
-      body: `${activeCount} tweak${activeCount !== 1 ? 's' : ''} applied successfully. System optimized for gaming.`,
-      icon: path.join(ASSETS_PATH, 'icons', 'tray-on.png'),
-      silent: true
-    }).show();
+    if (notifPrefs.activate) {
+      new Notification({
+        title: `Gaming Mode Activated: ${presetName}`,
+        body: `${activeCount} tweak${activeCount !== 1 ? 's' : ''} applied successfully. System optimized for gaming.`,
+        icon: path.join(ASSETS_PATH, 'icons', 'tray-on.png'),
+        silent: true
+      }).show();
+    }
 
     return { success: true, results, failed };
   } catch (e) {
@@ -520,23 +531,31 @@ ipcMain.handle('revert-mode', async (e, config) => {
     gamingModeActive = false;
     updateTrayMenu();
     if (tray) {
+      // Stop blink animation
+      if (trayAnimInterval) { clearInterval(trayAnimInterval); trayAnimInterval = null; }
       const offIcon = nativeImage.createFromPath(path.join(ASSETS_PATH, 'icons', 'tray-off.png'));
       tray.setImage(offIcon);
       tray.setToolTip('Mojo Gaming Mode');
     }
 
     // Windows native notification
-    new Notification({
-      title: 'Gaming Mode Deactivated',
-      body: 'All tweaks reverted. System restored to normal.',
-      icon: path.join(ASSETS_PATH, 'icons', 'tray-off.png'),
-      silent: true
-    }).show();
+    if (notifPrefs.deactivate) {
+      new Notification({
+        title: 'Gaming Mode Deactivated',
+        body: 'All tweaks reverted. System restored to normal.',
+        icon: path.join(ASSETS_PATH, 'icons', 'tray-off.png'),
+        silent: true
+      }).show();
+    }
 
     return { success: true, results };
   } catch (e) {
     return { success: false, error: e.message };
   }
+});
+
+ipcMain.on('set-notif-prefs', (e, prefs) => {
+  notifPrefs = { ...notifPrefs, ...prefs };
 });
 
 ipcMain.handle('set-autostart', (e, enabled) => {
@@ -599,11 +618,13 @@ function initAutoUpdater() {
   autoUpdater.on('update-available', (info) => {
     if (mainWindow && !mainWindow.isDestroyed())
       mainWindow.webContents.send('updater-status', { status: 'available', version: info.version });
-    new Notification({
-      title: 'Mojo Gaming Mode',
-      body: `v${info.version} is available. Open the app to download.`,
-      icon: path.join(ASSETS_PATH, 'icons', 'icon.ico')
-    }).show();
+    if (notifPrefs.update) {
+      new Notification({
+        title: 'Mojo Gaming Mode',
+        body: `v${info.version} is available. Open the app to download.`,
+        icon: path.join(ASSETS_PATH, 'icons', 'icon.ico')
+      }).show();
+    }
   });
 
   autoUpdater.on('update-not-available', () => {
