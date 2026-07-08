@@ -2082,3 +2082,101 @@ html, body {
   flex-shrink: 0;
 }
 .opacity-popover-close:hover { color: var(--text1); }
+
+/* Before/after activation impact toast */
+.toast-impact {
+  white-space: normal;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.toast-impact-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.toast-impact-stats {
+  display: flex;
+  gap: 14px;
+  font-weight: 500;
+  opacity: .9;
+}
+
+.toast-impact-stats b { font-weight: 700; }
+.toast-impact-stats b.better { text-decoration: underline; }
+
+/* Last activation impact card, Performance tab */
+.impact-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.impact-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.impact-card-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text1);
+}
+
+.impact-card-time {
+  font-size: 11px;
+  color: var(--text3);
+}
+
+.impact-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.impact-stat {
+  background: var(--bg2);
+  border-radius: 6px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.impact-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text3);
+}
+
+.impact-values {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.impact-before {
+  color: var(--text3);
+  text-decoration: line-through;
+}
+
+.impact-after {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text1);
+}
+
+.impact-after.better { color: var(--acc); }

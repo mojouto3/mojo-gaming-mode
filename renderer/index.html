@@ -314,6 +314,39 @@
 
           <div id="tab-stats" class="tab-panel">
 
+            <div class="impact-card" id="activation-impact-card" style="display:none">
+              <div class="impact-card-header">
+                <span class="impact-card-title">Last activation impact</span>
+                <span class="impact-card-time" id="impact-time"></span>
+              </div>
+              <div class="impact-card-grid">
+                <div class="impact-stat">
+                  <div class="impact-label">CPU</div>
+                  <div class="impact-values">
+                    <span class="impact-before" id="impact-cpu-before">--</span>
+                    <i class="ti ti-arrow-right"></i>
+                    <span class="impact-after" id="impact-cpu-after">--</span>
+                  </div>
+                </div>
+                <div class="impact-stat">
+                  <div class="impact-label">RAM</div>
+                  <div class="impact-values">
+                    <span class="impact-before" id="impact-ram-before">--</span>
+                    <i class="ti ti-arrow-right"></i>
+                    <span class="impact-after" id="impact-ram-after">--</span>
+                  </div>
+                </div>
+                <div class="impact-stat">
+                  <div class="impact-label">GPU</div>
+                  <div class="impact-values">
+                    <span class="impact-before" id="impact-gpu-before">--</span>
+                    <i class="ti ti-arrow-right"></i>
+                    <span class="impact-after" id="impact-gpu-after">--</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div class="section-header">
               <span class="sh-title">SYSTEM RESOURCES</span>
               <span class="live-pill"><span class="live-dot-anim"></span>LIVE</span>
