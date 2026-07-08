@@ -3,6 +3,7 @@
   <h1 align="center">Mojo Gaming Mode</h1>
 </p>
 
+[![CI](https://github.com/mojouto3/mojo-gaming-mode/actions/workflows/ci.yml/badge.svg)](https://github.com/mojouto3/mojo-gaming-mode/actions/workflows/ci.yml)
 [![Latest Release](https://img.shields.io/github/v/release/mojouto3/mojo-gaming-mode?label=version&color=76b900)](https://github.com/mojouto3/mojo-gaming-mode/releases/latest)
 [![License](https://img.shields.io/github/license/mojouto3/mojo-gaming-mode?color=76b900)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows-76b900)](https://github.com/mojouto3/mojo-gaming-mode)
