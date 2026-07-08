@@ -48,6 +48,24 @@ while ($true) {
 }
 `;
 
+const PS_SNAPSHOT_SCRIPT = `
+$ProgressPreference = 'SilentlyContinue'
+$cpu = [math]::Round((Get-CimInstance -ClassName Win32_Processor | Measure-Object -Property LoadPercentage -Average).Average, 1)
+$os = Get-CimInstance -ClassName Win32_OperatingSystem
+$ramTotal = [math]::Round($os.TotalVisibleMemorySize / 1MB, 1)
+$ramFree = [math]::Round($os.FreePhysicalMemory / 1MB, 1)
+$ramUsed = [math]::Round($ramTotal - $ramFree, 1)
+$ramPct = [math]::Round(($ramUsed / $ramTotal) * 100, 1)
+$gpuUsage = 0
+$nvidiaSmi = Get-Command 'nvidia-smi' -ErrorAction SilentlyContinue
+if ($nvidiaSmi) {
+  $smi = & nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>$null
+  if ($smi) { $gpuUsage = [int]$smi.Trim() }
+}
+$result = @{ cpu=$cpu; ramPct=$ramPct; ramUsed=$ramUsed; ramTotal=$ramTotal; gpuUsage=$gpuUsage } | ConvertTo-Json -Compress
+Write-Output $result
+`;
+
 function start(callback) {
   if (isRunning) return;
   isRunning = true;
@@ -92,4 +110,39 @@ function stop() {
   onDataCallback = null;
 }
 
-module.exports = { start, stop };
+function getSnapshot() {
+  return new Promise((resolve, reject) => {
+    const encoded = Buffer.from(PS_SNAPSHOT_SCRIPT, 'utf16le').toString('base64');
+    const snap = spawn('powershell.exe', [
+      '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass',
+      '-EncodedCommand', encoded
+    ], {
+      windowsHide: true,
+      stdio: ['ignore', 'pipe', 'ignore']
+    });
+
+    let output = '';
+    const timeout = setTimeout(() => {
+      snap.kill();
+      reject(new Error('metrics snapshot timed out'));
+    }, 6000);
+
+    snap.stdout.on('data', (data) => { output += data.toString(); });
+
+    snap.on('close', () => {
+      clearTimeout(timeout);
+      try {
+        resolve(JSON.parse(output.trim()));
+      } catch (e) {
+        reject(e);
+      }
+    });
+
+    snap.on('error', (err) => {
+      clearTimeout(timeout);
+      reject(err);
+    });
+  });
+}
+
+module.exports = { start, stop, getSnapshot };
