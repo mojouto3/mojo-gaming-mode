@@ -11,5 +11,5 @@ jobs:
       - name: Send Discord notification
         run: |
           curl -H "Content-Type: application/json" \
-            -d "{\"embeds\":[{\"title\":\"Mojo Gaming Mode ${{ github.event.release.tag_name }}\",\"description\":\"A new version of Mojo Gaming Mode is available.\",\"url\":\"${{ github.event.release.html_url }}\",\"color\":7843072,\"fields\":[{\"name\":\"Download\",\"value\":\"[Get the installer](${{ github.event.release.html_url }})\",\"inline\":true},{\"name\":\"Repository\",\"value\":\"[mojouto3/mojo-gaming-mode](https://github.com/mojouto3/mojo-gaming-mode)\",\"inline\":true}],\"footer\":{\"text\":\"mojomultimedia\"}}]}" \
+            -d "{\"embeds\":[{\"title\":\"Mojo Gaming Mode ${{ github.event.release.tag_name }}\",\"description\":\"A new version of Mojo Gaming Mode is available.\",\"url\":\"${{ github.event.release.html_url }}\",\"color\":7843072,\"image\":{\"url\":\"https://raw.githubusercontent.com/mojouto3/mojo-gaming-mode/main/assets/social-preview.png\"},\"fields\":[{\"name\":\"Download\",\"value\":\"[Get the installer](${{ github.event.release.html_url }})\",\"inline\":true},{\"name\":\"Repository\",\"value\":\"[mojouto3/mojo-gaming-mode](https://github.com/mojouto3/mojo-gaming-mode)\",\"inline\":true}],\"footer\":{\"text\":\"mojomultimedia\"}}]}" \
             "${{ secrets.DISCORD_WEBHOOK_URL }}"
