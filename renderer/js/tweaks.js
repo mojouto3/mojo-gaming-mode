@@ -57,6 +57,38 @@ const TWEAKS = {
       cmd: 'Registry: MSISupported=1 under GPU device key',
       tag: 'r',
       presets: { balanced: false, performance: false, esports: true }
+    },
+    {
+      id: 'focusassist',
+      name: 'Focus Assist (notifications) off',
+      desc: 'Suppresses Windows notifications while gaming mode is active.',
+      cmd: 'Registry: DisableNotificationCenter=1',
+      tag: 's',
+      presets: { balanced: false, performance: true, esports: true }
+    },
+    {
+      id: 'pointerprecision',
+      name: 'Enhanced Pointer Precision off',
+      desc: 'Disables mouse acceleration for consistent, 1:1 aim.',
+      cmd: 'Registry: HKCU\\Control Panel\\Mouse',
+      tag: 'a',
+      presets: { balanced: false, performance: false, esports: true }
+    },
+    {
+      id: 'winupdate',
+      name: 'Windows Update pause',
+      desc: "Pauses Windows Update for the gaming session so a background download or install doesn't interrupt you.",
+      cmd: 'sc stop wuauserv & sc config wuauserv start=disabled',
+      tag: 'a',
+      presets: { balanced: false, performance: true, esports: true }
+    },
+    {
+      id: 'usbsuspend',
+      name: 'USB selective suspend off',
+      desc: 'Stops USB devices like your mouse and keyboard from suspending, removing wake-up latency.',
+      cmd: 'powercfg USB selective suspend setting',
+      tag: 's',
+      presets: { balanced: false, performance: true, esports: true }
     }
   ],
   ov: [
@@ -125,6 +157,14 @@ const TWEAKS = {
       cmd: 'Registry: TcpAckFrequency=1, TCPNoDelay=1',
       tag: 'r',
       presets: { balanced: false, performance: false, esports: true }
+    },
+    {
+      id: 'nicpower',
+      name: 'Network adapter power-saving off',
+      desc: 'Prevents the network adapter from powering down mid-session, reducing micro-stutter and packet loss.',
+      cmd: 'Set-NetAdapterPowerManagement -AllowComputerToTurnOffDevice Disabled',
+      tag: 's',
+      presets: { balanced: false, performance: true, esports: true }
     }
   ]
 };

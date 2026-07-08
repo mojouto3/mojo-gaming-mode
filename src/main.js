@@ -98,7 +98,12 @@ const DEFAULT_CONFIG = {
     discord: false,
     telemetry: false,
     fso: false,
-    hpet: false
+    hpet: false,
+    focusassist: false,
+    pointerprecision: false,
+    winupdate: false,
+    nicpower: false,
+    usbsuspend: false
   },
   customRules: []
 };
