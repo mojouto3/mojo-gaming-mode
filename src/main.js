@@ -183,6 +183,7 @@ function createWindow() {
   mainWindow.on('close', (e) => {
     e.preventDefault();
     metrics.stop();
+    metrics.stopPing();
     mainWindow.hide();
   });
 
@@ -350,7 +351,7 @@ app.on('window-all-closed', (e) => {
 });
 
 app.on('quit', () => {
-  try { metrics.stop(); } catch(e) {}
+  try { metrics.stop(); metrics.stopPing(); } catch(e) {}
 });
 
 app.on('activate', () => {
@@ -763,6 +764,48 @@ ipcMain.handle('get-metrics-snapshot', async () => {
   } catch (e) {
     return null;
   }
+});
+
+ipcMain.handle('export-custom-rules', async (e, jsonContent) => {
+  try {
+    const result = await dialog.showSaveDialog(mainWindow, {
+      title: 'Export Custom Rules',
+      defaultPath: 'mgm-custom-rules.json',
+      filters: [{ name: 'JSON', extensions: ['json'] }]
+    });
+    if (result.canceled || !result.filePath) return { success: false, canceled: true };
+    fs.writeFileSync(result.filePath, jsonContent, 'utf8');
+    return { success: true, path: result.filePath };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('import-custom-rules', async () => {
+  try {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: 'Import Custom Rules',
+      filters: [{ name: 'JSON', extensions: ['json'] }],
+      properties: ['openFile']
+    });
+    if (result.canceled || !result.filePaths.length) return { success: false, canceled: true };
+    const content = fs.readFileSync(result.filePaths[0], 'utf8');
+    return { success: true, content };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.on('ping-start', () => {
+  metrics.startPing((data) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('ping-data', data);
+    }
+  });
+});
+
+ipcMain.on('ping-stop', () => {
+  metrics.stopPing();
 });
 
 ipcMain.on('set-mini-mode', (e, enabled) => {

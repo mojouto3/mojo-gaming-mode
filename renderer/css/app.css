@@ -1907,9 +1907,10 @@ html, body {
 
 .mm-stat-label {
   font-size: 9px;
-  color: var(--text3);
+  color: var(--acc);
   text-transform: uppercase;
   letter-spacing: .5px;
+  opacity: .8;
 }
 
 .mm-stat-val {
@@ -2013,10 +2014,11 @@ html, body {
 
 .bar-stat-label {
   font-size: 10px;
-  color: var(--text3);
+  color: var(--acc);
   text-transform: uppercase;
   letter-spacing: .3px;
   white-space: nowrap;
+  opacity: .8;
 }
 
 .bar-stat-val {
@@ -2180,3 +2182,14 @@ html, body {
 }
 
 .impact-after.better { color: var(--acc); }
+
+.cr-io-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.cr-io-row .btn-restore {
+  flex: 1;
+  justify-content: center;
+}
