@@ -307,6 +307,11 @@ async function init() {
     updateLiveViews();
   });
 
+  // Live ping listener (Performance tab only)
+  window.mgm.onPingData((data) => {
+    updatePingUI(data);
+  });
+
   // Auto-updater status handler
   window.mgm.onUpdaterStatus((data) => {
     handleUpdaterStatus(data);
@@ -356,6 +361,8 @@ function bindEvents() {
 
   // Rules
   document.getElementById('btn-add-rule').addEventListener('click', openModal);
+  document.getElementById('btn-export-rules')?.addEventListener('click', exportCustomRulesToFile);
+  document.getElementById('btn-import-rules')?.addEventListener('click', importCustomRulesFromFile);
   document.getElementById('modal-close').addEventListener('click', closeModal);
   document.getElementById('btn-modal-cancel').addEventListener('click', closeModal);
   document.getElementById('btn-modal-ok').addEventListener('click', saveRule);
@@ -579,6 +586,12 @@ function switchTab(name, el) {
     window.mgm.metricsStart();
   } else {
     window.mgm.metricsStop();
+  }
+  // Ping monitor only runs while the Performance tab itself is open
+  if (name === 'stats') {
+    window.mgm.pingStart();
+  } else {
+    window.mgm.pingStop();
   }
 }
 
@@ -889,6 +902,7 @@ function renderStats() {
 const cpuHistory = Array(20).fill(0);
 const ramHistory = Array(20).fill(0);
 const gpuHistory = Array(20).fill(0);
+const pingHistory = Array(20).fill(0);
 
 function renderSparkline(containerId, history, color, maxHeight = 28) {
   const el = document.getElementById(containerId);
@@ -908,6 +922,29 @@ function toggleChanges() {
   body.classList.toggle('open', !isOpen);
   body.classList.toggle('collapsed', isOpen);
   arrow.classList.toggle('open', !isOpen);
+}
+
+function updatePingUI(data) {
+  if (!data) return;
+  const pingVal = document.getElementById('ping-val');
+  const pingBar = document.getElementById('ping-bar');
+  const pingSub = document.getElementById('ping-sub');
+  if (pingVal && data.ping !== undefined) {
+    const v = Math.round(data.ping);
+    if (v <= 0) {
+      pingVal.textContent = 'N/A';
+      pingVal.className = 'gauge-big-val danger';
+      if (pingSub) pingSub.textContent = 'No response';
+      return;
+    }
+    pingVal.textContent = v + 'ms';
+    pingVal.className = 'gauge-big-val' + (v > 100 ? ' danger' : v > 50 ? ' warn' : '');
+    const pingColor = v > 100 ? '#ed1c24' : v > 50 ? '#f0a500' : 'var(--acc)';
+    if (pingBar) { pingBar.style.width = Math.min(100, v) + '%'; pingBar.style.background = pingColor; }
+    if (pingSub) pingSub.textContent = v > 100 ? 'High latency' : v > 50 ? 'Medium latency' : 'Good';
+    pingHistory.shift(); pingHistory.push(v);
+    renderSparkline('ping-spark', pingHistory, pingColor);
+  }
 }
 
 function updateMetricsUI(data) {
@@ -1155,6 +1192,68 @@ function saveRule() {
   renderStats();
   persistConfig();
   showToast('Rule added');
+}
+
+function exportCustomRulesToFile() {
+  const quickRuleIds = typeof CUSTOM_RULES !== 'undefined' ? CUSTOM_RULES.map(r => r.id) : Object.keys(customRulesState);
+  const quickRules = {};
+  quickRuleIds.forEach(id => { quickRules[id] = !!customRulesState[id]; });
+
+  const payload = {
+    app: 'mojo-gaming-mode',
+    exportType: 'custom-rules',
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    quickRules,
+    customRules: state.rules
+  };
+
+  window.mgm.exportCustomRules(JSON.stringify(payload, null, 2)).then((result) => {
+    if (result.canceled) return;
+    showToast(result.success ? 'Custom rules exported' : 'Export failed');
+  });
+}
+
+async function importCustomRulesFromFile() {
+  const result = await window.mgm.importCustomRules();
+  if (result.canceled) return;
+  if (!result.success) { showToast('Import failed - could not read file'); return; }
+
+  let data;
+  try {
+    data = JSON.parse(result.content);
+  } catch (e) {
+    showToast('Import failed - invalid JSON');
+    return;
+  }
+
+  if (!data || data.exportType !== 'custom-rules' || typeof data.quickRules !== 'object' || data.quickRules === null) {
+    showToast('Import failed - not a Mojo Gaming Mode rules file');
+    return;
+  }
+
+  // Only accept custom rule entries with the expected shape
+  const importedCustomRules = Array.isArray(data.customRules)
+    ? data.customRules.filter(r => r && typeof r.name === 'string' && typeof r.type === 'string' && typeof r.target === 'string')
+    : [];
+
+  // Only accept quick-rule ids that actually exist in this build, so an
+  // export from a future version with new rules can't set unknown ids
+  const knownIds = typeof CUSTOM_RULES !== 'undefined' ? new Set(CUSTOM_RULES.map(r => r.id)) : null;
+  let appliedCount = 0;
+  Object.entries(data.quickRules).forEach(([id, val]) => {
+    if (knownIds && !knownIds.has(id)) return;
+    customRulesState[id] = !!val;
+    appliedCount++;
+  });
+
+  state.rules = importedCustomRules;
+
+  renderCustomRules();
+  renderRules();
+  renderStats();
+  await persistConfig();
+  showToast(`Imported ${appliedCount} quick rule(s), ${importedCustomRules.length} custom rule(s)`);
 }
 
 function deleteRule(index) {
