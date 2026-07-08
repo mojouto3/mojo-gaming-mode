@@ -101,6 +101,69 @@ function start(callback) {
   });
 }
 
+const PING_TARGET = '8.8.8.8';
+const PS_PING_SCRIPT = `
+$ProgressPreference = 'SilentlyContinue'
+while ($true) {
+  $ping = 0
+  Try {
+    $result = Test-Connection -ComputerName ${PING_TARGET} -Count 1 -ErrorAction SilentlyContinue
+    if ($result) { $ping = [int]$result.ResponseTime }
+  } Catch {}
+  $result = @{ ping=$ping } | ConvertTo-Json -Compress
+  Write-Output $result
+  Start-Sleep -Seconds 3
+}
+`;
+
+let pingProcess = null;
+let onPingCallback = null;
+let pingRunning = false;
+
+function startPing(callback) {
+  if (pingRunning) return;
+  pingRunning = true;
+  onPingCallback = callback;
+
+  const encoded = Buffer.from(PS_PING_SCRIPT, 'utf16le').toString('base64');
+  pingProcess = spawn('powershell.exe', [
+    '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass',
+    '-EncodedCommand', encoded
+  ], {
+    windowsHide: true,
+    stdio: ['ignore', 'pipe', 'ignore']
+  });
+
+  let buffer = '';
+  pingProcess.stdout.on('data', (data) => {
+    buffer += data.toString();
+    const lines = buffer.split('\n');
+    buffer = lines.pop();
+    lines.forEach(line => {
+      const trimmed = line.trim();
+      if (!trimmed) return;
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (onPingCallback) onPingCallback(parsed);
+      } catch (e) {}
+    });
+  });
+
+  pingProcess.on('close', () => {
+    pingRunning = false;
+    pingProcess = null;
+  });
+}
+
+function stopPing() {
+  if (pingProcess) {
+    pingProcess.kill();
+    pingProcess = null;
+  }
+  pingRunning = false;
+  onPingCallback = null;
+}
+
 function stop() {
   if (psProcess) {
     psProcess.kill();
@@ -145,4 +208,4 @@ function getSnapshot() {
   });
 }
 
-module.exports = { start, stop, getSnapshot };
+module.exports = { start, stop, getSnapshot, startPing, stopPing };
