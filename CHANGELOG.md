@@ -4,6 +4,14 @@ All notable changes to Mojo Gaming Mode are documented here.
 
 ---
 
+## [1.9.0] - 2026-07-10
+
+### Added
+
+- Network latency monitor in the Performance tab (closes #45): pings 8.8.8.8 every 3 seconds, color-coded (green under 50ms, amber 50 to 100ms, red over 100ms), with sparkline history. Runs independently from the CPU / RAM / GPU polling loop and is only active while the Performance tab itself is open, including when mini mode or bar mode is showing
+- Import and export custom rules as JSON (closes #46): export button saves the current Quick Rules toggles and any custom-built rules to a shareable `.json` file, import restores them from a file with validation against unknown or malformed entries
+- Mini mode and bar mode: CPU / RAM / GPU labels now use the GPU vendor accent color instead of plain gray, for quicker visual scanning
+
 ## [1.8.0] - 2026-07-09
 
 ### Added

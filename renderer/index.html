@@ -153,6 +153,10 @@
           </div>
 
           <div id="tab-rules" class="tab-panel">
+            <div class="cr-io-row">
+              <button class="btn-restore" id="btn-export-rules"><i class="ti ti-download"></i> Export</button>
+              <button class="btn-restore" id="btn-import-rules"><i class="ti ti-upload"></i> Import</button>
+            </div>
             <div class="section-header" style="margin-bottom:8px">
               <span class="sh-title">QUICK RULES</span>
               <span class="sh-count" id="cr-active-count">0 active</span>
@@ -380,6 +384,13 @@
                 <div class="gauge-bar-wrap-big"><div class="gauge-bar-fill" id="gpu-temp-bar" style="width:0%"></div></div>
                 <div class="gauge-big-sub" id="gpu-temp-sub">Waiting...</div>
                 <div class="gauge-sparkline" id="gpu-temp-spark"></div>
+              </div>
+              <div class="gauge-card-big">
+                <div class="gauge-big-label">PING</div>
+                <div class="gauge-big-val" id="ping-val">--</div>
+                <div class="gauge-bar-wrap-big"><div class="gauge-bar-fill" id="ping-bar" style="width:0%"></div></div>
+                <div class="gauge-big-sub" id="ping-sub">Waiting...</div>
+                <div class="gauge-sparkline" id="ping-spark"></div>
               </div>
             </div>
 
