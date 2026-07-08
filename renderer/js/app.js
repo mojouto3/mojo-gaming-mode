@@ -24,6 +24,7 @@ ALL_TWEAKS.forEach(t => { state.tweaks[t.id] = t.presets.balanced; });
 let miniModeActive = false;
 let barModeActive = false;
 let lastMetrics = {};
+let lastActivationImpact = null;
 
 function anyLiveViewActive() {
   const statsTabActive = document.getElementById('tab-stats')?.classList.contains('active');
@@ -350,8 +351,8 @@ function bindEvents() {
   });
 
   // Activate / Revert
-  document.getElementById('btn-activate').addEventListener('click', applyMode);
-  document.getElementById('btn-revert').addEventListener('click', revertMode);
+  document.getElementById('btn-activate').addEventListener('click', onActivateClick);
+  document.getElementById('btn-revert').addEventListener('click', onRevertClick);
 
   // Rules
   document.getElementById('btn-add-rule').addEventListener('click', openModal);
@@ -572,6 +573,7 @@ function switchTab(name, el) {
   const titles = { presets: 'Presets', tweaks: 'Tweaks', rules: 'Custom rules', stats: 'Performance', settings: 'Settings' };
   document.getElementById('page-title').textContent = titles[name] || name;
   if (name === 'settings') initSettingsTab();
+  if (name === 'stats') renderActivationImpact();
   // Start/stop metrics polling based on active tab
   if (name === 'stats' || miniModeActive || barModeActive) {
     window.mgm.metricsStart();
@@ -1014,11 +1016,42 @@ function toggleTweak(id, val) {
   persistConfig();
 }
 
+function averageSnapshots(a, b) {
+  if (!a || !b) return a || b || null;
+  return {
+    cpu: (a.cpu + b.cpu) / 2,
+    ramPct: (a.ramPct + b.ramPct) / 2,
+    gpuUsage: (a.gpuUsage + b.gpuUsage) / 2
+  };
+}
+
+async function takeAveragedSnapshot() {
+  const [s1, s2] = await Promise.all([
+    window.mgm.getMetricsSnapshot().catch(() => null),
+    new Promise(r => setTimeout(r, 400)).then(() => window.mgm.getMetricsSnapshot().catch(() => null))
+  ]);
+  return averageSnapshots(s1, s2);
+}
+
+// Bug (found 2026-07): addEventListener passes the DOM click Event as the
+// first argument to its handler. applyMode(silent = false) and
+// revertMode(silent = false) treat that first argument as the silent flag.
+// A DOM Event object is always truthy, so binding these functions directly
+// as listeners (addEventListener('click', applyMode)) silently forced
+// silent=true on every real button click, suppressing the activation
+// toast entirely, with no error and no visible symptom other than the
+// toast never appearing. Always wrap in a named handler that calls the
+// function with explicit arguments instead of passing it directly.
+function onActivateClick() { applyMode(); }
+function onRevertClick() { revertMode(); }
+
 async function applyMode(silent = false) {
   const btn = document.getElementById('btn-activate');
   btn.disabled = true;
   btn.innerHTML = '<i class="ti ti-loader"></i> Applying...';
   if (!silent) showToast('Applying tweaks...');
+
+  const beforeSnapshot = await takeAveragedSnapshot();
 
   const result = await window.mgm.applyMode({ tweaks: state.tweaks, rules: state.rules, preset: state.preset, customRulesActive: customRulesState });
   btn.disabled = false;
@@ -1037,11 +1070,27 @@ async function applyMode(silent = false) {
 
   btn.className = 'btn-activate deact';
   btn.innerHTML = '<i class="ti ti-power"></i> Deactivate';
-  btn.removeEventListener('click', applyMode);
-  btn.addEventListener('click', revertMode);
+  // Must remove/add the same named function references used at bind time
+  // (onActivateClick/onRevertClick), not applyMode/revertMode directly,
+  // or removeEventListener silently fails to find a match and both
+  // handlers stay attached at once.
+  btn.removeEventListener('click', onActivateClick);
+  btn.addEventListener('click', onRevertClick);
 
-  if (!silent) {
-    const failed = result.failed ? result.failed.length : 0;
+  const failed = result.failed ? result.failed.length : 0;
+  // Let the system settle after the tweak-applying PowerShell processes exit
+  // before reading the "after" numbers, or they read artificially high.
+  await new Promise(r => setTimeout(r, 1500));
+  const afterSnapshot = await takeAveragedSnapshot();
+  let showedImpactToast = false;
+  if (beforeSnapshot && afterSnapshot) {
+    lastActivationImpact = { before: beforeSnapshot, after: afterSnapshot, timestamp: Date.now() };
+    renderActivationImpact();
+    if (!silent) {
+      showActivationToast(beforeSnapshot, afterSnapshot, failed);
+      showedImpactToast = true;
+    }
+  } else if (!silent) {
     showToast(failed > 0 ? `Activated - ${failed} tweak(s) skipped` : 'Gaming mode activated');
   }
 
@@ -1049,8 +1098,9 @@ async function applyMode(silent = false) {
   renderPresetActive(); // re-render to show ON status
   updateLiveViews();
 
-  // Auto-minimize to tray
-  setTimeout(() => window.mgm.minimizeToTray(), 800);
+  // Auto-minimize to tray. Give the richer impact toast time to actually
+  // be read before the window disappears into the tray.
+  setTimeout(() => window.mgm.minimizeToTray(), showedImpactToast ? 5000 : 800);
 
   // Start session timer
   startSessionTimer();
@@ -1072,8 +1122,8 @@ async function revertMode(silent = false) {
 
   btn.className = 'btn-activate';
   btn.innerHTML = '<i class="ti ti-bolt"></i> Activate';
-  btn.removeEventListener('click', revertMode);
-  btn.addEventListener('click', applyMode);
+  btn.removeEventListener('click', onRevertClick);
+  btn.addEventListener('click', onActivateClick);
 
   renderStats();
   renderPresetActive(); // re-render to show tag status
@@ -1396,6 +1446,55 @@ function showToast(msg) {
   el.classList.add('show');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+function impactDelta(before, after) {
+  return { before: Math.round(before), after: Math.round(after), improved: after < before };
+}
+
+function showActivationToast(before, after, failedCount) {
+  const el = document.getElementById('toast');
+  const cpu = impactDelta(before.cpu, after.cpu);
+  const ram = impactDelta(before.ramPct, after.ramPct);
+  const gpu = impactDelta(before.gpuUsage, after.gpuUsage);
+  const statusLine = failedCount > 0 ? `Activated - ${failedCount} tweak(s) skipped` : 'Gaming mode activated';
+  el.innerHTML = `<div class="toast-impact">
+    <div class="toast-impact-title"><i class="ti ti-check"></i> ${statusLine}</div>
+    <div class="toast-impact-stats">
+      <span>CPU ${cpu.before}% <i class="ti ti-arrow-right"></i> <b class="${cpu.improved ? 'better' : ''}">${cpu.after}%</b></span>
+      <span>RAM ${ram.before}% <i class="ti ti-arrow-right"></i> <b class="${ram.improved ? 'better' : ''}">${ram.after}%</b></span>
+      <span>GPU ${gpu.before}% <i class="ti ti-arrow-right"></i> <b>${gpu.after}%</b></span>
+    </div>
+  </div>`;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.classList.remove('show'); el.innerHTML = ''; }, 6000);
+}
+
+function renderActivationImpact() {
+  const card = document.getElementById('activation-impact-card');
+  if (!card) return;
+  if (!lastActivationImpact) {
+    card.style.display = 'none';
+    return;
+  }
+  const { before, after, timestamp } = lastActivationImpact;
+  card.style.display = 'flex';
+  const timeEl = document.getElementById('impact-time');
+  if (timeEl) timeEl.textContent = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  const setStat = (prefix, beforeVal, afterVal, judge) => {
+    const beforeEl = document.getElementById(prefix + '-before');
+    const afterEl = document.getElementById(prefix + '-after');
+    if (beforeEl) beforeEl.textContent = Math.round(beforeVal) + '%';
+    if (afterEl) {
+      afterEl.textContent = Math.round(afterVal) + '%';
+      afterEl.className = 'impact-after' + (judge && afterVal < beforeVal ? ' better' : '');
+    }
+  };
+  setStat('impact-cpu', before.cpu, after.cpu, true);
+  setStat('impact-ram', before.ramPct, after.ramPct, true);
+  setStat('impact-gpu', before.gpuUsage, after.gpuUsage, false);
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
