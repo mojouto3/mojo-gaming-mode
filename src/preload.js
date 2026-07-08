@@ -15,6 +15,7 @@ contextBridge.exposeInMainWorld('mgm', {
   onTrayToggle: (cb) => ipcRenderer.on('tray-toggle-mode', (e, val) => cb(val)),
   metricsStart: () => ipcRenderer.send('metrics-start'),
   metricsStop: () => ipcRenderer.send('metrics-stop'),
+  getMetricsSnapshot: () => ipcRenderer.invoke('get-metrics-snapshot'),
   onMetricsData: (cb) => ipcRenderer.on('metrics-data', (e, data) => cb(data)),
   onUpdaterStatus: (cb) => ipcRenderer.on('updater-status', (e, data) => cb(data)),
   onTrayPresetSwitch: (cb) => ipcRenderer.on('tray-switch-preset', (e, preset) => cb(preset)),

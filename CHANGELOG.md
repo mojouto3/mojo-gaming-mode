@@ -4,6 +4,19 @@ All notable changes to Mojo Gaming Mode are documented here.
 
 ---
 
+## [1.8.0] - 2026-07-09
+
+### Added
+
+- Before/after performance snapshot on activation (closes #42): CPU, RAM, and GPU are read right before applying tweaks and again after, shown as a toast on activation and as a persistent "Last activation impact" card in the Performance tab
+- `metrics.js`: new `getSnapshot()` for a single averaged reading, separate from the existing continuous polling loop used by mini mode, bar mode, and the Performance tab
+
+### Fixed
+
+- Activation toast never appeared on a direct button click. `addEventListener('click', applyMode)` passes the DOM click Event as the function's first argument, which `applyMode(silent = false)` reads as the silent flag. An Event object is always truthy, so every real click silently ran as `silent = true` and suppressed the toast, with no error and no visible symptom besides the missing toast. The native Windows notification fired regardless, which is why this went unnoticed. Fixed by binding through named handlers (`onActivateClick`, `onRevertClick`) that call `applyMode()` / `revertMode()` with no arguments.
+- The Activate/Deactivate button swap used `removeEventListener('click', applyMode)` / `removeEventListener('click', revertMode)`, which stopped matching once the bug above was fixed with wrapped handlers, leaving both listeners attached at once. Fixed by using the same named handler references for both the add and the remove calls.
+- Before/after readings are now averaged from two samples 400ms apart, with a 1.5 second settle delay after tweaks finish, to reduce noise from the tweak-applying PowerShell processes still winding down.
+
 ## [1.7.0] - 2026-07-08
 
 ### Added

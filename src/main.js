@@ -757,6 +757,14 @@ ipcMain.on('metrics-stop', () => {
   metrics.stop();
 });
 
+ipcMain.handle('get-metrics-snapshot', async () => {
+  try {
+    return await metrics.getSnapshot();
+  } catch (e) {
+    return null;
+  }
+});
+
 ipcMain.on('set-mini-mode', (e, enabled) => {
   if (!mainWindow || mainWindow.isDestroyed()) return;
   if (enabled) {

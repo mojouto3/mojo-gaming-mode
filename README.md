@@ -16,6 +16,7 @@ A lightweight Windows gaming optimizer that automatically detects your GPU vendo
 
 - GPU auto-detection (NVIDIA, AMD, Intel) with matching vendor theme
 - Three presets: Balanced, Performance, Esports + dynamic Custom preset
+- Before/after performance snapshot on activation, shown as a toast and as a persistent card in the Performance tab
 - 15 safe and fully revertible system tweaks
 - Custom Rules engine with 25 quick rules in 5 categories
 - Global keyboard shortcuts: Ctrl+G (toggle), Ctrl+B/P/E (presets)
