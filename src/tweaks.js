@@ -115,6 +115,43 @@ const TWEAK_DEFINITIONS = {
     requiresAdmin: true,
     applyCmd: `$ifaces=Get-ChildItem 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces'; ForEach($i in $ifaces){Set-ItemProperty -Path $i.PSPath -Name 'TcpAckFrequency' -Value 1 -Type DWord -ErrorAction SilentlyContinue; Set-ItemProperty -Path $i.PSPath -Name 'TCPNoDelay' -Value 1 -Type DWord -ErrorAction SilentlyContinue}; Exit 0`,
     revertCmd: `$ifaces=Get-ChildItem 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces'; ForEach($i in $ifaces){Remove-ItemProperty -Path $i.PSPath -Name 'TcpAckFrequency' -ErrorAction SilentlyContinue; Remove-ItemProperty -Path $i.PSPath -Name 'TCPNoDelay' -ErrorAction SilentlyContinue}; Exit 0`
+  },
+
+  // ── ADDED (issue #56) ───────────────────────────────────────────────────────
+
+  focusassist: {
+    name: 'Focus Assist (notifications) off',
+    requiresAdmin: false,
+    applyCmd: `$p='HKCU:\\Software\\Policies\\Microsoft\\Windows\\Explorer'; If(!(Test-Path $p)){New-Item -Path $p -Force|Out-Null}; Set-ItemProperty -Path $p -Name 'DisableNotificationCenter' -Value 1 -Type DWord; Exit 0`,
+    revertCmd: `$p='HKCU:\\Software\\Policies\\Microsoft\\Windows\\Explorer'; If(Test-Path $p){Remove-ItemProperty -Path $p -Name 'DisableNotificationCenter' -ErrorAction SilentlyContinue}; Exit 0`
+  },
+
+  pointerprecision: {
+    name: 'Enhanced Pointer Precision off',
+    requiresAdmin: false,
+    applyCmd: `$p='HKCU:\\Control Panel\\Mouse'; Set-ItemProperty -Path $p -Name 'MouseSpeed' -Value '0' -Type String; Set-ItemProperty -Path $p -Name 'MouseThreshold1' -Value '0' -Type String; Set-ItemProperty -Path $p -Name 'MouseThreshold2' -Value '0' -Type String; Exit 0`,
+    revertCmd: `$p='HKCU:\\Control Panel\\Mouse'; Set-ItemProperty -Path $p -Name 'MouseSpeed' -Value '1' -Type String; Set-ItemProperty -Path $p -Name 'MouseThreshold1' -Value '6' -Type String; Set-ItemProperty -Path $p -Name 'MouseThreshold2' -Value '10' -Type String; Exit 0`
+  },
+
+  winupdate: {
+    name: 'Windows Update pause',
+    requiresAdmin: true,
+    applyCmd: `Stop-Service -Name 'wuauserv' -Force -ErrorAction SilentlyContinue; Set-Service -Name 'wuauserv' -StartupType Disabled -ErrorAction SilentlyContinue; Exit 0`,
+    revertCmd: `sc.exe config wuauserv start= demand; sc.exe start wuauserv; Exit 0`
+  },
+
+  nicpower: {
+    name: 'Network adapter power-saving off',
+    requiresAdmin: true,
+    applyCmd: `Get-NetAdapter | Where-Object {$_.Status -eq 'Up'} | ForEach-Object { Set-NetAdapterPowerManagement -Name $_.Name -AllowComputerToTurnOffDevice Disabled -ErrorAction SilentlyContinue }; Exit 0`,
+    revertCmd: `Get-NetAdapter | Where-Object {$_.Status -eq 'Up'} | ForEach-Object { Set-NetAdapterPowerManagement -Name $_.Name -AllowComputerToTurnOffDevice Enabled -ErrorAction SilentlyContinue }; Exit 0`
+  },
+
+  usbsuspend: {
+    name: 'USB selective suspend off',
+    requiresAdmin: true,
+    applyCmd: `powercfg /setacvalueindex SCHEME_CURRENT 2a737441-1930-4402-8d77-b2bebba308a3 48e6b7a6-50f5-4782-a5d4-53bb8f07e226 0; powercfg /setdcvalueindex SCHEME_CURRENT 2a737441-1930-4402-8d77-b2bebba308a3 48e6b7a6-50f5-4782-a5d4-53bb8f07e226 0; powercfg /setactive SCHEME_CURRENT; Exit 0`,
+    revertCmd: `powercfg /setacvalueindex SCHEME_CURRENT 2a737441-1930-4402-8d77-b2bebba308a3 48e6b7a6-50f5-4782-a5d4-53bb8f07e226 1; powercfg /setdcvalueindex SCHEME_CURRENT 2a737441-1930-4402-8d77-b2bebba308a3 48e6b7a6-50f5-4782-a5d4-53bb8f07e226 1; powercfg /setactive SCHEME_CURRENT; Exit 0`
   }
 
 };
