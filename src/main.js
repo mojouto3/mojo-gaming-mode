@@ -771,6 +771,14 @@ ipcMain.handle('get-metrics-snapshot', async () => {
   }
 });
 
+ipcMain.handle('get-ping-snapshot', async () => {
+  try {
+    return await metrics.getPingSnapshot();
+  } catch (e) {
+    return null;
+  }
+});
+
 ipcMain.handle('export-custom-rules', async (e, jsonContent) => {
   try {
     const result = await dialog.showSaveDialog(mainWindow, {
