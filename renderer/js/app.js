@@ -1062,12 +1062,22 @@ function averageSnapshots(a, b) {
   };
 }
 
+function averagePing(a, b) {
+  const valid = [a, b].filter(v => typeof v === 'number' && v > 0);
+  if (!valid.length) return 0;
+  return valid.reduce((sum, v) => sum + v, 0) / valid.length;
+}
+
 async function takeAveragedSnapshot() {
-  const [s1, s2] = await Promise.all([
+  const [s1, s2, p1, p2] = await Promise.all([
     window.mgm.getMetricsSnapshot().catch(() => null),
-    new Promise(r => setTimeout(r, 400)).then(() => window.mgm.getMetricsSnapshot().catch(() => null))
+    new Promise(r => setTimeout(r, 400)).then(() => window.mgm.getMetricsSnapshot().catch(() => null)),
+    window.mgm.getPingSnapshot().catch(() => null),
+    new Promise(r => setTimeout(r, 400)).then(() => window.mgm.getPingSnapshot().catch(() => null))
   ]);
-  return averageSnapshots(s1, s2);
+  const merged = averageSnapshots(s1, s2);
+  if (merged) merged.ping = averagePing(p1 && p1.ping, p2 && p2.ping);
+  return merged;
 }
 
 // Bug (found 2026-07): addEventListener passes the DOM click Event as the
@@ -1557,12 +1567,18 @@ function showActivationToast(before, after, failedCount) {
   const ram = impactDelta(before.ramPct, after.ramPct);
   const gpu = impactDelta(before.gpuUsage, after.gpuUsage);
   const statusLine = failedCount > 0 ? `Activated - ${failedCount} tweak(s) skipped` : 'Gaming mode activated';
+  let pingRow = '';
+  if (before.ping > 0 && after.ping > 0) {
+    const ping = impactDelta(before.ping, after.ping);
+    pingRow = `<span>PING ${ping.before}ms <i class="ti ti-arrow-right"></i> <b class="${ping.improved ? 'better' : ''}">${ping.after}ms</b></span>`;
+  }
   el.innerHTML = `<div class="toast-impact">
     <div class="toast-impact-title"><i class="ti ti-check"></i> ${statusLine}</div>
     <div class="toast-impact-stats">
       <span>CPU ${cpu.before}% <i class="ti ti-arrow-right"></i> <b class="${cpu.improved ? 'better' : ''}">${cpu.after}%</b></span>
       <span>RAM ${ram.before}% <i class="ti ti-arrow-right"></i> <b class="${ram.improved ? 'better' : ''}">${ram.after}%</b></span>
       <span>GPU ${gpu.before}% <i class="ti ti-arrow-right"></i> <b>${gpu.after}%</b></span>
+      ${pingRow}
     </div>
   </div>`;
   el.classList.add('show');
@@ -1582,18 +1598,28 @@ function renderActivationImpact() {
   const timeEl = document.getElementById('impact-time');
   if (timeEl) timeEl.textContent = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-  const setStat = (prefix, beforeVal, afterVal, judge) => {
+  const setStat = (prefix, beforeVal, afterVal, judge, unit = '%') => {
     const beforeEl = document.getElementById(prefix + '-before');
     const afterEl = document.getElementById(prefix + '-after');
-    if (beforeEl) beforeEl.textContent = Math.round(beforeVal) + '%';
+    if (beforeEl) beforeEl.textContent = Math.round(beforeVal) + unit;
     if (afterEl) {
-      afterEl.textContent = Math.round(afterVal) + '%';
+      afterEl.textContent = Math.round(afterVal) + unit;
       afterEl.className = 'impact-after' + (judge && afterVal < beforeVal ? ' better' : '');
     }
   };
   setStat('impact-cpu', before.cpu, after.cpu, true);
   setStat('impact-ram', before.ramPct, after.ramPct, true);
   setStat('impact-gpu', before.gpuUsage, after.gpuUsage, false);
+
+  const pingStat = document.getElementById('impact-ping-stat');
+  if (pingStat) {
+    if (before.ping > 0 && after.ping > 0) {
+      pingStat.style.display = 'flex';
+      setStat('impact-ping', before.ping, after.ping, true, 'ms');
+    } else {
+      pingStat.style.display = 'none';
+    }
+  }
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────

@@ -164,6 +164,52 @@ function stopPing() {
   onPingCallback = null;
 }
 
+const PS_PING_SNAPSHOT_SCRIPT = `
+$ProgressPreference = 'SilentlyContinue'
+$ping = 0
+Try {
+  $result = Test-Connection -ComputerName ${PING_TARGET} -Count 1 -ErrorAction SilentlyContinue
+  if ($result) { $ping = [int]$result.ResponseTime }
+} Catch {}
+$result = @{ ping=$ping } | ConvertTo-Json -Compress
+Write-Output $result
+`;
+
+function getPingSnapshot() {
+  return new Promise((resolve, reject) => {
+    const encoded = Buffer.from(PS_PING_SNAPSHOT_SCRIPT, 'utf16le').toString('base64');
+    const snap = spawn('powershell.exe', [
+      '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass',
+      '-EncodedCommand', encoded
+    ], {
+      windowsHide: true,
+      stdio: ['ignore', 'pipe', 'ignore']
+    });
+
+    let output = '';
+    const timeout = setTimeout(() => {
+      snap.kill();
+      reject(new Error('ping snapshot timed out'));
+    }, 6000);
+
+    snap.stdout.on('data', (data) => { output += data.toString(); });
+
+    snap.on('close', () => {
+      clearTimeout(timeout);
+      try {
+        resolve(JSON.parse(output.trim()));
+      } catch (e) {
+        reject(e);
+      }
+    });
+
+    snap.on('error', (err) => {
+      clearTimeout(timeout);
+      reject(err);
+    });
+  });
+}
+
 function stop() {
   if (psProcess) {
     psProcess.kill();
@@ -208,4 +254,4 @@ function getSnapshot() {
   });
 }
 
-module.exports = { start, stop, getSnapshot, startPing, stopPing };
+module.exports = { start, stop, getSnapshot, startPing, stopPing, getPingSnapshot };
