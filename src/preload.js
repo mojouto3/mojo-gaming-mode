@@ -16,6 +16,7 @@ contextBridge.exposeInMainWorld('mgm', {
   metricsStart: () => ipcRenderer.send('metrics-start'),
   metricsStop: () => ipcRenderer.send('metrics-stop'),
   getMetricsSnapshot: () => ipcRenderer.invoke('get-metrics-snapshot'),
+  getPingSnapshot: () => ipcRenderer.invoke('get-ping-snapshot'),
   pingStart: () => ipcRenderer.send('ping-start'),
   pingStop: () => ipcRenderer.send('ping-stop'),
   onPingData: (cb) => ipcRenderer.on('ping-data', (e, data) => cb(data)),
