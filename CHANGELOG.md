@@ -4,6 +4,17 @@ All notable changes to Mojo Gaming Mode are documented here.
 
 ---
 
+## [1.10.0] - 2026-07-11
+
+### Added
+
+- 5 new safe, fully revertible tweaks (closes #56, partial): Focus Assist off, Enhanced Pointer Precision off, Windows Update pause, network adapter power-saving off, USB selective suspend off. All individually verified, including crash-recovery revert testing
+- Before/after activation impact (toast and Performance tab card) now also captures ping, alongside CPU, RAM, and GPU. Previously the feature couldn't show the effect of network-latency tweaks like Nagle's algorithm or QoS packet scheduling, since those don't move CPU/RAM/GPU usage at all
+
+### Not included
+
+A launcher/downloader bandwidth throttle tweak (Steam, Epic, Battle.net, EA App, Ubisoft Connect, Riot updater) was built and extensively tested using Windows policy-based QoS (`New-NetQosPolicy`), but enforcement proved unreliable on a standalone (non-domain) setup despite the policy being created correctly every time. Left out of this release pending further research; details on issue #56.
+
 ## [1.9.0] - 2026-07-10
 
 ### Added

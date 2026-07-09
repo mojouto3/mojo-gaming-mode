@@ -20,7 +20,7 @@ A lightweight Windows gaming optimizer that automatically detects your GPU vendo
 - Before/after performance snapshot on activation, shown as a toast and as a persistent card in the Performance tab
 - Network latency monitor in the Performance tab, color-coded with sparkline history
 - Import and export custom rules as JSON, for backup or sharing between PCs
-- 15 safe and fully revertible system tweaks
+- 20 safe and fully revertible system tweaks
 - Custom Rules engine with 25 quick rules in 5 categories
 - Global keyboard shortcuts: Ctrl+G (toggle), Ctrl+B/P/E (presets)
 - Mini mode: compact always-on-top card with live CPU / RAM / GPU stats
@@ -214,6 +214,7 @@ All PRs target `main` and require 1 review before merge.
 | v1.7.0 | Bar mode overlay, live opacity control, mini mode stats and polish | Done |
 | v1.8.0 | Before/after activation performance snapshot | Done |
 | v1.9.0 | Network latency monitor, custom rules import/export | Done |
+| v1.10.0 | 5 new system tweaks, ping in before/after activation impact | Done |
 | v2.0.0 | Scheduled optimization, game detection, custom tweak builder | Planned |
 
 ---

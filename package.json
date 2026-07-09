@@ -1,6 +1,6 @@
 {
   "name": "mojo-gaming-mode",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "description": "A lightweight Windows gaming optimizer with GPU vendor themes and safe system tweaks",
   "main": "src/main.js",
   "author": "mojouto3",
