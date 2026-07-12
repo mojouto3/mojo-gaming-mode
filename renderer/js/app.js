@@ -670,6 +670,19 @@ function renderTweaks() {
   updateCategoryCount('win', TWEAKS.win);
   updateCategoryCount('ov', TWEAKS.ov);
   updateCategoryCount('net', TWEAKS.net);
+
+  // Toggle-all switches per category
+  const categoryMap = { win: TWEAKS.win, ov: TWEAKS.ov, net: TWEAKS.net };
+  document.querySelectorAll('input[data-tweak-cat]').forEach(cb => {
+    const cat = cb.dataset.tweakCat;
+    const tweaks = categoryMap[cat] || [];
+    cb.checked = tweaks.length > 0 && tweaks.every(t => state.tweaks[t.id]);
+    cb.onchange = (e) => {
+      const val = e.target.checked;
+      tweaks.forEach(t => toggleTweak(t.id, val));
+      renderTweaks();
+    };
+  });
 }
 
 function renderPresetActive() {

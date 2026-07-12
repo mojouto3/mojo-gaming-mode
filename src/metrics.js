@@ -36,6 +36,16 @@ while ($true) {
       }
     }
   } else {
+    # AMD/Intel: use Windows' native GPU Engine performance counters, the
+    # same data source Task Manager's GPU graph uses, works across all vendors
+    Try {
+      $counters = Get-Counter '\\GPU Engine(*engtype_3D)\\Utilization Percentage' -ErrorAction SilentlyContinue
+      if ($counters) {
+        $sum = ($counters.CounterSamples | Where-Object { $_.CookedValue -gt 0 } | Measure-Object -Property CookedValue -Sum).Sum
+        $gpuUsage = [math]::Round($sum, 0)
+        if ($gpuUsage -gt 100) { $gpuUsage = 100 }
+      }
+    } Catch {}
     # Try AMD/Intel via WMI MSAcpi_ThermalZoneTemperature (approximate)
     Try {
       $temp = Get-CimInstance -Namespace root/WMI -ClassName MSAcpi_ThermalZoneTemperature -ErrorAction SilentlyContinue | Select-Object -First 1
