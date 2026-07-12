@@ -215,6 +215,7 @@ All PRs target `main` and require 1 review before merge.
 | v1.8.0 | Before/after activation performance snapshot | Done |
 | v1.9.0 | Network latency monitor, custom rules import/export | Done |
 | v1.10.0 | 5 new system tweaks, ping in before/after activation impact | Done |
+| v1.11.0 | AMD/Intel GPU stats, tweak toggle bug fix, Custom preset accuracy | Done |
 | v2.0.0 | Scheduled optimization, game detection, custom tweak builder | Planned |
 
 ---
