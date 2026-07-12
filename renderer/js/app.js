@@ -633,24 +633,19 @@ function buildTweakRow(t, mini = false) {
       ${statusHtml(t.id)}`;
     row.style.cursor = 'default';
   } else {
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.checked = !!state.tweaks[t.id];
-    cb.addEventListener('change', (e) => toggleTweak(t.id, e.target.checked));
-
-    const tog = document.createElement('label');
-    tog.className = 'tog';
-    tog.appendChild(cb);
-    tog.innerHTML += '<div class="tog-track"></div><div class="tog-thumb"></div>';
-
     row.innerHTML = `
       <div class="tr-icon"><i class="ti ti-${iconFor(t.id)}"></i></div>
       <div class="tr-info">
         <div class="tr-name">${t.name} ${tagHtml(t.tag)}</div>
         <div class="tr-desc">${t.desc}</div>
         <div class="tr-cmd">${t.cmd}</div>
-      </div>`;
-    row.appendChild(tog);
+      </div>
+      <label class="tog">
+        <input type="checkbox" ${state.tweaks[t.id] ? 'checked' : ''}>
+        <div class="tog-track"></div>
+        <div class="tog-thumb"></div>
+      </label>`;
+    row.querySelector('input[type="checkbox"]').addEventListener('change', (e) => toggleTweak(t.id, e.target.checked));
   }
   return row;
 }
@@ -670,6 +665,19 @@ function renderTweaks() {
   updateCategoryCount('win', TWEAKS.win);
   updateCategoryCount('ov', TWEAKS.ov);
   updateCategoryCount('net', TWEAKS.net);
+
+  // Toggle-all switches per category
+  const categoryMap = { win: TWEAKS.win, ov: TWEAKS.ov, net: TWEAKS.net };
+  document.querySelectorAll('input[data-tweak-cat]').forEach(cb => {
+    const cat = cb.dataset.tweakCat;
+    const tweaks = categoryMap[cat] || [];
+    cb.checked = tweaks.length > 0 && tweaks.every(t => state.tweaks[t.id]);
+    cb.onchange = (e) => {
+      const val = e.target.checked;
+      tweaks.forEach(t => toggleTweak(t.id, val));
+      renderTweaks();
+    };
+  });
 }
 
 function renderPresetActive() {
@@ -699,7 +707,7 @@ function renderCustomRules() {
     cr_battlenet: 'device-gamepad', cr_ubisoft: 'device-gamepad', cr_gog: 'device-gamepad',
     cr_xbox: 'brand-xbox', cr_rockstar: 'device-gamepad',
     cr_slack: 'brand-slack', cr_zoom: 'video', cr_whatsapp: 'brand-whatsapp',
-    cr_telegram: 'brand-telegram', cr_googledrive: 'brand-google-drive', cr_dropbox: 'brand-dropbox',
+    cr_telegram: 'brand-telegram', cr_googledrive: 'brand-google-drive', cr_dropbox: 'cloud',
     cr_riot: 'device-gamepad-2', cr_onedrive_close: 'cloud-off', cr_icloud: 'cloud-off', cr_skype: 'brand-skype',
     cr_minecraft: 'device-gamepad', cr_itunes: 'music'
   };
@@ -783,7 +791,7 @@ function renderCustomRules() {
   });
 
   if (countEl) countEl.textContent = activeCount + ' active';
-  updateCustomPresetCard(activeCount);
+  refreshCustomCardState();
 }
 
 function toggleCustomRule(id, val) {
@@ -793,18 +801,7 @@ function toggleCustomRule(id, val) {
   const activeCount = Object.values(customRulesState).filter(Boolean).length;
   const countEl = document.getElementById('cr-active-count');
   if (countEl) countEl.textContent = activeCount + ' active';
-  updateCustomPresetCard(activeCount);
-
-  if (activeCount > 0) {
-    // Auto-highlight Custom card
-    document.querySelectorAll('.preset-card[data-preset]').forEach(c => c.classList.remove('active'));
-    document.getElementById('pc-custom')?.classList.add('active');
-  } else {
-    // Restore previous preset highlight
-    document.getElementById('pc-custom')?.classList.remove('active');
-    setPresetButtons(state.preset);
-  }
-
+  refreshCustomCardState();
   persistConfig();
 }
 
@@ -837,16 +834,41 @@ function renderCustomPresetActive() {
   });
 }
 
-function updateCustomPresetCard(activeCount) {
+function updateCustomPresetCard(tweakCount, ruleCount = 0) {
   const card = document.getElementById('pc-custom');
   if (!card) return;
 
-  if (activeCount > 0) {
-    card.style.display = '';
-    card.querySelector('.pc-sub').textContent = activeCount + ' rule' + (activeCount !== 1 ? 's' : '') + ' active';
+  card.style.display = '';
+  let label;
+  if (tweakCount > 0 && ruleCount > 0) {
+    label = `${tweakCount} tweak${tweakCount !== 1 ? 's' : ''}, ${ruleCount} rule${ruleCount !== 1 ? 's' : ''}`;
+  } else if (tweakCount > 0) {
+    label = `${tweakCount} tweak${tweakCount !== 1 ? 's' : ''} active`;
   } else {
-    card.style.display = 'none';
-    card.classList.remove('active');
+    label = `${ruleCount} rule${ruleCount !== 1 ? 's' : ''} active`;
+  }
+  card.querySelector('.pc-sub').textContent = label;
+}
+
+function refreshCustomCardState() {
+  const ruleCount = Object.values(customRulesState).filter(Boolean).length;
+  const overrideCount = Object.keys(state.manualOverrides || {}).length;
+  const isCustom = ruleCount > 0 || overrideCount > 0;
+
+  if (isCustom) {
+    // Switching to Custom is triggered by any deviation from the preset,
+    // but the displayed count is everything currently active, not just
+    // what differs, so it matches the "ACTIVE IN THIS PRESET" list below.
+    const activeTweakCount = ALL_TWEAKS.filter(t => state.tweaks[t.id]).length;
+    updateCustomPresetCard(activeTweakCount, ruleCount);
+    document.querySelectorAll('.preset-card[data-preset]').forEach(c => c.classList.remove('active'));
+    document.getElementById('pc-custom')?.classList.add('active');
+    renderCustomPresetActive();
+  } else {
+    const card = document.getElementById('pc-custom');
+    if (card) { card.style.display = 'none'; card.classList.remove('active'); }
+    setPresetButtons(state.preset);
+    renderPresetActive();
   }
 }
 
@@ -1029,7 +1051,6 @@ function updateMetricsUI(data) {
 
 function renderAll() {
   renderTweaks();
-  renderPresetActive();
   renderCustomRules();
   renderRules();
   renderStats();
@@ -1048,7 +1069,7 @@ function toggleTweak(id, val) {
   }
   const row = document.getElementById('tr-' + id);
   if (row) row.className = 'tweak-row' + (val ? ' active' : '');
-  renderPresetActive();
+  refreshCustomCardState();
   renderStats();
   persistConfig();
 }
