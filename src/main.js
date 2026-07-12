@@ -402,7 +402,7 @@ ipcMain.handle('create-restore-point', async () => {
 const CUSTOM_RULE_CMDS = {
   cr_teams: {
     apply: `Get-Process -Name 'Teams','ms-teams' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
-    revert: `$t = "$env:LOCALAPPDATA\Microsoft\Teams\Update.exe"; If (Test-Path $t) { Start-Process $t -ArgumentList '--processStart Teams.exe' -ErrorAction SilentlyContinue }; Exit 0`
+    revert: `$t = "$env:LOCALAPPDATA\\Microsoft\\Teams\\Update.exe"; If (Test-Path $t) { Start-Process $t -ArgumentList '--processStart Teams.exe' -ErrorAction SilentlyContinue }; Exit 0`
   },
   cr_phonelink: {
     apply: `Get-Process -Name 'PhoneExperienceHost' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
@@ -418,7 +418,7 @@ const CUSTOM_RULE_CMDS = {
   },
   cr_epicgames: {
     apply: `Get-Process -Name 'EpicGamesLauncher','EpicWebHelper' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
-    revert: `$e = "C:\Program Files (x86)\Epic Games\Launcher\Portal\Binaries\Win32\EpicGamesLauncher.exe"; If (Test-Path $e) { Start-Process $e -ErrorAction SilentlyContinue }; Exit 0`
+    revert: `$e = "C:\\Program Files (x86)\\Epic Games\\Launcher\\Portal\\Binaries\\Win32\\EpicGamesLauncher.exe"; If (Test-Path $e) { Start-Process $e -ErrorAction SilentlyContinue }; Exit 0`
   },
   cr_eaapp: {
     apply: `Get-Process -Name 'EABackgroundService','EAGD' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
@@ -426,7 +426,7 @@ const CUSTOM_RULE_CMDS = {
   },
   cr_spotify: {
     apply: `Get-Process -Name 'Spotify' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
-    revert: `$s = "$env:APPDATA\Spotify\Spotify.exe"; If (Test-Path $s) { Start-Process $s -ErrorAction SilentlyContinue }; Exit 0`
+    revert: `$s = "$env:APPDATA\\Spotify\\Spotify.exe"; If (Test-Path $s) { Start-Process $s -ErrorAction SilentlyContinue }; Exit 0`
   },
   cr_minecraft: {
     apply: `Get-Process -Name 'MinecraftLauncher','Minecraft' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
@@ -442,7 +442,7 @@ const CUSTOM_RULE_CMDS = {
   },
   cr_onedrive_close: {
     apply: `Get-Process -Name 'OneDrive' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
-    revert: `$o = "$env:LOCALAPPDATA\Microsoft\OneDrive\OneDrive.exe"; If (Test-Path $o) { Start-Process $o -ErrorAction SilentlyContinue }; Exit 0`
+    revert: `$o = "$env:LOCALAPPDATA\\Microsoft\\OneDrive\\OneDrive.exe"; If (Test-Path $o) { Start-Process $o -ErrorAction SilentlyContinue }; Exit 0`
   },
   cr_icloud: {
     apply: `Get-Process -Name 'iCloudDrive','iCloudPhotos','iCloudServices' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
@@ -454,7 +454,7 @@ const CUSTOM_RULE_CMDS = {
   },
   cr_slack: {
     apply: `Get-Process -Name 'slack' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
-    revert: `$s = "$env:LOCALAPPDATA\slack\slack.exe"; If (Test-Path $s) { Start-Process $s -ErrorAction SilentlyContinue }; Exit 0`
+    revert: `$s = "$env:LOCALAPPDATA\\slack\\slack.exe"; If (Test-Path $s) { Start-Process $s -ErrorAction SilentlyContinue }; Exit 0`
   },
   cr_zoom: {
     apply: `Get-Process -Name 'Zoom','ZoomOutlookIMPlugin' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
@@ -462,31 +462,31 @@ const CUSTOM_RULE_CMDS = {
   },
   cr_whatsapp: {
     apply: `Get-Process -Name 'WhatsApp' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
-    revert: `$w = "$env:LOCALAPPDATA\WhatsApp\WhatsApp.exe"; If (Test-Path $w) { Start-Process $w -ErrorAction SilentlyContinue }; Exit 0`
+    revert: `$w = "$env:LOCALAPPDATA\\WhatsApp\\WhatsApp.exe"; If (Test-Path $w) { Start-Process $w -ErrorAction SilentlyContinue }; Exit 0`
   },
   cr_telegram: {
     apply: `Get-Process -Name 'Telegram' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
-    revert: `$t = "$env:APPDATA\Telegram Desktop\Telegram.exe"; If (Test-Path $t) { Start-Process $t -ErrorAction SilentlyContinue }; Exit 0`
+    revert: `$t = "$env:APPDATA\\Telegram Desktop\\Telegram.exe"; If (Test-Path $t) { Start-Process $t -ErrorAction SilentlyContinue }; Exit 0`
   },
   cr_googledrive: {
     apply: `Get-Process -Name 'GoogleDriveFS','GoogleDrive' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
-    revert: `$g = "C:\Program Files\Google\Drive File Stream\GoogleDriveFS.exe"; If (Test-Path $g) { Start-Process $g -ErrorAction SilentlyContinue }; Exit 0`
+    revert: `$g = "C:\\Program Files\\Google\\Drive File Stream\\GoogleDriveFS.exe"; If (Test-Path $g) { Start-Process $g -ErrorAction SilentlyContinue }; Exit 0`
   },
   cr_dropbox: {
     apply: `Get-Process -Name 'Dropbox' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
-    revert: `$d = "$env:LOCALAPPDATA\Dropbox\client\Dropbox.exe"; If (Test-Path $d) { Start-Process $d -ErrorAction SilentlyContinue }; Exit 0`
+    revert: `$d = "$env:LOCALAPPDATA\\Dropbox\\client\\Dropbox.exe"; If (Test-Path $d) { Start-Process $d -ErrorAction SilentlyContinue }; Exit 0`
   },
   cr_battlenet: {
     apply: `Get-Process -Name 'Battle.net','Battle.net Helper' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
-    revert: `$b = "C:\Program Files (x86)\Battle.net\Battle.net.exe"; If (Test-Path $b) { Start-Process $b -ErrorAction SilentlyContinue }; Exit 0`
+    revert: `$b = "C:\\Program Files (x86)\\Battle.net\\Battle.net.exe"; If (Test-Path $b) { Start-Process $b -ErrorAction SilentlyContinue }; Exit 0`
   },
   cr_ubisoft: {
     apply: `Get-Process -Name 'UbisoftConnect','UplayWebCore' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
-    revert: `$u = "C:\Program Files (x86)\Ubisoft\Ubisoft Game Launcher\UbisoftConnect.exe"; If (Test-Path $u) { Start-Process $u -ErrorAction SilentlyContinue }; Exit 0`
+    revert: `$u = "C:\\Program Files (x86)\\Ubisoft\\Ubisoft Game Launcher\\UbisoftConnect.exe"; If (Test-Path $u) { Start-Process $u -ErrorAction SilentlyContinue }; Exit 0`
   },
   cr_gog: {
     apply: `Get-Process -Name 'GalaxyClient','GalaxyClientService' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
-    revert: `$g = "C:\Program Files (x86)\GOG Galaxy\GalaxyClient.exe"; If (Test-Path $g) { Start-Process $g -ErrorAction SilentlyContinue }; Exit 0`
+    revert: `$g = "C:\\Program Files (x86)\\GOG Galaxy\\GalaxyClient.exe"; If (Test-Path $g) { Start-Process $g -ErrorAction SilentlyContinue }; Exit 0`
   },
   cr_xbox: {
     apply: `Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.Name -like "Xbox*" -or $_.Name -like "GameBar*" } | Stop-Process -Force -ErrorAction SilentlyContinue; Exit 0`,
@@ -494,11 +494,11 @@ const CUSTOM_RULE_CMDS = {
   },
   cr_rockstar: {
     apply: `Get-Process -Name 'RockstarService','Launcher' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
-    revert: `$r = "C:\Program Files\Rockstar Games\Launcher\Launcher.exe"; If (Test-Path $r) { Start-Process $r -ErrorAction SilentlyContinue }; Exit 0`
+    revert: `$r = "C:\\Program Files\\Rockstar Games\\Launcher\\Launcher.exe"; If (Test-Path $r) { Start-Process $r -ErrorAction SilentlyContinue }; Exit 0`
   },
   cr_gamesprior: {
-    apply: `$p = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games'; If (!(Test-Path $p)) { New-Item -Path $p -Force | Out-Null }; Set-ItemProperty -Path $p -Name 'GPU Priority' -Value 8 -Type DWord; Set-ItemProperty -Path $p -Name 'Priority' -Value 6 -Type DWord; Set-ItemProperty -Path $p -Name 'Scheduling Category' -Value 'High' -Type String; Set-ItemProperty -Path $p -Name 'SFIO Priority' -Value 'High' -Type String; Exit 0`,
-    revert: `$p = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games'; Set-ItemProperty -Path $p -Name 'GPU Priority' -Value 2 -Type DWord -ErrorAction SilentlyContinue; Set-ItemProperty -Path $p -Name 'Priority' -Value 2 -Type DWord -ErrorAction SilentlyContinue; Set-ItemProperty -Path $p -Name 'Scheduling Category' -Value 'Medium' -Type String -ErrorAction SilentlyContinue; Set-ItemProperty -Path $p -Name 'SFIO Priority' -Value 'Normal' -Type String -ErrorAction SilentlyContinue; Exit 0`
+    apply: `$p = 'HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games'; If (!(Test-Path $p)) { New-Item -Path $p -Force | Out-Null }; Set-ItemProperty -Path $p -Name 'GPU Priority' -Value 8 -Type DWord; Set-ItemProperty -Path $p -Name 'Priority' -Value 6 -Type DWord; Set-ItemProperty -Path $p -Name 'Scheduling Category' -Value 'High' -Type String; Set-ItemProperty -Path $p -Name 'SFIO Priority' -Value 'High' -Type String; Exit 0`,
+    revert: `$p = 'HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games'; Set-ItemProperty -Path $p -Name 'GPU Priority' -Value 2 -Type DWord -ErrorAction SilentlyContinue; Set-ItemProperty -Path $p -Name 'Priority' -Value 2 -Type DWord -ErrorAction SilentlyContinue; Set-ItemProperty -Path $p -Name 'Scheduling Category' -Value 'Medium' -Type String -ErrorAction SilentlyContinue; Set-ItemProperty -Path $p -Name 'SFIO Priority' -Value 'Normal' -Type String -ErrorAction SilentlyContinue; Exit 0`
   }
 };
 
