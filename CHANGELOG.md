@@ -4,6 +4,20 @@ All notable changes to Mojo Gaming Mode are documented here.
 
 ---
 
+## [1.11.0] - 2026-07-12
+
+### Fixed
+
+- **Individual tweak toggles were not persisting reliably.** A DOM re-serialization bug in `buildTweakRow()` destroyed the checkbox's checked state and click handler immediately after creation. Manually clicking a tweak on or off could silently fail to update the app's actual configuration
+- 15 Windows paths in quick-rule revert commands had their backslashes silently stripped by JS string parsing, breaking several "relaunch app after deactivate" commands and the `cr_gamesprior` GPU/CPU priority registry tweak entirely
+- GPU usage percentage was NVIDIA-only (`nvidia-smi`), always showing 0 on AMD and Intel systems. Added a fallback using Windows' native GPU Engine performance counters, the same data source Task Manager's GPU graph uses, working across all vendors
+- The "Custom" preset card only tracked active Quick Rules, ignoring manual tweak overrides, so a hand-edited preset could still show the original preset name as active. Now any deviation switches to Custom, with an accurate combined count
+- The Dropbox quick rule had no icon (the bundled icon font doesn't include one); switched to a generic cloud icon
+
+### Added
+
+- Toggle-all switch per Tweaks category (Windows System / Overlays and Apps / Network), matching the existing per-category toggle in Custom Rules
+
 ## [1.10.0] - 2026-07-11
 
 ### Added
