@@ -63,4 +63,68 @@ async function executeTweaks(tweakIds, tweak_definitions, mode = 'apply') {
   return Promise.all(promises);
 }
 
-module.exports = { runPS, executeTweaks };
+// Escape a value for use inside a single-quoted PowerShell string.
+// User-created custom rules take free-text process/service names, so this
+// is needed to avoid a stray quote breaking (or injecting into) the command.
+function psEscape(str) {
+  return String(str).replace(/'/g, "''");
+}
+
+const SC_START_MAP = { Auto: 'auto', Manual: 'demand', Disabled: 'disabled', Boot: 'boot', System: 'system' };
+
+// Executes a single user-created custom rule (Kill process / CPU priority /
+// Disable service) with real success/failure tracking, unlike the old
+// fire-and-forget pattern. Returns capturedStartType for 'service' rules on
+// apply, so the caller can persist it and use the real original value on
+// revert instead of guessing.
+async function executeCustomRule(rule, mode) {
+  const target = psEscape((rule.target || '').replace(/\.exe$/i, ''));
+  let command;
+
+  if (rule.type === 'kill') {
+    if (mode === 'apply') {
+      command = `Get-Process -Name '${target}' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`;
+    } else {
+      if (rule.reopenOnDeactivate && rule.exePath) {
+        const exePath = psEscape(rule.exePath);
+        command = `If (Test-Path '${exePath}') { Start-Process '${exePath}' -ErrorAction SilentlyContinue }; Exit 0`;
+      } else {
+        return { id: rule.name, success: true, skipped: true };
+      }
+    }
+  } else if (rule.type === 'priority') {
+    const priority = mode === 'apply' ? 'High' : 'Normal';
+    command = `Get-Process -Name '${target}' -ErrorAction SilentlyContinue | ForEach-Object { $_.PriorityClass = '${priority}' }; Exit 0`;
+  } else if (rule.type === 'service') {
+    if (mode === 'apply') {
+      command = `$svc = Get-CimInstance Win32_Service -Filter "Name='${target}'" -ErrorAction SilentlyContinue; $startMode = if ($svc) { $svc.StartMode } else { 'Manual' }; Stop-Service -Name '${target}' -Force -ErrorAction SilentlyContinue; Set-Service -Name '${target}' -StartupType Disabled -ErrorAction SilentlyContinue; Write-Output $startMode`;
+    } else {
+      const scStart = SC_START_MAP[rule.capturedStartType] || 'demand';
+      command = `sc.exe config "${target}" start= ${scStart}; sc.exe start "${target}"; Exit 0`;
+    }
+  } else {
+    return { id: rule.name, success: false, error: 'Unknown rule type: ' + rule.type };
+  }
+
+  try {
+    const result = await runPS(command);
+    const out = { id: rule.name, success: result.success, error: result.error };
+    if (rule.type === 'service' && mode === 'apply' && result.success) {
+      const captured = (result.output || '').trim();
+      if (captured) out.capturedStartType = captured;
+    }
+    return out;
+  } catch (e) {
+    return { id: rule.name, success: false, error: e.message };
+  }
+}
+
+async function executeCustomRules(rules, mode = 'apply') {
+  const results = [];
+  for (const rule of rules) {
+    results.push(await executeCustomRule(rule, mode));
+  }
+  return results;
+}
+
+module.exports = { runPS, executeTweaks, executeCustomRule, executeCustomRules };
