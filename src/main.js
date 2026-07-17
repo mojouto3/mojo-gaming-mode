@@ -466,7 +466,7 @@ ipcMain.handle('create-restore-point', async () => {
 const CUSTOM_RULE_CMDS = {
   cr_teams: {
     apply: `Get-Process -Name 'Teams','ms-teams' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
-    revert: `$t = "$env:LOCALAPPDATA\\Microsoft\\Teams\\Update.exe"; If (Test-Path $t) { Start-Process $t -ArgumentList '--processStart Teams.exe' -ErrorAction SilentlyContinue }; Exit 0`
+    revert: `$tClassic = "$env:LOCALAPPDATA\\Microsoft\\Teams\\Update.exe"; $tNew = "$env:LOCALAPPDATA\\Microsoft\\WindowsApps\\ms-teams.exe"; If (Test-Path $tClassic) { Start-Process $tClassic -ArgumentList '--processStart Teams.exe' -ErrorAction SilentlyContinue } ElseIf (Test-Path $tNew) { Start-Process $tNew -ErrorAction SilentlyContinue }; Exit 0`
   },
   cr_phonelink: {
     apply: `Get-Process -Name 'PhoneExperienceHost' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
