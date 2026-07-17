@@ -216,6 +216,7 @@ All PRs target `main` and require 1 review before merge.
 | v1.9.0 | Network latency monitor, custom rules import/export | Done |
 | v1.10.0 | 5 new system tweaks, ping in before/after activation impact | Done |
 | v1.11.0 | AMD/Intel GPU stats, tweak toggle bug fix, Custom preset accuracy | Done |
+| v1.12.0 | Full code review: custom rule execution, honest revert reporting, crash-recovery fixes | Done |
 | v2.0.0 | Game detection | Planned |
 
 ---
