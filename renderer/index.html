@@ -449,12 +449,23 @@
         <label class="field-label">Action</label>
         <select class="field-input" id="rule-type">
           <option value="kill">Kill process</option>
-          <option value="priority">Set CPU priority</option>
-          <option value="reg">Registry tweak</option>
+          <option value="priority">Set CPU priority (High, reverts to Normal)</option>
           <option value="service">Disable service</option>
         </select>
-        <label class="field-label">Target</label>
+        <label class="field-label" id="rule-target-label">Process name</label>
         <input type="text" class="field-input" id="rule-target" placeholder="Discord.exe">
+
+        <div id="rule-reopen-row" style="margin-top:12px; display:flex; align-items:center; gap:8px;">
+          <label class="tog tog-sm">
+            <input type="checkbox" id="rule-reopen">
+            <div class="tog-track"></div>
+            <div class="tog-thumb"></div>
+          </label>
+          <span style="font-size:12px; color:var(--text2)">Reopen when deactivated</span>
+        </div>
+        <div id="rule-reopen-hint" style="font-size:11px; color:var(--text3); margin-top:6px;">
+          Without this, the process is closed on activate but won't reopen automatically when you deactivate.
+        </div>
       </div>
       <div class="modal-footer">
         <button class="btn-cancel" id="btn-modal-cancel">Cancel</button>

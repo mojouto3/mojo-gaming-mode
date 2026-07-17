@@ -55,7 +55,7 @@ function clearDiscordPresence() {
 const path = require('path');
 const fs = require('fs');
 const { exec } = require('child_process');
-const { executeTweaks, runPS } = require('./executor');
+const { executeTweaks, runPS, executeCustomRules } = require('./executor');
 const metrics = require('./metrics');
 const { autoUpdater } = require('electron-updater');
 
@@ -69,6 +69,7 @@ let tray = null;
 let gamingModeActive = false;
 let detectedGPU = { vendor: 'nvidia', model: 'Unknown GPU' };
 let activeTweakIds = []; // tweaks currently applied, used for revert
+let activeCustomRules = []; // user-created custom rules currently applied (with captured revert state), used for revert
 let trayAnimInterval = null;
 let notifPrefs = { activate: true, deactivate: true, update: true };
 let currentPreset = 'balanced';
@@ -324,19 +325,54 @@ app.whenReady().then(async () => {
 
   // Check if app crashed while active and auto-revert
   const startupConfig = loadConfig();
-  if (startupConfig.wasActive && startupConfig.activeTweakIds && startupConfig.activeTweakIds.length > 0) {
-    
-    activeTweakIds = [...startupConfig.activeTweakIds];
-    try {
-      await executeTweaks(activeTweakIds, TWEAK_DEFINITIONS, 'revert');
-    } catch(e) {
-      
+  const hadActiveTweaks = startupConfig.wasActive && startupConfig.activeTweakIds && startupConfig.activeTweakIds.length > 0;
+  const hadActiveCustomRules = startupConfig.activeCustomRules && startupConfig.activeCustomRules.length > 0;
+  if (hadActiveTweaks || hadActiveCustomRules) {
+    let recoveryFailedCount = 0;
+
+    if (hadActiveTweaks) {
+      activeTweakIds = [...startupConfig.activeTweakIds];
+      try {
+        const recoveryResults = await executeTweaks(activeTweakIds, TWEAK_DEFINITIONS, 'revert');
+        const recoveryFailed = recoveryResults.filter(r => !r.success && !r.skipped);
+        if (recoveryFailed.length) {
+          console.error('Crash-recovery: failed to revert tweaks:', recoveryFailed.map(r => r.id + ' (' + r.error + ')').join(', '));
+          recoveryFailedCount += recoveryFailed.length;
+        }
+      } catch(e) {
+        console.error('Crash-recovery: tweak revert threw:', e.message);
+        recoveryFailedCount += activeTweakIds.length;
+      }
+      activeTweakIds = [];
     }
-    activeTweakIds = [];
+
+    if (hadActiveCustomRules) {
+      try {
+        const ruleResults = await executeCustomRules(startupConfig.activeCustomRules, 'revert');
+        const ruleFailed = ruleResults.filter(r => !r.success && !r.skipped);
+        if (ruleFailed.length) {
+          console.error('Crash-recovery: failed to revert custom rules:', ruleFailed.map(r => r.id + ' (' + r.error + ')').join(', '));
+          recoveryFailedCount += ruleFailed.length;
+        }
+      } catch(e) {
+        console.error('Crash-recovery: custom rule revert threw:', e.message);
+        recoveryFailedCount += startupConfig.activeCustomRules.length;
+      }
+    }
+
     startupConfig.wasActive = false;
     startupConfig.activeTweakIds = [];
+    startupConfig.activeCustomRules = [];
     saveConfig(startupConfig);
-    
+
+    if (recoveryFailedCount > 0) {
+      new Notification({
+        title: 'Mojo Gaming Mode',
+        body: `Recovered from an unexpected close, but ${recoveryFailedCount} item${recoveryFailedCount !== 1 ? 's' : ''} may not have reverted correctly. Check Settings if something seems off.`,
+        icon: path.join(ASSETS_PATH, 'icons', 'icon.ico')
+      }).show();
+    }
+
   }
   const config = loadConfig();
   if (!config.gpu) {
@@ -356,7 +392,7 @@ app.on('window-all-closed', (e) => {
 });
 
 app.on('quit', () => {
-  try { metrics.stop(); metrics.stopPing(); } catch(e) {}
+  try { metrics.stop(); metrics.stopPing(); clearDiscordPresence(); } catch(e) {}
 });
 
 app.on('activate', () => {
@@ -523,7 +559,7 @@ ipcMain.handle('apply-mode', async (e, config) => {
     }
     const failed = results.filter(r => !r.success && !r.skipped);
 
-    // Execute active custom rules
+    // Execute active custom rules (built-in Quick Rules)
     if (config.customRulesActive) {
       for (const [id, active] of Object.entries(config.customRulesActive)) {
         if (active && CUSTOM_RULE_CMDS[id]) {
@@ -531,6 +567,25 @@ ipcMain.handle('apply-mode', async (e, config) => {
         }
       }
     }
+
+    // Execute user-created custom rules (Add custom rule modal), with real
+    // per-rule success/failure tracking instead of firing and forgetting.
+    // Store a deep copy as activeCustomRules so revert uses the exact state
+    // that was actually applied (including any captured service startup
+    // type), not whatever the renderer's config currently says.
+    let customRuleResults = [];
+    activeCustomRules = Array.isArray(config.rules) ? JSON.parse(JSON.stringify(config.rules)) : [];
+    if (activeCustomRules.length) {
+      customRuleResults = await executeCustomRules(activeCustomRules, 'apply');
+      // Merge captured service startup types back so revert can restore
+      // the real original state instead of guessing.
+      customRuleResults.forEach((r, i) => {
+        if (r.capturedStartType && activeCustomRules[i]) {
+          activeCustomRules[i].capturedStartType = r.capturedStartType;
+        }
+      });
+    }
+    const customRuleFailed = customRuleResults.filter(r => !r.success && !r.skipped);
 
     gamingModeActive = true;
     if (config.preset) currentPreset = config.preset;
@@ -540,6 +595,7 @@ ipcMain.handle('apply-mode', async (e, config) => {
     const activeConfig = loadConfig();
     activeConfig.wasActive = true;
     activeConfig.activeTweakIds = [...activeTweakIds];
+    activeConfig.activeCustomRules = activeCustomRules;
     saveConfig(activeConfig);
     if (tray) {
       const onIcon = nativeImage.createFromPath(path.join(ASSETS_PATH, 'icons', 'tray-on.png'));
@@ -556,19 +612,22 @@ ipcMain.handle('apply-mode', async (e, config) => {
 
     // Windows native notification
     const activeCount = results.filter(r => r.success && !r.skipped).length;
+    const totalFailedCount = failed.length + customRuleFailed.length;
     const presetName = config.preset
       ? config.preset.charAt(0).toUpperCase() + config.preset.slice(1)
       : 'Gaming';
     if (notifPrefs.activate) {
       new Notification({
         title: `Gaming Mode Activated: ${presetName}`,
-        body: `${activeCount} tweak${activeCount !== 1 ? 's' : ''} applied successfully. System optimized for gaming.`,
+        body: totalFailedCount > 0
+          ? `${activeCount} tweak${activeCount !== 1 ? 's' : ''} applied, ${totalFailedCount} item${totalFailedCount !== 1 ? 's' : ''} failed. Check the app for details.`
+          : `${activeCount} tweak${activeCount !== 1 ? 's' : ''} applied successfully. System optimized for gaming.`,
         icon: path.join(ASSETS_PATH, 'icons', 'tray-on.png'),
         silent: true
       }).show();
     }
 
-    return { success: true, results, failed };
+    return { success: true, results, failed, customRuleResults, customRuleFailed };
   } catch (e) {
     return { success: false, error: e.message };
   }
@@ -581,14 +640,16 @@ ipcMain.handle('revert-mode', async (e, config) => {
     
 
     const results = await executeTweaks(tweaksToRevert, TWEAK_DEFINITIONS, 'revert');
+    const failed = results.filter(r => !r.success && !r.skipped);
     activeTweakIds = []; // clear after revert
     // Clear active state from config
     const revertConfig = loadConfig();
     revertConfig.wasActive = false;
     revertConfig.activeTweakIds = [];
+    revertConfig.activeCustomRules = [];
     saveConfig(revertConfig);
 
-    // Revert active custom rules
+    // Revert active custom rules (built-in Quick Rules)
     const savedConfig = loadConfig();
     if (savedConfig.customRulesActive) {
       for (const [id, active] of Object.entries(savedConfig.customRulesActive)) {
@@ -597,6 +658,16 @@ ipcMain.handle('revert-mode', async (e, config) => {
         }
       }
     }
+
+    // Revert user-created custom rules, using the state that was actually
+    // applied (activeCustomRules), not the renderer's current config, so a
+    // rule edited or deleted mid-session still reverts correctly.
+    let customRuleResults = [];
+    if (activeCustomRules.length) {
+      customRuleResults = await executeCustomRules(activeCustomRules, 'revert');
+    }
+    const customRuleFailed = customRuleResults.filter(r => !r.success && !r.skipped);
+    activeCustomRules = [];
 
     gamingModeActive = false;
     updateTrayMenu();
@@ -610,16 +681,19 @@ ipcMain.handle('revert-mode', async (e, config) => {
     }
 
     // Windows native notification
+    const totalFailedCount = failed.length + customRuleFailed.length;
     if (notifPrefs.deactivate) {
       new Notification({
         title: 'Gaming Mode Deactivated',
-        body: 'All tweaks reverted. System restored to normal.',
+        body: totalFailedCount > 0
+          ? `System mostly restored, but ${totalFailedCount} item${totalFailedCount !== 1 ? 's' : ''} failed to revert. Check the app for details.`
+          : 'All tweaks reverted. System restored to normal.',
         icon: path.join(ASSETS_PATH, 'icons', 'tray-off.png'),
         silent: true
       }).show();
     }
 
-    return { success: true, results };
+    return { success: true, results, failed, customRuleResults, customRuleFailed };
   } catch (e) {
     return { success: false, error: e.message };
   }
@@ -779,6 +853,32 @@ ipcMain.handle('get-ping-snapshot', async () => {
   }
 });
 
+ipcMain.handle('find-process-path', async (e, processName) => {
+  try {
+    const safe = String(processName || '').replace(/'/g, "''");
+    const result = await runPS(`(Get-Process -Name '${safe}' -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Path)`);
+    const p = (result.output || '').trim();
+    if (result.success && p) return { path: p };
+    return { path: null };
+  } catch (e) {
+    return { path: null };
+  }
+});
+
+ipcMain.handle('browse-for-exe', async () => {
+  try {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: 'Select executable',
+      filters: [{ name: 'Executable', extensions: ['exe'] }],
+      properties: ['openFile']
+    });
+    if (result.canceled || !result.filePaths.length) return { canceled: true };
+    return { canceled: false, filePath: result.filePaths[0] };
+  } catch (e) {
+    return { canceled: true, error: e.message };
+  }
+});
+
 ipcMain.handle('export-custom-rules', async (e, jsonContent) => {
   try {
     const result = await dialog.showSaveDialog(mainWindow, {
@@ -877,24 +977,34 @@ ipcMain.on('window-close', () => {
 
 // Auto-revert on app quit (tray Quit or system shutdown)
 async function revertOnExit() {
-  if (gamingModeActive && activeTweakIds.length > 0) {
-    
+  if (gamingModeActive && (activeTweakIds.length > 0 || activeCustomRules.length > 0)) {
     try {
-      await executeTweaks([...activeTweakIds], TWEAK_DEFINITIONS, 'revert');
+      if (activeTweakIds.length > 0) {
+        const results = await executeTweaks([...activeTweakIds], TWEAK_DEFINITIONS, 'revert');
+        const failed = results.filter(r => !r.success && !r.skipped);
+        if (failed.length) console.error('revertOnExit: failed to revert tweaks:', failed.map(r => r.id + ' (' + r.error + ')').join(', '));
+      }
+      if (activeCustomRules.length > 0) {
+        const ruleResults = await executeCustomRules(activeCustomRules, 'revert');
+        const ruleFailed = ruleResults.filter(r => !r.success && !r.skipped);
+        if (ruleFailed.length) console.error('revertOnExit: failed to revert custom rules:', ruleFailed.map(r => r.id + ' (' + r.error + ')').join(', '));
+      }
       activeTweakIds = [];
+      activeCustomRules = [];
       gamingModeActive = false;
       // Save inactive state to config
       const config = loadConfig();
       config.wasActive = false;
+      config.activeCustomRules = [];
       saveConfig(config);
     } catch(e) {
-      
+      console.error('revertOnExit threw:', e.message);
     }
   }
 }
 
 app.on('before-quit', async (e) => {
-  if (gamingModeActive && activeTweakIds.length > 0) {
+  if (gamingModeActive && (activeTweakIds.length > 0 || activeCustomRules.length > 0)) {
     e.preventDefault();
     await revertOnExit();
     app.exit(0);
