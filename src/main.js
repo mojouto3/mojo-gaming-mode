@@ -457,8 +457,21 @@ ipcMain.handle('create-restore-point', async () => {
     const { spawn } = require('child_process');
     const cmd = `
       $ProgressPreference = 'SilentlyContinue'
-      Checkpoint-Computer -Description 'Mojo Gaming Mode' -RestorePointType 'MODIFY_SETTINGS'
-      Exit 0
+      $before = (Get-ComputerRestorePoint | Measure-Object).Count
+      try {
+        Checkpoint-Computer -Description 'Mojo Gaming Mode' -RestorePointType 'MODIFY_SETTINGS' -ErrorAction Stop
+      } catch {
+        Write-Output "ERROR: $($_.Exception.Message)"
+        Exit 1
+      }
+      Start-Sleep -Seconds 2
+      $after = (Get-ComputerRestorePoint | Measure-Object).Count
+      if ($after -gt $before) {
+        Exit 0
+      } else {
+        Write-Output "THROTTLED"
+        Exit 2
+      }
     `;
     const encoded = Buffer.from(cmd, 'utf16le').toString('base64');
     const ps = spawn('powershell.exe', [
@@ -466,15 +479,26 @@ ipcMain.handle('create-restore-point', async () => {
       '-EncodedCommand', encoded
     ], { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
 
+    let stdout = '';
+    let stderr = '';
+    ps.stdout.on('data', d => stdout += d);
+    ps.stderr.on('data', d => stderr += d);
+
     ps.on('close', (code) => {
-      resolve({ success: true });
+      if (code === 0) {
+        resolve({ success: true });
+      } else if (code === 2) {
+        resolve({ success: false, error: 'Windows already created a restore point in the last 24 hours and only allows one per day, so this one was skipped.' });
+      } else {
+        resolve({ success: false, error: (stdout + stderr).trim() || `Exit code ${code}` });
+      }
     });
     ps.on('error', (err) => {
       resolve({ success: false, error: err.message });
     });
     setTimeout(() => {
       ps.kill();
-      resolve({ success: true }); // timeout = likely succeeded (slow operation)
+      resolve({ success: false, error: 'Timed out after 60s. It may have completed in the background, check System Restore to confirm.' });
     }, 60000);
   });
 });
