@@ -20,6 +20,8 @@ contextBridge.exposeInMainWorld('mgm', {
   pingStart: () => ipcRenderer.send('ping-start'),
   pingStop: () => ipcRenderer.send('ping-stop'),
   onPingData: (cb) => ipcRenderer.on('ping-data', (e, data) => cb(data)),
+  findProcessPath: (processName) => ipcRenderer.invoke('find-process-path', processName),
+  browseForExe: () => ipcRenderer.invoke('browse-for-exe'),
   exportCustomRules: (jsonContent) => ipcRenderer.invoke('export-custom-rules', jsonContent),
   importCustomRules: () => ipcRenderer.invoke('import-custom-rules'),
   onMetricsData: (cb) => ipcRenderer.on('metrics-data', (e, data) => cb(data)),
