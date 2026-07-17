@@ -1560,7 +1560,7 @@ async function createRestorePoint() {
     persistConfig();
     showToast('Restore point created');
   } else {
-    showToast('Failed to create restore point');
+    showToast(result.error || 'Failed to create restore point');
   }
 }
 
