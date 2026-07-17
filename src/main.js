@@ -2,6 +2,24 @@
 
 const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, Notification, globalShortcut, shell, dialog, screen } = require('electron');
 
+// The @xhayper/discord-rpc library can emit a raw 'error' event on its
+// internal IPC socket (e.g. EPIPE when Discord isn't running or closes the
+// pipe mid-connect) that bypasses the .catch() on login() entirely and
+// crashes the whole process. Discord presence is a cosmetic, best-effort
+// feature, so specifically that failure mode is not allowed to take down
+// the app (including the crash-recovery/revert logic that runs at startup).
+// Anything else uncaught is NOT swallowed here, so real, unexpected bugs
+// still crash loudly instead of limping along silently broken.
+process.on('uncaughtException', (err) => {
+  const msg = (err && err.stack) || String(err);
+  if (msg.includes('discord-rpc') || msg.includes('IPCTransport')) {
+    console.error('Discord RPC transport error (non-fatal, ignored):', err.message);
+    return;
+  }
+  console.error('Uncaught exception:', err);
+  app.exit(1);
+});
+
 // Discord Rich Presence
 let discordRPC = null;
 let rpcClient = null;
