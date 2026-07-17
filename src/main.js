@@ -348,6 +348,12 @@ app.whenReady().then(async () => {
   // Init Discord Rich Presence
   initDiscordRPC();
 
+  // Load persisted notification preferences (defaults stay if never saved)
+  const startupNotifConfig = loadConfig();
+  if (startupNotifConfig.notifPrefs) {
+    notifPrefs = { ...notifPrefs, ...startupNotifConfig.notifPrefs };
+  }
+
   // Init auto-updater and check on startup
   initAutoUpdater();
   setTimeout(() => autoUpdater.checkForUpdates().catch(() => {}), 4000);
@@ -774,6 +780,7 @@ ipcMain.handle('revert-mode', async (e, config) => {
 
 ipcMain.on('set-notif-prefs', (e, prefs) => {
   notifPrefs = { ...notifPrefs, ...prefs };
+  saveConfig({ notifPrefs });
 });
 
 ipcMain.handle('set-autostart', (e, enabled) => {
