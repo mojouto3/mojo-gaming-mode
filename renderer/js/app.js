@@ -14,7 +14,8 @@ const state = {
   autostart: false,
   lastRestorePoint: null,
   lang: 'en',
-  manualTheme: null
+  manualTheme: null,
+  notifPrefs: { activate: true, deactivate: true, update: true }
 };
 
 ALL_TWEAKS.forEach(t => { state.tweaks[t.id] = t.presets.balanced; });
@@ -232,6 +233,7 @@ async function init() {
     if (config.lastRestorePoint) state.lastRestorePoint = config.lastRestorePoint;
     if (config.lang) state.lang = config.lang;
     if (config.manualTheme) state.manualTheme = config.manualTheme;
+    if (config.notifPrefs) state.notifPrefs = { ...state.notifPrefs, ...config.notifPrefs };
 
     setPresetButtons(state.preset);
     applyLanguage(state.lang);
@@ -467,6 +469,18 @@ function bindEvents() {
   // Settings - Autostart
   document.getElementById('cb-autostart').addEventListener('change', (e) => {
     toggleAutostart(e.target.checked);
+  });
+
+  // Settings - Notification preferences
+  const notifBindings = { activate: 'cb-notif-activate', deactivate: 'cb-notif-deactivate', update: 'cb-notif-update' };
+  Object.entries(notifBindings).forEach(([key, id]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('change', (e) => {
+      state.notifPrefs[key] = e.target.checked;
+      window.mgm.setNotifPrefs({ [key]: e.target.checked });
+      persistConfig();
+    });
   });
 }
 
@@ -1580,6 +1594,12 @@ function initSettingsTab() {
   // Restore autostart state
   const cb = document.getElementById('cb-autostart');
   if (cb) cb.checked = !!state.autostart;
+  // Restore notification preference checkboxes
+  const notifIds = { activate: 'cb-notif-activate', deactivate: 'cb-notif-deactivate', update: 'cb-notif-update' };
+  Object.entries(notifIds).forEach(([key, id]) => {
+    const el = document.getElementById(id);
+    if (el) el.checked = state.notifPrefs[key] !== false;
+  });
   // Settings vendor theme - show vendor name and logo
   const badge = document.getElementById('settings-gpu-badge');
   const vendorIcon = document.getElementById('settings-vendor-icon');
@@ -1600,7 +1620,8 @@ async function persistConfig() {
     autostart: state.autostart,
     lastRestorePoint: state.lastRestorePoint,
     lang: state.lang,
-    manualTheme: state.manualTheme
+    manualTheme: state.manualTheme,
+    notifPrefs: state.notifPrefs
   });
 }
 
