@@ -127,4 +127,25 @@ async function executeCustomRules(rules, mode = 'apply') {
   return results;
 }
 
-module.exports = { runPS, executeTweaks, executeCustomRule, executeCustomRules };
+// Executes the built-in Quick Rules (the 25 predefined toggles, e.g. "close
+// Discord"), keyed by id against the CUSTOM_RULE_CMDS lookup table. Same
+// honest tracking as executeCustomRules, instead of the previous
+// fire-and-forget pattern that discarded every result.
+async function executeQuickRules(ids, cmdsMap, mode = 'apply') {
+  const results = [];
+  for (const id of ids) {
+    const def = cmdsMap[id];
+    if (!def) { results.push({ id, success: false, error: 'Unknown quick rule' }); continue; }
+    const command = mode === 'apply' ? def.apply : def.revert;
+    if (!command) { results.push({ id, success: true, skipped: true }); continue; }
+    try {
+      const result = await runPS(command);
+      results.push({ id, success: result.success, error: result.error });
+    } catch (e) {
+      results.push({ id, success: false, error: e.message });
+    }
+  }
+  return results;
+}
+
+module.exports = { runPS, executeTweaks, executeCustomRule, executeCustomRules, executeQuickRules };

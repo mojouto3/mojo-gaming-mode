@@ -1163,7 +1163,7 @@ async function applyMode(silent = false) {
     if (result.customRuleResults.some(r => r.capturedStartType)) persistConfig();
   }
 
-  const failed = (result.failed ? result.failed.length : 0) + (result.customRuleFailed ? result.customRuleFailed.length : 0);
+  const failed = (result.failed ? result.failed.length : 0) + (result.customRuleFailed ? result.customRuleFailed.length : 0) + (result.quickRuleFailed ? result.quickRuleFailed.length : 0);
   // Let the system settle after the tweak-applying PowerShell processes exit
   // before reading the "after" numbers, or they read artificially high.
   await new Promise(r => setTimeout(r, 1500));
@@ -1215,7 +1215,7 @@ async function revertMode(silent = false) {
   renderPresetActive(); // re-render to show tag status
   updateLiveViews();
 
-  const failed = (result?.failed ? result.failed.length : 0) + (result?.customRuleFailed ? result.customRuleFailed.length : 0);
+  const failed = (result?.failed ? result.failed.length : 0) + (result?.customRuleFailed ? result.customRuleFailed.length : 0) + (result?.quickRuleFailed ? result.quickRuleFailed.length : 0);
   if (!silent) {
     showToast(failed > 0 ? `Reverted - ${failed} item(s) failed to revert` : 'Reverted to normal');
   }
