@@ -361,6 +361,7 @@ function bindEvents() {
 
   // Rules
   document.getElementById('btn-add-rule').addEventListener('click', openModal);
+  document.getElementById('rule-type')?.addEventListener('change', updateRuleTargetLabel);
   document.getElementById('btn-export-rules')?.addEventListener('click', exportCustomRulesToFile);
   document.getElementById('btn-import-rules')?.addEventListener('click', importCustomRulesFromFile);
   document.getElementById('modal-close').addEventListener('click', closeModal);
@@ -880,14 +881,19 @@ function renderRules() {
     container.innerHTML = '<div class="empty-state">No custom rules yet.</div>';
     return;
   }
+  const typeLabels = { kill: 'Kill process', priority: 'CPU priority (High)', service: 'Disable service' };
   state.rules.forEach((r, i) => {
     const row = document.createElement('div');
     row.className = 'rule-row';
+    const typeLabel = typeLabels[r.type] || r.type;
+    const reopenNote = r.type === 'kill'
+      ? (r.reopenOnDeactivate ? '<span style="color:var(--acc)">reopens on deactivate</span>' : '<span style="color:var(--text3)">won\'t reopen</span>')
+      : '';
     row.innerHTML = `
       <i class="ti ti-terminal" style="font-size:16px;color:var(--text3)"></i>
       <div class="rr-info">
         <div class="rr-name">${r.name}</div>
-        <div class="rr-type">${r.type} &rarr; ${r.target}</div>
+        <div class="rr-type">${typeLabel} &rarr; ${r.target}${reopenNote ? ' &middot; ' + reopenNote : ''}</div>
       </div>`;
     const delBtn = document.createElement('button');
     delBtn.className = 'btn-del';
@@ -1145,7 +1151,19 @@ async function applyMode(silent = false) {
   btn.removeEventListener('click', onActivateClick);
   btn.addEventListener('click', onRevertClick);
 
-  const failed = result.failed ? result.failed.length : 0;
+  // Merge any captured service startup types back into state.rules so a
+  // later revert restores the real original value instead of guessing.
+  if (Array.isArray(result.customRuleResults)) {
+    result.customRuleResults.forEach(r => {
+      if (r.capturedStartType) {
+        const rule = state.rules.find(x => x.name === r.id);
+        if (rule) rule.capturedStartType = r.capturedStartType;
+      }
+    });
+    if (result.customRuleResults.some(r => r.capturedStartType)) persistConfig();
+  }
+
+  const failed = (result.failed ? result.failed.length : 0) + (result.customRuleFailed ? result.customRuleFailed.length : 0);
   // Let the system settle after the tweak-applying PowerShell processes exit
   // before reading the "after" numbers, or they read artificially high.
   await new Promise(r => setTimeout(r, 1500));
@@ -1180,7 +1198,7 @@ async function revertMode(silent = false) {
   btn.disabled = true;
   btn.innerHTML = '<i class="ti ti-loader"></i> Reverting...';
 
-  await window.mgm.revertMode();
+  const result = await window.mgm.revertMode();
   btn.disabled = false;
 
   state.active = false;
@@ -1196,28 +1214,72 @@ async function revertMode(silent = false) {
   renderStats();
   renderPresetActive(); // re-render to show tag status
   updateLiveViews();
-  if (!silent) showToast('Reverted to normal');
+
+  const failed = (result?.failed ? result.failed.length : 0) + (result?.customRuleFailed ? result.customRuleFailed.length : 0);
+  if (!silent) {
+    showToast(failed > 0 ? `Reverted - ${failed} item(s) failed to revert` : 'Reverted to normal');
+  }
 }
 
 // ── Rules ─────────────────────────────────────────────────────────────────────
 
+function updateRuleTargetLabel() {
+  const type = document.getElementById('rule-type').value;
+  const targetLabel = document.getElementById('rule-target-label');
+  const reopenRow = document.getElementById('rule-reopen-row');
+  const reopenHint = document.getElementById('rule-reopen-hint');
+  const labels = { kill: 'Process name', priority: 'Process name', service: 'Service name' };
+  if (targetLabel) targetLabel.textContent = labels[type] || 'Target';
+  const showReopen = type === 'kill';
+  if (reopenRow) reopenRow.style.display = showReopen ? 'flex' : 'none';
+  if (reopenHint) reopenHint.style.display = showReopen ? 'block' : 'none';
+}
+
 function openModal() {
   document.getElementById('modal-overlay').classList.add('open');
   document.getElementById('rule-name').focus();
+  updateRuleTargetLabel();
 }
 
 function closeModal() {
   document.getElementById('modal-overlay').classList.remove('open');
   document.getElementById('rule-name').value = '';
   document.getElementById('rule-target').value = '';
+  const reopenCb = document.getElementById('rule-reopen');
+  if (reopenCb) reopenCb.checked = false;
 }
 
-function saveRule() {
+async function saveRule() {
   const name = document.getElementById('rule-name').value.trim();
   const type = document.getElementById('rule-type').value;
   const target = document.getElementById('rule-target').value.trim();
   if (!name || !target) { showToast('Fill in all fields'); return; }
-  state.rules.push({ name, type, target });
+
+  const rule = { name, type, target, reopenOnDeactivate: false, exePath: null };
+
+  const reopenChecked = document.getElementById('rule-reopen')?.checked;
+  if (type === 'kill' && reopenChecked) {
+    const okBtn = document.getElementById('btn-modal-ok');
+    okBtn.disabled = true;
+    okBtn.textContent = 'Locating...';
+    const found = await window.mgm.findProcessPath(target.replace(/\.exe$/i, ''));
+    if (found && found.path) {
+      rule.reopenOnDeactivate = true;
+      rule.exePath = found.path;
+    } else {
+      const browsed = await window.mgm.browseForExe();
+      if (browsed && !browsed.canceled) {
+        rule.reopenOnDeactivate = true;
+        rule.exePath = browsed.filePath;
+      } else {
+        showToast(target + ' isn\'t running and no file was selected, rule saved without reopen');
+      }
+    }
+    okBtn.disabled = false;
+    okBtn.textContent = 'Add rule';
+  }
+
+  state.rules.push(rule);
   closeModal();
   renderRules();
   renderStats();
