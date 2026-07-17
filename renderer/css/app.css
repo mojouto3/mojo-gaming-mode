@@ -1006,28 +1006,6 @@ html, body {
   border-radius: 6px;
 }
 
-.gpu-detected-icon {
-  width: 26px;
-  height: 26px;
-  object-fit: contain;
-  border-radius: 4px;
-  flex-shrink: 0;
-}
-
-.gpu-detected-model {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text);
-  line-height: 1.3;
-}
-
-.gpu-detected-vendor {
-  font-size: 9px;
-  color: var(--text3);
-  margin-top: 1px;
-  letter-spacing: 0.3px;
-}
-
 /* Sidebar GPU card - replaces MGM logo block */
 .sidebar-gpu-card {
   display: flex;
