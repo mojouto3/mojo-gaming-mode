@@ -4,6 +4,28 @@ All notable changes to Mojo Gaming Mode are documented here.
 
 ---
 
+## [1.12.0] - 2026-07-17
+
+A full internal code review found several places where the app reported success without actually verifying anything happened. This release fixes all of them.
+
+### Fixed
+
+- **The "Add custom rule" feature never executed anything.** A user could create a rule, see it saved and listed, and it would have zero real effect. Kill process, CPU priority, and Disable service now actually run, with real tracking. "Registry tweak" removed from the type dropdown for now, pending a safer redesign.
+- New optional "Reopen when deactivated" toggle for Kill-process custom rules, with automatic path detection or a file picker.
+- "Disable service" custom rules now capture the real original startup type before disabling it and restore that exact value on revert, instead of guessing.
+- None of the revert paths (Deactivate button, app quit, crash-recovery on next launch) checked whether the revert actually succeeded before declaring success. All now check real results.
+- The 25 built-in Quick Rules discarded every apply/revert result. They now have real success/failure tracking and are protected by crash-recovery and quit-revert, which they previously weren't at all.
+- The "Kill Teams" quick rule couldn't reopen the new, MSIX-based Teams client, only the classic one. Fixed with a fallback to the new client's stable launch path.
+- Restore point creation always reported success regardless of the actual result, even hardcoding a success exit code into the script itself. Now verifies a restore point genuinely appeared, and reports the specific reason on failure (including Windows' 24-hour throttle limit, which silently no-ops instead of erroring).
+- The three notification preference toggles in Settings had no effect at all. Now wired up, and the preference persists across restarts (it didn't before).
+- Discord Rich Presence stayed stuck on-screen indefinitely after quitting the app.
+- Fixed a bug in `saveConfig()` where a partial save from one part of the app could silently wipe out fields written by another part (specifically, this was erasing the crash-recovery state right after it was written).
+- Fixed an unhandled Discord RPC transport error that could crash the entire app on launch if Discord wasn't running.
+
+### Removed
+
+- Dead, unused duplicate command data in the renderer (never executed, confirmed via full review) and a handful of orphaned CSS rules left over from an earlier naming convention.
+
 ## [1.11.0] - 2026-07-12
 
 ### Fixed
