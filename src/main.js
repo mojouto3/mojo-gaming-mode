@@ -121,7 +121,17 @@ function loadConfig() {
 function saveConfig(config) {
   try {
     fs.mkdirSync(path.dirname(CONFIG_PATH), { recursive: true });
-    fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
+    // Merge with whatever is already on disk instead of a full replace.
+    // A partial config object (e.g. the renderer's persistConfig(), which
+    // only sends UI-facing fields) must not silently wipe out fields owned
+    // by other code paths, like the crash-recovery state written by
+    // apply-mode (wasActive/activeTweakIds/activeCustomRules).
+    let existing = {};
+    try {
+      if (fs.existsSync(CONFIG_PATH)) existing = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
+    } catch (e) {}
+    const merged = { ...existing, ...config };
+    fs.writeFileSync(CONFIG_PATH, JSON.stringify(merged, null, 2));
     return true;
   } catch (e) {
     return false;
