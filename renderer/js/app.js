@@ -495,6 +495,7 @@ function bindEvents() {
 
   // Games
   document.getElementById('btn-add-game')?.addEventListener('click', addGame);
+  document.getElementById('btn-scan-games')?.addEventListener('click', scanForInstalledGames);
   const gdToggle = document.getElementById('game-detection-toggle');
   if (gdToggle) {
     gdToggle.checked = state.gameDetectionEnabled;
@@ -666,15 +667,19 @@ function statusHtml(id) {
 function buildTweakRow(t, mini = false) {
   const row = document.createElement('div');
   row.className = 'tweak-row' + (state.tweaks[t.id] ? ' active' : '');
-  row.id = 'tr-' + t.id;
 
   if (mini) {
+    // Do NOT reuse 'tr-' + id here - the full Tweaks tab row already uses
+    // that id, and toggleTweak()'s getElementById lookup must resolve
+    // unambiguously to that one, not to a duplicate-ID mini summary row.
+    row.id = 'trm-' + t.id;
     row.innerHTML = `
       <div class="tr-icon"><i class="ti ti-${iconFor(t.id)}"></i></div>
       <div class="tr-info"><div class="tr-name">${t.name}</div></div>
       ${statusHtml(t.id)}`;
     row.style.cursor = 'default';
   } else {
+    row.id = 'tr-' + t.id;
     row.innerHTML = `
       <div class="tr-icon"><i class="ti ti-${iconFor(t.id)}"></i></div>
       <div class="tr-info">
@@ -1699,7 +1704,7 @@ function renderGames() {
 
 function buildGameRow(g) {
   const row = document.createElement('div');
-  row.className = 'game-row';
+  row.className = 'game-row' + (g.enabled ? ' active' : '');
   row.innerHTML = `
     <div class="game-icon"><i class="ti ti-device-gamepad-2"></i></div>
     <div class="game-info">
@@ -1712,7 +1717,7 @@ function buildGameRow(g) {
       <option value="performance">Performance</option>
       <option value="esports">Esports</option>
     </select>
-    <label class="tog tog-sm">
+    <label class="tog tog-xs">
       <input type="checkbox" ${g.enabled ? 'checked' : ''}>
       <div class="tog-track"></div>
       <div class="tog-thumb"></div>
@@ -1727,6 +1732,7 @@ function buildGameRow(g) {
   });
   row.querySelector('input[type="checkbox"]').addEventListener('change', (e) => {
     g.enabled = e.target.checked;
+    row.className = 'game-row' + (g.enabled ? ' active' : '');
     persistConfig();
     restartGameDetectionIfActive();
   });
@@ -1753,6 +1759,49 @@ async function addGame() {
   renderGames();
   persistConfig();
   restartGameDetectionIfActive();
+}
+
+async function scanForInstalledGames() {
+  const btn = document.getElementById('btn-scan-games');
+  const originalHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader"></i> Scanning...';
+
+  const result = await window.mgm.scanInstalledGames();
+
+  btn.disabled = false;
+  btn.innerHTML = originalHtml;
+
+  if (!result.success) {
+    showToast(result.error || 'Scan failed');
+    return;
+  }
+
+  const existingPaths = new Set(state.games.map(g => g.exePath.toLowerCase()));
+  let added = 0;
+  result.games.forEach(g => {
+    if (!g.exePath || existingPaths.has(g.exePath.toLowerCase())) return;
+    state.games.push({
+      id: 'g_' + Date.now() + '_' + added,
+      name: g.name,
+      exeName: g.exeName,
+      exePath: g.exePath,
+      presetId: null,
+      enabled: false
+    });
+    existingPaths.add(g.exePath.toLowerCase());
+    added++;
+  });
+
+  if (added > 0) {
+    renderGames();
+    persistConfig();
+    showToast(`Found ${added} game(s), added disabled - review and enable the ones you want monitored`);
+  } else if (result.games.length > 0) {
+    showToast('No new games found - everything detected is already in your list');
+  } else {
+    showToast('No installed Steam or Epic games found');
+  }
 }
 
 async function handleGameDetectionEvent(data) {

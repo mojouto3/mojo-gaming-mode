@@ -2218,109 +2218,13 @@ html, body {
   border-color: rgba(var(--acc-rgb), 0.3);
 }
 
-.game-icon {
-  width: 30px;
-  height: 30px;
-  border-radius: 7px;
-  background: var(--bg2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  font-size: 15px;
-  color: var(--acc);
+.game-row.active {
+  border-color: var(--border-acc);
+  background: rgba(var(--acc-rgb), 0.04);
 }
 
-.game-info {
-  width: 130px;
-  min-width: 0;
-  flex-shrink: 0;
-}
-
-.game-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text1);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.game-exe {
-  font-size: 11px;
-  color: var(--text3);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.game-preset-select {
-  flex: 1;
-  min-width: 0;
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text1);
-  font-size: 12px;
-  padding: 5px 6px;
-  font-family: var(--font);
-  color-scheme: dark;
-}
-
-.game-remove {
-  font-size: 14px;
-  color: var(--text3);
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.game-remove:hover {
-  color: #ed1c24;
-}
-
-/* Games tab (game detection) */
-.games-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 14px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--border);
-}
-
-.games-header-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text1);
-}
-
-.games-header-sub {
-  font-size: 11px;
-  color: var(--text3);
-  margin-top: 2px;
-}
-
-.games-empty {
-  font-size: 12px;
-  color: var(--text3);
-  text-align: center;
-  padding: 24px 12px;
-}
-
-.game-row {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 10px 12px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
-  transition: border-color .2s;
-}
-
-.game-row:hover {
-  border-color: rgba(var(--acc-rgb), 0.3);
+.game-row.active .game-icon {
+  background: rgba(var(--acc-rgb), 0.1);
 }
 
 .game-icon {
@@ -2337,7 +2241,7 @@ html, body {
 }
 
 .game-info {
-  width: 130px;
+  width: 175px;
   min-width: 0;
   flex-shrink: 0;
 }
@@ -2386,4 +2290,22 @@ html, body {
 
 .game-remove:hover {
   color: #ed1c24;
+}
+
+/* Compact toggle for game rows - a real smaller size, not just a visual
+   scale of .tog (which keeps its full 36px layout width even scaled down) */
+.tog-xs {
+  width: 26px;
+  height: 15px;
+}
+
+.tog-xs .tog-thumb {
+  width: 9px;
+  height: 9px;
+  top: 2px;
+  left: 2px;
+}
+
+.tog-xs input:checked ~ .tog-thumb {
+  left: 13px;
 }
