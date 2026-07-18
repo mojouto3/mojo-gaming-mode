@@ -74,6 +74,7 @@ const path = require('path');
 const fs = require('fs');
 const { exec } = require('child_process');
 const { executeTweaks, runPS, executeCustomRules, executeQuickRules } = require('./executor');
+const gameDetection = require('./game-detection');
 const metrics = require('./metrics');
 const { autoUpdater } = require('electron-updater');
 
@@ -125,7 +126,9 @@ const DEFAULT_CONFIG = {
     nicpower: false,
     usbsuspend: false
   },
-  customRules: []
+  customRules: [],
+  games: [],
+  gameDetectionEnabled: false
 };
 
 function loadConfig() {
@@ -443,7 +446,7 @@ app.on('window-all-closed', (e) => {
 });
 
 app.on('quit', () => {
-  try { metrics.stop(); metrics.stopPing(); clearDiscordPresence(); } catch(e) {}
+  try { metrics.stop(); metrics.stopPing(); clearDiscordPresence(); gameDetection.stop(); } catch(e) {}
 });
 
 app.on('activate', () => {
@@ -957,6 +960,35 @@ ipcMain.handle('browse-for-exe', async () => {
   } catch (e) {
     return { canceled: true, error: e.message };
   }
+});
+
+ipcMain.on('game-detection-start', (e, processNames) => {
+  gameDetection.start(processNames, (data) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('game-detection-event', data);
+    }
+  });
+});
+
+ipcMain.on('game-detection-stop', () => {
+  gameDetection.stop();
+});
+
+ipcMain.on('notify-game-closed', (e, gameName) => {
+  const notif = new Notification({
+    title: 'Game closed',
+    body: `${gameName} closed. Click to review gaming mode.`,
+    icon: path.join(ASSETS_PATH, 'icons', 'icon.ico'),
+    silent: true
+  });
+  notif.on('click', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.show();
+      mainWindow.focus();
+      mainWindow.webContents.send('game-closed-prompt', gameName);
+    }
+  });
+  notif.show();
 });
 
 ipcMain.handle('export-custom-rules', async (e, jsonContent) => {

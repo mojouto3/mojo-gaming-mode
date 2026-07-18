@@ -9,6 +9,8 @@ const state = {
   tweaks: {},
   manualOverrides: {},
   rules: [],
+  games: [],
+  gameDetectionEnabled: false,
   active: false,
   sessions: 0,
   autostart: false,
@@ -234,11 +236,19 @@ async function init() {
     if (config.lang) state.lang = config.lang;
     if (config.manualTheme) state.manualTheme = config.manualTheme;
     if (config.notifPrefs) state.notifPrefs = { ...state.notifPrefs, ...config.notifPrefs };
+    state.games = Array.isArray(config.games) ? config.games : [];
+    state.gameDetectionEnabled = !!config.gameDetectionEnabled;
 
     setPresetButtons(state.preset);
     applyLanguage(state.lang);
     if (state.manualTheme) applyGPUTheme(state.manualTheme);
     renderAll();
+
+    // Resume game detection if it was left on
+    if (state.gameDetectionEnabled) {
+      const names = getEnabledGameProcessNames();
+      if (names.length) window.mgm.startGameDetection(names);
+    }
 
     // Show onboarding on first launch
     if (!config.onboardingComplete) {
@@ -482,6 +492,22 @@ function bindEvents() {
       persistConfig();
     });
   });
+
+  // Games
+  document.getElementById('btn-add-game')?.addEventListener('click', addGame);
+  const gdToggle = document.getElementById('game-detection-toggle');
+  if (gdToggle) {
+    gdToggle.checked = state.gameDetectionEnabled;
+    gdToggle.addEventListener('change', (e) => toggleGameDetection(e.target.checked));
+  }
+  document.getElementById('game-deactivate-close')?.addEventListener('click', closeGameDeactivatePrompt);
+  document.getElementById('game-deactivate-no')?.addEventListener('click', closeGameDeactivatePrompt);
+  document.getElementById('game-deactivate-yes')?.addEventListener('click', async () => {
+    closeGameDeactivatePrompt();
+    await revertMode();
+  });
+  window.mgm.onGameDetectionEvent((data) => handleGameDetectionEvent(data));
+  window.mgm.onGameClosedPrompt((gameName) => showGameDeactivatePrompt(gameName));
 }
 
 // ── GPU Theme ─────────────────────────────────────────────────────────────────
@@ -592,10 +618,11 @@ function switchTab(name, el) {
   document.getElementById('tab-' + name).classList.add('active');
   document.querySelectorAll('.nav-item[data-tab]').forEach(n => n.classList.remove('active'));
   el.classList.add('active');
-  const titles = { presets: 'Presets', tweaks: 'Tweaks', rules: 'Custom rules', stats: 'Performance', settings: 'Settings' };
+  const titles = { presets: 'Presets', tweaks: 'Tweaks', games: 'Games', rules: 'Custom rules', stats: 'Performance', settings: 'Settings' };
   document.getElementById('page-title').textContent = titles[name] || name;
   if (name === 'settings') initSettingsTab();
   if (name === 'stats') renderActivationImpact();
+  if (name === 'games') renderGames();
   // Start/stop metrics polling based on active tab
   if (name === 'stats' || miniModeActive || barModeActive) {
     window.mgm.metricsStart();
@@ -1073,6 +1100,7 @@ function renderAll() {
   renderTweaks();
   renderCustomRules();
   renderRules();
+  renderGames();
   renderStats();
 }
 
@@ -1147,7 +1175,7 @@ async function applyMode(silent = false) {
   if (!result.success) {
     btn.innerHTML = '<i class="ti ti-bolt"></i> Activate';
     if (!silent) showToast('Failed to apply - check logs');
-    return;
+    return result;
   }
 
   state.active = true;
@@ -1204,6 +1232,8 @@ async function applyMode(silent = false) {
 
   // Start session timer
   startSessionTimer();
+
+  return { ...result, failedCount: failed };
 }
 
 async function revertMode(silent = false) {
@@ -1216,6 +1246,7 @@ async function revertMode(silent = false) {
   btn.disabled = false;
 
   state.active = false;
+  autoActivatedGameId = null;
 
   document.getElementById('status-dot').classList.remove('on');
   document.getElementById('status-label').textContent = 'Gaming mode off';
@@ -1621,8 +1652,148 @@ async function persistConfig() {
     lastRestorePoint: state.lastRestorePoint,
     lang: state.lang,
     manualTheme: state.manualTheme,
-    notifPrefs: state.notifPrefs
+    notifPrefs: state.notifPrefs,
+    games: state.games,
+    gameDetectionEnabled: state.gameDetectionEnabled
   });
+}
+
+// ── Game Detection ───────────────────────────────────────────────────────────
+
+let autoActivatedGameId = null;
+
+function getEnabledGameProcessNames() {
+  return state.games.filter(g => g.enabled).map(g => g.exeName);
+}
+
+function restartGameDetectionIfActive() {
+  if (!state.gameDetectionEnabled) return;
+  window.mgm.stopGameDetection();
+  const names = getEnabledGameProcessNames();
+  if (names.length) window.mgm.startGameDetection(names);
+}
+
+function toggleGameDetection(enabled) {
+  state.gameDetectionEnabled = enabled;
+  if (enabled) {
+    const names = getEnabledGameProcessNames();
+    if (names.length) window.mgm.startGameDetection(names);
+  } else {
+    window.mgm.stopGameDetection();
+  }
+  persistConfig();
+}
+
+function renderGames() {
+  const list = document.getElementById('games-list');
+  const empty = document.getElementById('games-empty');
+  if (!list) return;
+  list.innerHTML = '';
+  if (!state.games.length) {
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  state.games.forEach(g => list.appendChild(buildGameRow(g)));
+}
+
+function buildGameRow(g) {
+  const row = document.createElement('div');
+  row.className = 'game-row';
+  row.innerHTML = `
+    <div class="game-icon"><i class="ti ti-device-gamepad-2"></i></div>
+    <div class="game-info">
+      <div class="game-name">${g.name}</div>
+      <div class="game-exe">${g.exeName}.exe</div>
+    </div>
+    <select class="game-preset-select">
+      <option value="">Use last active preset</option>
+      <option value="balanced">Balanced</option>
+      <option value="performance">Performance</option>
+      <option value="esports">Esports</option>
+    </select>
+    <label class="tog tog-sm">
+      <input type="checkbox" ${g.enabled ? 'checked' : ''}>
+      <div class="tog-track"></div>
+      <div class="tog-thumb"></div>
+    </label>
+    <i class="ti ti-trash game-remove" title="Remove"></i>
+  `;
+  const select = row.querySelector('.game-preset-select');
+  select.value = g.presetId || '';
+  select.addEventListener('change', (e) => {
+    g.presetId = e.target.value || null;
+    persistConfig();
+  });
+  row.querySelector('input[type="checkbox"]').addEventListener('change', (e) => {
+    g.enabled = e.target.checked;
+    persistConfig();
+    restartGameDetectionIfActive();
+  });
+  row.querySelector('.game-remove').addEventListener('click', () => {
+    state.games = state.games.filter(x => x.id !== g.id);
+    renderGames();
+    persistConfig();
+    restartGameDetectionIfActive();
+  });
+  return row;
+}
+
+async function addGame() {
+  const result = await window.mgm.browseForExe();
+  if (!result || result.canceled) return;
+  const exePath = result.filePath;
+  const rawName = exePath.split(/[\\/]/).pop().replace(/\.exe$/i, '');
+  if (state.games.some(g => g.exeName.toLowerCase() === rawName.toLowerCase())) {
+    showToast('That game is already in the list');
+    return;
+  }
+  const displayName = rawName.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  state.games.push({ id: 'g_' + Date.now(), name: displayName, exeName: rawName, exePath, presetId: null, enabled: true });
+  renderGames();
+  persistConfig();
+  restartGameDetectionIfActive();
+}
+
+async function handleGameDetectionEvent(data) {
+  const game = state.games.find(g => g.exeName.toLowerCase() === (data.process || '').toLowerCase());
+  if (!game || !game.enabled) return;
+
+  if (data.event === 'started') {
+    if (!state.active) {
+      if (game.presetId) setPreset(game.presetId);
+      autoActivatedGameId = game.id;
+      // silent=true suppresses the routine "activating..." toast, but
+      // applyMode() still returns the real result, so a genuine failure
+      // is never hidden just because this was triggered automatically.
+      const result = await applyMode(true);
+      if (result && result.success && result.failedCount > 0) {
+        showToast(`${game.name} detected, but ${result.failedCount} item(s) failed to apply`);
+      } else if (result && result.success) {
+        showToast(`${game.name} detected, gaming mode activated`);
+      } else {
+        showToast(`${game.name} detected, but gaming mode failed to activate - check the app`);
+      }
+    }
+  } else if (data.event === 'stopped') {
+    if (state.active && autoActivatedGameId === game.id) {
+      window.mgm.notifyGameClosed(game.name);
+    }
+  }
+}
+
+function showGameDeactivatePrompt(gameName) {
+  const msg = document.getElementById('game-deactivate-msg');
+  if (msg) msg.textContent = (gameName ? gameName + ' closed. ' : '') + 'Deactivate gaming mode now?';
+  document.getElementById('game-deactivate-overlay')?.classList.add('open');
+}
+
+function closeGameDeactivatePrompt() {
+  document.getElementById('game-deactivate-overlay')?.classList.remove('open');
+  // Do NOT clear autoActivatedGameId here - if the user picks "Keep active",
+  // gaming mode is still on, so we still need to remember which game
+  // triggered it in case the same game closes again later. It only clears
+  // once gaming mode actually turns off, in revertMode().
 }
 
 // ── Toast ─────────────────────────────────────────────────────────────────────

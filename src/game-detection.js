@@ -59,11 +59,22 @@ function start(processNames, callback) {
       try {
         const parsed = JSON.parse(trimmed);
         if (onEventCallback) onEventCallback(parsed);
-      } catch (e) {}
+      } catch (e) {
+        console.error('game-detection: failed to parse event line:', trimmed, e.message);
+      }
     });
   });
 
-  gdProcess.on('close', () => {
+  gdProcess.on('error', (err) => {
+    console.error('game-detection: process error:', err.message);
+    gdRunning = false;
+    gdProcess = null;
+  });
+
+  gdProcess.on('close', (code) => {
+    if (code !== 0 && code !== null) {
+      console.error('game-detection: polling process exited unexpectedly with code', code);
+    }
     gdRunning = false;
     gdProcess = null;
   });
@@ -78,4 +89,8 @@ function stop() {
   onEventCallback = null;
 }
 
-module.exports = { start, stop };
+function isRunning() {
+  return gdRunning;
+}
+
+module.exports = { start, stop, isRunning };

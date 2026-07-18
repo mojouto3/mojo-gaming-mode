@@ -51,6 +51,9 @@
           <div class="nav-item" id="ni-tweaks" data-tab="tweaks">
             <i class="ti ti-adjustments-horizontal"></i> Tweaks
           </div>
+          <div class="nav-item" id="ni-games" data-tab="games">
+            <i class="ti ti-device-gamepad-2"></i> Games
+          </div>
           <div class="section-label" style="margin-top:8px">System</div>
           <div class="nav-item" id="ni-rules" data-tab="rules">
             <i class="ti ti-list-check"></i> Custom rules
@@ -150,6 +153,30 @@
             <div id="tw-ov"></div>
             <div class="section-header" style="margin-top:14px"><span class="sh-title">NETWORK</span><span class="sh-count" id="count-net"></span><label class="tog tog-sm" style="margin-left:auto"><input type="checkbox" data-tweak-cat="net"><div class="tog-track"></div><div class="tog-thumb"></div></label></div>
             <div id="tw-net"></div>
+          </div>
+
+          <div id="tab-games" class="tab-panel">
+            <div class="games-header">
+              <div>
+                <div class="games-header-title">Game detection</div>
+                <div class="games-header-sub">Auto-activate gaming mode when a monitored game launches</div>
+              </div>
+              <label class="tog tog-sm">
+                <input type="checkbox" id="game-detection-toggle">
+                <div class="tog-track"></div>
+                <div class="tog-thumb"></div>
+              </label>
+            </div>
+
+            <button class="btn-add-rule" id="btn-add-game">
+              <i class="ti ti-plus"></i> Add game
+            </button>
+
+            <div id="games-empty" class="games-empty" style="display:none">
+              No games added yet. Click "Add game" to pick an executable to monitor.
+            </div>
+
+            <div id="games-list"></div>
           </div>
 
           <div id="tab-rules" class="tab-panel">
@@ -470,6 +497,22 @@
       <div class="modal-footer">
         <button class="btn-cancel" id="btn-modal-cancel">Cancel</button>
         <button class="btn-ok" id="btn-modal-ok">Add rule</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="game-deactivate-overlay">
+    <div class="modal" style="max-width:320px">
+      <div class="modal-header">
+        <span class="modal-title"><i class="ti ti-device-gamepad-2"></i> Game closed</span>
+        <button class="modal-close" id="game-deactivate-close"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:13px; color:var(--text2); margin:0;" id="game-deactivate-msg">Deactivate gaming mode now?</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="game-deactivate-no">Keep active</button>
+        <button class="btn-ok" id="game-deactivate-yes">Deactivate</button>
       </div>
     </div>
   </div>
