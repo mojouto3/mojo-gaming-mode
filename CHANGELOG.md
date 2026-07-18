@@ -4,6 +4,13 @@ All notable changes to Mojo Gaming Mode are documented here.
 
 ---
 
+## [2.0.3] - 2026-07-18
+
+### Fixed
+
+- Reopening an app on deactivate (Quick Rules or a custom rule with "Reopen when deactivated") could run it with administrator rights, since it inherited this app's own elevation. OneDrive explicitly refuses to run this way and showed an error. Apps now reopen using a temporary Task Scheduler task configured for standard user rights, which reliably runs unelevated regardless of this app's own elevation.
+- Apps reopened on deactivate even if they weren't actually running before you activated gaming mode, since the check only looked at whether the app was installed, not whether anything had actually been closed. Now only reopens an app if it was genuinely running before it was closed.
+
 ## [2.0.2] - 2026-07-18
 
 ### Fixed
