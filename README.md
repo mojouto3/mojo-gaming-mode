@@ -22,6 +22,7 @@ A lightweight Windows gaming optimizer that automatically detects your GPU vendo
 - Import and export custom rules as JSON, for backup or sharing between PCs
 - 20 safe and fully revertible system tweaks
 - Custom Rules engine with 25 quick rules in 5 categories
+- Game detection: auto-activate gaming mode when a monitored game launches, with Steam/Epic library scan to find games automatically
 - Global keyboard shortcuts: Ctrl+G (toggle), Ctrl+B/P/E (presets)
 - Mini mode: compact always-on-top card with live CPU / RAM / GPU stats
 - Bar mode: thin, draggable, always-on-top overlay for in-game use
@@ -217,7 +218,7 @@ All PRs target `main` and require 1 review before merge.
 | v1.10.0 | 5 new system tweaks, ping in before/after activation impact | Done |
 | v1.11.0 | AMD/Intel GPU stats, tweak toggle bug fix, Custom preset accuracy | Done |
 | v1.12.0 | Full code review: custom rule execution, honest revert reporting, crash-recovery fixes | Done |
-| v2.0.0 | Game detection | Planned |
+| v2.0.0 | Game detection (manual + Steam/Epic auto-detect) | Done |
 
 ---
 

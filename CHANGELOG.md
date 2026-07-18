@@ -4,6 +4,18 @@ All notable changes to Mojo Gaming Mode are documented here.
 
 ---
 
+## [2.0.0] - 2026-07-18
+
+### Added
+
+- **Game detection**, the first v2.0.0 milestone feature. A new Games tab lets you add games to monitor (or scan your Steam and Epic libraries to find them automatically). When a monitored game launches, gaming mode auto-activates using that game's assigned preset, or the last active one. When the game closes, a notification lets you choose whether to deactivate, instead of doing it automatically.
+- **Steam/Epic library scan**: a "Scan for installed games" button in the Games tab. Epic detection is exact, reading the real launch executable straight from the game's manifest. Steam detection is best-effort, since Steam's local files don't expose the actual executable name directly; results are added disabled by default so you can review them.
+
+### Fixed
+
+- Individual tweak toggles could visually get stuck "highlighted" after being turned off, caused by a duplicate HTML id shared between the real Tweaks tab row and background summary views of the same tweak elsewhere in the app.
+- Extended the Games tab with the same active-state highlighting already used in Tweaks and Custom Rules.
+
 ## [1.12.0] - 2026-07-17
 
 A full internal code review found several places where the app reported success without actually verifying anything happened. This release fixes all of them.
