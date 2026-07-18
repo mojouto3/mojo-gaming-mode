@@ -168,9 +168,14 @@
               </label>
             </div>
 
-            <button class="btn-add-rule" id="btn-add-game">
-              <i class="ti ti-plus"></i> Add game
-            </button>
+            <div style="display:flex; gap:8px;">
+              <button class="btn-add-rule" id="btn-add-game" style="flex:1;">
+                <i class="ti ti-plus"></i> Add game
+              </button>
+              <button class="btn-add-rule" id="btn-scan-games" style="flex:1;">
+                <i class="ti ti-search"></i> Scan for installed games
+              </button>
+            </div>
 
             <div id="games-empty" class="games-empty" style="display:none">
               No games added yet. Click "Add game" to pick an executable to monitor.
