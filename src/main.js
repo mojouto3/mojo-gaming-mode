@@ -962,6 +962,102 @@ ipcMain.handle('browse-for-exe', async () => {
   }
 });
 
+ipcMain.handle('scan-installed-games', async () => {
+  const script = `
+$ProgressPreference = 'SilentlyContinue'
+$results = @()
+
+try {
+  $steamPath = $null
+  $regPaths = @('HKLM:\\SOFTWARE\\WOW6432Node\\Valve\\Steam', 'HKLM:\\SOFTWARE\\Valve\\Steam', 'HKCU:\\Software\\Valve\\Steam')
+  foreach ($rp in $regPaths) {
+    if (Test-Path $rp) {
+      $val = Get-ItemProperty -Path $rp -ErrorAction SilentlyContinue
+      if ($val.InstallPath) { $steamPath = $val.InstallPath; break }
+      if ($val.SteamPath) { $steamPath = $val.SteamPath; break }
+    }
+  }
+  if ($steamPath) {
+    $libraries = @($steamPath)
+    $libFile = Join-Path $steamPath 'steamapps\\libraryfolders.vdf'
+    if (Test-Path $libFile) {
+      $content = Get-Content $libFile -Raw
+      $pathMatches = [regex]::Matches($content, '"path"\\s+"([^"]+)"')
+      foreach ($m in $pathMatches) {
+        $p = $m.Groups[1].Value -replace '\\\\\\\\', '\\'
+        if ($libraries -notcontains $p) { $libraries += $p }
+      }
+    }
+    $skipExePattern = 'unins|setup|redist|vcredist|dxsetup|crashpad|crashreporter|easyanticheat|battleye|directx|dotnet|vc_redist|helper|updater|epiconlineservices|eossdk|eos_|minidump|stackwalk|crashhandler'
+    $skipGameNamePattern = 'SteamVR|Steamworks Common Redistributables|Proton \\d'
+    foreach ($lib in $libraries) {
+      $steamappsDir = Join-Path $lib 'steamapps'
+      if (-not (Test-Path $steamappsDir)) { continue }
+      $acfFiles = Get-ChildItem -Path $steamappsDir -Filter 'appmanifest_*.acf' -ErrorAction SilentlyContinue
+      foreach ($acf in $acfFiles) {
+        $c = Get-Content $acf.FullName -Raw
+        $nameMatch = [regex]::Match($c, '"name"\\s+"([^"]+)"')
+        $dirMatch = [regex]::Match($c, '"installdir"\\s+"([^"]+)"')
+        if (-not $nameMatch.Success -or -not $dirMatch.Success) { continue }
+        if ($nameMatch.Groups[1].Value -match $skipGameNamePattern) { continue }
+        $gameFolder = Join-Path $steamappsDir ('common\\' + $dirMatch.Groups[1].Value)
+        if (-not (Test-Path $gameFolder)) { continue }
+        $exes = Get-ChildItem -Path $gameFolder -Filter '*.exe' -File -Recurse -Depth 5 -ErrorAction SilentlyContinue |
+          Where-Object { $_.Name -notmatch $skipExePattern -and $_.DirectoryName -notmatch '_CommonRedist|Redistributable|CrashReportClient|__Installer' } |
+          Sort-Object Length -Descending
+        if ($exes.Count -eq 0) { continue }
+        $results += [PSCustomObject]@{ name = $nameMatch.Groups[1].Value; exeName = $exes[0].BaseName; exePath = $exes[0].FullName; source = 'Steam' }
+      }
+    }
+  }
+} catch {}
+
+try {
+  $epicManifests = Join-Path $env:PROGRAMDATA 'Epic\\EpicGamesLauncher\\Data\\Manifests'
+  if (Test-Path $epicManifests) {
+    $items = Get-ChildItem -Path $epicManifests -Filter '*.item' -ErrorAction SilentlyContinue
+    foreach ($item in $items) {
+      try {
+        $json = Get-Content $item.FullName -Raw | ConvertFrom-Json
+        if (-not $json.DisplayName -or -not $json.LaunchExecutable) { continue }
+        $exePath = Join-Path $json.InstallLocation $json.LaunchExecutable
+        $exeName = [System.IO.Path]::GetFileNameWithoutExtension($json.LaunchExecutable)
+        $results += [PSCustomObject]@{ name = $json.DisplayName; exeName = $exeName; exePath = $exePath; source = 'Epic' }
+      } catch {}
+    }
+  }
+} catch {}
+
+$jsonItems = $results | ForEach-Object { $_ | ConvertTo-Json -Compress }
+Write-Output ('[' + ($jsonItems -join ',') + ']')
+  `;
+  try {
+    const { spawn } = require('child_process');
+    const encoded = Buffer.from(script, 'utf16le').toString('base64');
+    const result = await new Promise((resolve) => {
+      const ps = spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', encoded], { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
+      let stdout = '';
+      let stderr = '';
+      ps.stdout.on('data', d => stdout += d);
+      ps.stderr.on('data', d => stderr += d);
+      ps.on('close', (code) => resolve({ code, stdout, stderr }));
+      ps.on('error', (err) => resolve({ code: -1, stdout: '', stderr: err.message }));
+    });
+    if (result.code !== 0) {
+      return { success: false, error: result.stderr.trim() || `Exit code ${result.code}`, games: [] };
+    }
+    let games = [];
+    try {
+      games = JSON.parse(result.stdout.trim() || '[]');
+    } catch (e) {
+      return { success: false, error: 'Could not parse scan results: ' + e.message, games: [] };
+    }
+    return { success: true, games };
+  } catch (e) {
+    return { success: false, error: e.message, games: [] };
+  }
+});
+
 ipcMain.on('game-detection-start', (e, processNames) => {
   gameDetection.start(processNames, (data) => {
     if (mainWindow && !mainWindow.isDestroyed()) {
