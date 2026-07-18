@@ -4,6 +4,12 @@ All notable changes to Mojo Gaming Mode are documented here.
 
 ---
 
+## [2.0.1] - 2026-07-18
+
+### Fixed
+
+- Clicking the "game closed" notification did nothing in the installed app (it worked fine in development, which masked this). Windows requires an app to have a matching AppUserModelID for notification clicks to correctly bring the app to the foreground, which Electron only sets up automatically for Squirrel-based installers, not NSIS. Set explicitly now.
+
 ## [2.0.0] - 2026-07-18
 
 ### Added
