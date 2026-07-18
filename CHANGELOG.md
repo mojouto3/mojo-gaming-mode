@@ -4,6 +4,12 @@ All notable changes to Mojo Gaming Mode are documented here.
 
 ---
 
+## [2.0.2] - 2026-07-18
+
+### Fixed
+
+- The AppUserModelID fix in v2.0.1 wasn't enough on its own: Windows notification click-to-focus is a known, still-unresolved issue in Electron itself for packaged (non-Squirrel) apps, even with a correctly configured AppUserModelID. Rather than depend on the notification click working, the game-closed prompt now reliably appears the next time the app window is shown or focused by any means (tray icon, taskbar, or a working notification click), instead of only firing through the unreliable click path.
+
 ## [2.0.1] - 2026-07-18
 
 ### Fixed
