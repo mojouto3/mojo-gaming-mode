@@ -218,6 +218,24 @@ function createWindow() {
     if (typeof savedOpacity === 'number') mainWindow.setOpacity(savedOpacity);
   });
 
+  // Reliable fallback for the game-closed prompt: Windows notification
+  // click-through to focus a packaged (non-Squirrel) Electron app is a
+  // known unreliable area (electron/electron#32585), even with a correct
+  // AppUserModelID. Rather than depend on that alone, whenever the window
+  // is shown or focused by ANY means (tray click, taskbar, a working
+  // notification click, etc.), check for a pending decision and show it
+  // then, so the prompt always eventually appears instead of silently
+  // never firing.
+  const checkPendingGameClosePrompt = () => {
+    if (pendingGameClosePrompt && mainWindow && !mainWindow.isDestroyed()) {
+      const name = pendingGameClosePrompt;
+      pendingGameClosePrompt = null;
+      mainWindow.webContents.send('game-closed-prompt', name);
+    }
+  };
+  mainWindow.on('show', checkPendingGameClosePrompt);
+  mainWindow.on('focus', checkPendingGameClosePrompt);
+
   mainWindow.on('close', (e) => {
     e.preventDefault();
     metrics.stop();
@@ -722,7 +740,7 @@ ipcMain.handle('revert-mode', async (e, config) => {
   try {
     // Use the tweaks that were actually applied, not the config
     const tweaksToRevert = [...activeTweakIds];
-    
+    pendingGameClosePrompt = null; // no longer relevant once actually deactivated
 
     const results = await executeTweaks(tweaksToRevert, TWEAK_DEFINITIONS, 'revert');
     const failed = results.filter(r => !r.success && !r.skipped);
@@ -1074,10 +1092,14 @@ ipcMain.on('game-detection-stop', () => {
   gameDetection.stop();
 });
 
+let pendingGameClosePrompt = null; // gameName, or null - fallback for when the notification click doesn't fire (known Electron/Windows issue)
+
 ipcMain.on('notify-game-closed', (e, gameName) => {
+  pendingGameClosePrompt = gameName;
+
   const notif = new Notification({
     title: 'Game closed',
-    body: `${gameName} closed. Click to review gaming mode.`,
+    body: `${gameName} closed. Click to review gaming mode, or open the app.`,
     icon: path.join(ASSETS_PATH, 'icons', 'icon.ico'),
     silent: true
   });
@@ -1085,8 +1107,12 @@ ipcMain.on('notify-game-closed', (e, gameName) => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.show();
       mainWindow.focus();
-      mainWindow.webContents.send('game-closed-prompt', gameName);
     }
+    // Deliberately not sending game-closed-prompt directly here - the
+    // mainWindow 'show'/'focus' listener below handles it, so there's
+    // exactly one path that fires the prompt, regardless of whether it
+    // was reached via a working notification click or the user just
+    // opening the app normally afterwards.
   });
   notif.show();
 });
