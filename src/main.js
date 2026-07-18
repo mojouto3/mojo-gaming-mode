@@ -331,7 +331,11 @@ app.on('second-instance', () => {
 app.commandLine.appendSwitch('disable-gpu-shader-disk-cache');
 app.commandLine.appendSwitch('no-sandbox');
 
-
+// Required for Windows toast notification clicks to correctly focus this
+// app in the packaged build. Electron auto-sets this for Squirrel-based
+// installers, but this app uses NSIS, so it must be set explicitly here,
+// matching the "appId" in package.json's electron-builder config exactly.
+app.setAppUserModelId('com.mojomultimedia.gaming-mode');
 
 app.whenReady().then(async () => {
   detectedGPU = await detectGPU();
