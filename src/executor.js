@@ -87,7 +87,7 @@ async function executeCustomRule(rule, mode) {
     } else {
       if (rule.reopenOnDeactivate && rule.exePath) {
         const exePath = psEscape(rule.exePath);
-        command = `If (Test-Path '${exePath}') { Start-Process '${exePath}' -ErrorAction SilentlyContinue }; Exit 0`;
+        command = `If (Test-Path '${exePath}') { Start-Process "explorer.exe" -ArgumentList '${exePath}' -ErrorAction SilentlyContinue }; Exit 0`;
       } else {
         return { id: rule.name, success: true, skipped: true };
       }
