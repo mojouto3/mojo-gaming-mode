@@ -83,11 +83,13 @@ async function executeCustomRule(rule, mode) {
 
   if (rule.type === 'kill') {
     if (mode === 'apply') {
-      command = `Get-Process -Name '${target}' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`;
+      const marker = psEscape('mgm_wasrunning_custom_' + (rule.id || rule.name || 'rule').replace(/[^a-zA-Z0-9]/g, ''));
+      command = `$marker = "$env:TEMP\\${marker}.flag"; $running = Get-Process -Name '${target}' -ErrorAction SilentlyContinue; If ($running) { New-Item -Path $marker -ItemType File -Force | Out-Null } Else { Remove-Item $marker -ErrorAction SilentlyContinue }; $running | Stop-Process -Force; Exit 0`;
     } else {
       if (rule.reopenOnDeactivate && rule.exePath) {
         const exePath = psEscape(rule.exePath);
-        command = `If (Test-Path '${exePath}') { Start-Process '${exePath}' -ErrorAction SilentlyContinue }; Exit 0`;
+        const marker = psEscape('mgm_wasrunning_custom_' + (rule.id || rule.name || 'rule').replace(/[^a-zA-Z0-9]/g, ''));
+        command = `$marker = "$env:TEMP\\${marker}.flag"; If ((Test-Path $marker) -and (Test-Path '${exePath}')) { Remove-Item $marker -ErrorAction SilentlyContinue; $tn = 'MGM_' + [guid]::NewGuid().ToString('N').Substring(0,8); $act = New-ScheduledTaskAction -Execute '${exePath}'; $pri = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel Limited; Register-ScheduledTask -TaskName $tn -Action $act -Principal $pri -Force | Out-Null; Start-ScheduledTask -TaskName $tn; Start-Sleep -Milliseconds 1000; Unregister-ScheduledTask -TaskName $tn -Confirm:$false -ErrorAction SilentlyContinue }; Exit 0`;
       } else {
         return { id: rule.name, success: true, skipped: true };
       }
