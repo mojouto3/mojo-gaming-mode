@@ -9,7 +9,12 @@ let isRunning = false;
 const PS_SCRIPT = `
 $ProgressPreference = 'SilentlyContinue'
 while ($true) {
-  $cpu = [math]::Round((Get-CimInstance -ClassName Win32_Processor | Measure-Object -Property LoadPercentage -Average).Average, 1)
+  # Win32_Processor.LoadPercentage only reflects the first core of each
+  # physical processor, not true overall usage (confirmed: pinning load to
+  # different cores gives wildly different readings for the same real load).
+  # Use the same Performance Counter Task Manager itself reads from instead.
+  $cpuSample = Get-Counter '\\Processor(_Total)\\% Processor Time' -SampleInterval 1 -MaxSamples 2 -ErrorAction SilentlyContinue
+  $cpu = if ($cpuSample) { [math]::Round($cpuSample.CounterSamples[-1].CookedValue, 1) } else { 0 }
   $os = Get-CimInstance -ClassName Win32_OperatingSystem
   $ramTotal = [math]::Round($os.TotalVisibleMemorySize / 1MB, 1)
   $ramFree = [math]::Round($os.FreePhysicalMemory / 1MB, 1)
@@ -54,13 +59,14 @@ while ($true) {
   }
   $result = @{ cpu=$cpu; ramPct=$ramPct; ramUsed=$ramUsed; ramTotal=$ramTotal; gpuName=$gpuName; gpuUsage=$gpuUsage; gpuVramUsed=$gpuVramUsed; gpuVramTotal=$gpuVramTotal; gpuVramPct=$gpuVramPct; gpuTemp=$gpuTemp } | ConvertTo-Json -Compress
   Write-Output $result
-  Start-Sleep -Seconds 2
+  Start-Sleep -Seconds 1
 }
 `;
 
 const PS_SNAPSHOT_SCRIPT = `
 $ProgressPreference = 'SilentlyContinue'
-$cpu = [math]::Round((Get-CimInstance -ClassName Win32_Processor | Measure-Object -Property LoadPercentage -Average).Average, 1)
+$cpuSample = Get-Counter '\\Processor(_Total)\\% Processor Time' -SampleInterval 1 -MaxSamples 2 -ErrorAction SilentlyContinue
+$cpu = if ($cpuSample) { [math]::Round($cpuSample.CounterSamples[-1].CookedValue, 1) } else { 0 }
 $os = Get-CimInstance -ClassName Win32_OperatingSystem
 $ramTotal = [math]::Round($os.TotalVisibleMemorySize / 1MB, 1)
 $ramFree = [math]::Round($os.FreePhysicalMemory / 1MB, 1)
