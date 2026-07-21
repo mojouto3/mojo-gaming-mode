@@ -509,6 +509,21 @@ function bindEvents() {
   });
   window.mgm.onGameDetectionEvent((data) => handleGameDetectionEvent(data));
   window.mgm.onGameClosedPrompt((gameName) => showGameDeactivatePrompt(gameName));
+
+  document.getElementById('app-restart-confirm-close')?.addEventListener('click', () => {
+    document.getElementById('app-restart-confirm-overlay')?.classList.remove('open');
+    pendingRestartConfirm = null;
+  });
+  document.getElementById('app-restart-confirm-cancel')?.addEventListener('click', () => {
+    document.getElementById('app-restart-confirm-overlay')?.classList.remove('open');
+    pendingRestartConfirm = null;
+  });
+  document.getElementById('app-restart-confirm-ok')?.addEventListener('click', () => {
+    document.getElementById('app-restart-confirm-overlay')?.classList.remove('open');
+    const fn = pendingRestartConfirm;
+    pendingRestartConfirm = null;
+    if (fn) fn();
+  });
 }
 
 // ── GPU Theme ─────────────────────────────────────────────────────────────────
@@ -652,7 +667,7 @@ function iconFor(id) {
     fso: 'maximize', hpet: 'clock', msi: 'cpu-2',
     xbox: 'brand-xbox', steam: 'brand-steam', nvoverlay: 'device-desktop',
     onedrive: 'cloud', discord: 'brand-discord', telemetry: 'radar',
-    qos: 'router', nagle: 'network'
+    nagle: 'network'
   };
   return map[id] || 'settings';
 }
@@ -1163,7 +1178,24 @@ async function takeAveragedSnapshot() {
 // toast entirely, with no error and no visible symptom other than the
 // toast never appearing. Always wrap in a named handler that calls the
 // function with explicit arguments instead of passing it directly.
-function onActivateClick() { applyMode(); }
+function onActivateClick() {
+  const restartingTweaks = ALL_TWEAKS.filter(t => t.restartsApp && state.tweaks[t.id]);
+  if (restartingTweaks.length > 0) {
+    const names = restartingTweaks.map(t => t.name).join(', ');
+    showAppRestartConfirm(names, () => applyMode());
+  } else {
+    applyMode();
+  }
+}
+
+function showAppRestartConfirm(names, onConfirm) {
+  const msg = document.getElementById('app-restart-confirm-msg');
+  if (msg) msg.textContent = `${names} will restart to apply this setting, which may interrupt an active call. Continue?`;
+  pendingRestartConfirm = onConfirm;
+  document.getElementById('app-restart-confirm-overlay')?.classList.add('open');
+}
+
+let pendingRestartConfirm = null;
 function onRevertClick() { revertMode(); }
 
 async function applyMode(silent = false) {
