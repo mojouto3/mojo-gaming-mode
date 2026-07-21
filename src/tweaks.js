@@ -46,6 +46,7 @@ const TWEAK_DEFINITIONS = {
   hpet: {
     name: 'Disable HPET timer',
     requiresAdmin: true,
+    requiresReboot: true,
     applyCmd: `bcdedit /set useplatformclock false; Exit 0`,
     revertCmd: `bcdedit /deletevalue useplatformclock; Exit 0`
   },
@@ -53,6 +54,7 @@ const TWEAK_DEFINITIONS = {
   msi: {
     name: 'MSI interrupt mode',
     requiresAdmin: true,
+    requiresReboot: true,
     applyCmd: `$gpu=Get-WmiObject Win32_VideoController|Where-Object{$_.Name -notlike '*Virtual*' -and $_.Name -notlike '*Meta*'}|Select-Object -First 1; If($gpu){$p="HKLM:\\SYSTEM\\CurrentControlSet\\Enum\\$($gpu.PNPDeviceID)\\Device Parameters\\Interrupt Management\\MessageSignaledInterruptProperties"; If(!(Test-Path $p)){New-Item -Path $p -Force|Out-Null}; Set-ItemProperty -Path $p -Name 'MSISupported' -Value 1 -Type DWord}; Exit 0`,
     revertCmd: `$gpu=Get-WmiObject Win32_VideoController|Where-Object{$_.Name -notlike '*Virtual*' -and $_.Name -notlike '*Meta*'}|Select-Object -First 1; If($gpu){$p="HKLM:\\SYSTEM\\CurrentControlSet\\Enum\\$($gpu.PNPDeviceID)\\Device Parameters\\Interrupt Management\\MessageSignaledInterruptProperties"; If(Test-Path $p){Set-ItemProperty -Path $p -Name 'MSISupported' -Value 0 -Type DWord -ErrorAction SilentlyContinue}}; Exit 0`
   },
@@ -103,16 +105,10 @@ const TWEAK_DEFINITIONS = {
 
   // ── NETWORK ──────────────────────────────────────────────────────────────────
 
-  qos: {
-    name: 'QoS packet scheduling off',
-    requiresAdmin: true,
-    applyCmd: `$p='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\Psched'; If(!(Test-Path $p)){New-Item -Path $p -Force|Out-Null}; Set-ItemProperty -Path $p -Name 'NonBestEffortLimit' -Value 0 -Type DWord; Exit 0`,
-    revertCmd: `$p='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\Psched'; If(Test-Path $p){Remove-ItemProperty -Path $p -Name 'NonBestEffortLimit' -ErrorAction SilentlyContinue}; Exit 0`
-  },
-
   nagle: {
     name: "Disable Nagle's algorithm",
     requiresAdmin: true,
+    requiresReboot: true,
     applyCmd: `$ifaces=Get-ChildItem 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces'; ForEach($i in $ifaces){Set-ItemProperty -Path $i.PSPath -Name 'TcpAckFrequency' -Value 1 -Type DWord -ErrorAction SilentlyContinue; Set-ItemProperty -Path $i.PSPath -Name 'TCPNoDelay' -Value 1 -Type DWord -ErrorAction SilentlyContinue}; Exit 0`,
     revertCmd: `$ifaces=Get-ChildItem 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces'; ForEach($i in $ifaces){Remove-ItemProperty -Path $i.PSPath -Name 'TcpAckFrequency' -ErrorAction SilentlyContinue; Remove-ItemProperty -Path $i.PSPath -Name 'TCPNoDelay' -ErrorAction SilentlyContinue}; Exit 0`
   },
@@ -124,13 +120,6 @@ const TWEAK_DEFINITIONS = {
     requiresAdmin: false,
     applyCmd: `$p='HKCU:\\Software\\Policies\\Microsoft\\Windows\\Explorer'; If(!(Test-Path $p)){New-Item -Path $p -Force|Out-Null}; Set-ItemProperty -Path $p -Name 'DisableNotificationCenter' -Value 1 -Type DWord; Exit 0`,
     revertCmd: `$p='HKCU:\\Software\\Policies\\Microsoft\\Windows\\Explorer'; If(Test-Path $p){Remove-ItemProperty -Path $p -Name 'DisableNotificationCenter' -ErrorAction SilentlyContinue}; Exit 0`
-  },
-
-  pointerprecision: {
-    name: 'Enhanced Pointer Precision off',
-    requiresAdmin: false,
-    applyCmd: `$p='HKCU:\\Control Panel\\Mouse'; Set-ItemProperty -Path $p -Name 'MouseSpeed' -Value '0' -Type String; Set-ItemProperty -Path $p -Name 'MouseThreshold1' -Value '0' -Type String; Set-ItemProperty -Path $p -Name 'MouseThreshold2' -Value '0' -Type String; Exit 0`,
-    revertCmd: `$p='HKCU:\\Control Panel\\Mouse'; Set-ItemProperty -Path $p -Name 'MouseSpeed' -Value '1' -Type String; Set-ItemProperty -Path $p -Name 'MouseThreshold1' -Value '6' -Type String; Set-ItemProperty -Path $p -Name 'MouseThreshold2' -Value '10' -Type String; Exit 0`
   },
 
   winupdate: {
