@@ -113,7 +113,6 @@ const DEFAULT_CONFIG = {
     xbox: false,
     steam: false,
     nvoverlay: false,
-    qos: false,
     nagle: false,
     msi: false,
     discord: false,
@@ -121,7 +120,6 @@ const DEFAULT_CONFIG = {
     fso: false,
     hpet: false,
     focusassist: false,
-    pointerprecision: false,
     winupdate: false,
     nicpower: false,
     usbsuspend: false
@@ -357,6 +355,36 @@ app.setAppUserModelId('com.mojomultimedia.gaming-mode');
 
 app.whenReady().then(async () => {
   detectedGPU = await detectGPU();
+
+  // One-time cleanup: the 'qos' tweak was removed (confirmed to have no
+  // real effect for typical gaming/app traffic - the "80% bandwidth
+  // reserved" claim is a long-debunked myth). Anyone who had it active
+  // before this update needs its registry key removed directly, since
+  // crash-recovery/revert can no longer look up a definition for it.
+  try {
+    await runPS(`Remove-ItemProperty -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\Psched' -Name 'NonBestEffortLimit' -ErrorAction SilentlyContinue; Exit 0`);
+  } catch (e) {}
+
+  // Note: no migration cleanup for the removed 'pointerprecision' tweak.
+  // Unlike QoS's NonBestEffortLimit (an obscure key essentially only ever
+  // touched by tools like this one), MouseSpeed=0 is a common, legitimate
+  // personal preference many users set manually via Windows' own UI,
+  // independent of ever having used this tweak. There's no reliable way
+  // to tell "we set this" apart from "the user already had it this way",
+  // so automatically resetting it risks overwriting a real user choice.
+
+  // One-time cleanup: briefly tried switching 'focusassist' to
+  // NOC_GLOBAL_SETTING_TOASTS_ENABLED, based on documentation suggesting
+  // DisableNotificationCenter only hides the panel rather than actually
+  // blocking banners. Real testing showed DisableNotificationCenter was
+  // actually working correctly the whole time (confirmed: banners were
+  // blocked with it, not blocked with the "corrected" version) - so it's
+  // back in use. Anyone who tested the brief incorrect version needs this
+  // key restored to enabled (1), since it's obscure enough that only this
+  // tool would plausibly have touched it.
+  try {
+    await runPS(`Set-ItemProperty -Path 'HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Notifications\\Settings' -Name 'NOC_GLOBAL_SETTING_TOASTS_ENABLED' -Value 1 -Type DWord -ErrorAction SilentlyContinue; Exit 0`);
+  } catch (e) {}
 
   // Global keyboard shortcut Ctrl+G to toggle gaming mode
   globalShortcut.register('CommandOrControl+G', () => {

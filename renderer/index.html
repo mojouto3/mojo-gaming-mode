@@ -522,6 +522,22 @@
     </div>
   </div>
 
+  <div class="modal-overlay" id="app-restart-confirm-overlay">
+    <div class="modal" style="max-width:340px">
+      <div class="modal-header">
+        <span class="modal-title"><i class="ti ti-alert-triangle"></i> App will restart</span>
+        <button class="modal-close" id="app-restart-confirm-close"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:13px; color:var(--text2); margin:0;" id="app-restart-confirm-msg">This will restart an app. Continue?</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="app-restart-confirm-cancel">Cancel</button>
+        <button class="btn-ok" id="app-restart-confirm-ok">Continue</button>
+      </div>
+    </div>
+  </div>
+
   <script src="js/translations.js"></script>
   <!-- Mini Mode -->
   <div class="mini-mode" id="mini-mode" style="display:none">
