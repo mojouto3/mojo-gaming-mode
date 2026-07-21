@@ -4,6 +4,21 @@ All notable changes to Mojo Gaming Mode are documented here.
 
 ---
 
+## [2.0.4] - 2026-07-21
+
+A full accuracy audit of all 20 core tweaks: does each one actually deliver what its name and description promise, not just whether the underlying command runs without error.
+
+### Removed
+
+- **QoS packet scheduling off**: confirmed a 20+ year old debunked myth. It only affects apps that actively request Windows QoS bandwidth reservations, which essentially no modern game does, so it delivered no real benefit despite writing successfully.
+- **Enhanced Pointer Precision off**: meant to be toggled per gaming session, but a registry change alone doesn't apply live in the current session, only after signing out or restarting - which isn't practical for something you'd want to toggle every session. No reliable way to force it live was found.
+
+### Fixed
+
+- **Discord GPU acceleration off**: previously tried to auto-restart Discord so the change applies immediately, but Discord's own updater requires admin rights, which conflicts with how this app safely relaunches other apps. Now just changes the setting and tells you to restart Discord yourself, with an explanation of why.
+- **Focus Assist (notifications) off**: the description overpromised. It actually locks the Notification Center panel from opening, it does not block notification banners from appearing. Description corrected to match.
+- **Disable HPET timer**, **MSI interrupt mode**, **Disable Nagle's algorithm**: all confirmed to require a restart to take effect, which wasn't previously mentioned. Descriptions updated.
+
 ## [2.0.3] - 2026-07-18
 
 ### Fixed
