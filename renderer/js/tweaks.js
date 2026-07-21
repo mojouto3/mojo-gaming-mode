@@ -45,7 +45,7 @@ const TWEAKS = {
     {
       id: 'hpet',
       name: 'Disable HPET timer',
-      desc: 'May reduce interrupt latency. Test on your CPU - results vary.',
+      desc: 'May reduce interrupt latency. Test on your CPU - results vary. Requires a restart to take effect.',
       cmd: 'bcdedit /set useplatformclock false',
       tag: 'a',
       presets: { balanced: false, performance: true, esports: true }
@@ -53,7 +53,7 @@ const TWEAKS = {
     {
       id: 'msi',
       name: 'MSI interrupt mode',
-      desc: 'Message Signaled Interrupts reduce GPU latency on supported hardware.',
+      desc: 'Message Signaled Interrupts reduce GPU latency on supported hardware. Requires a restart to take effect.',
       cmd: 'Registry: MSISupported=1 under GPU device key',
       tag: 'r',
       presets: { balanced: false, performance: false, esports: true }
@@ -61,18 +61,10 @@ const TWEAKS = {
     {
       id: 'focusassist',
       name: 'Focus Assist (notifications) off',
-      desc: 'Suppresses Windows notifications while gaming mode is active.',
+      desc: 'Locks the Notification Center panel so it can\'t be opened during gaming.',
       cmd: 'Registry: DisableNotificationCenter=1',
       tag: 's',
       presets: { balanced: false, performance: true, esports: true }
-    },
-    {
-      id: 'pointerprecision',
-      name: 'Enhanced Pointer Precision off',
-      desc: 'Disables mouse acceleration for consistent, 1:1 aim.',
-      cmd: 'Registry: HKCU\\Control Panel\\Mouse',
-      tag: 'a',
-      presets: { balanced: false, performance: false, esports: true }
     },
     {
       id: 'winupdate',
@@ -127,7 +119,7 @@ const TWEAKS = {
     {
       id: 'discord',
       name: 'Discord GPU acceleration off',
-      desc: 'Disables hardware acceleration in Discord to free VRAM.',
+      desc: 'Disables hardware acceleration in Discord to free VRAM. Requires restarting Discord yourself to take effect (Discord\'s own updater requires admin rights, so this can\'t be done automatically).',
       cmd: 'Discord settings.json: hardwareAcceleration=false',
       tag: 's',
       presets: { balanced: false, performance: false, esports: true }
@@ -143,17 +135,9 @@ const TWEAKS = {
   ],
   net: [
     {
-      id: 'qos',
-      name: 'QoS packet scheduling off',
-      desc: 'Removes the 20% bandwidth reserve held for system processes.',
-      cmd: 'Registry: HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Psched',
-      tag: 'a',
-      presets: { balanced: false, performance: true, esports: true }
-    },
-    {
       id: 'nagle',
       name: "Disable Nagle's algorithm",
-      desc: 'Reduces TCP packet delay for lower ping in online games.',
+      desc: 'Reduces TCP packet delay for lower ping in online games. Requires a restart to take effect for existing connections.',
       cmd: 'Registry: TcpAckFrequency=1, TCPNoDelay=1',
       tag: 'r',
       presets: { balanced: false, performance: false, esports: true }
