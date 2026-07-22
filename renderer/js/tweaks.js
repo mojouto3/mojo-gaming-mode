@@ -81,6 +81,30 @@ const TWEAKS = {
       cmd: 'powercfg USB selective suspend setting',
       tag: 's',
       presets: { balanced: false, performance: true, esports: true }
+    },
+    {
+      id: 'xboxservices',
+      name: 'Xbox background services off',
+      desc: 'Stops Xbox Live background services (auth, cloud saves, networking) that run even if you don\'t use Xbox features. Breaks Xbox Live sign-in, cloud saves, and cross-play while active - only enable if you don\'t use those.',
+      cmd: 'sc stop/disable XblAuthManager, XblGameSave, XboxNetApiSvc, XboxGipSvc',
+      tag: 'a',
+      presets: { balanced: false, performance: false, esports: true }
+    },
+    {
+      id: 'wersvc',
+      name: 'Windows Error Reporting off',
+      desc: 'Stops the background service that generates crash dump reports, avoiding disk/CPU spikes if something else crashes while gaming.',
+      cmd: 'sc stop WerSvc & sc config WerSvc start=disabled',
+      tag: 'a',
+      presets: { balanced: false, performance: true, esports: true }
+    },
+    {
+      id: 'diskoptimize',
+      name: 'Disk optimization schedule pause',
+      desc: 'Pauses the scheduled disk optimization task for the gaming session, avoiding disk contention if it happens to run while you play.',
+      cmd: 'schtasks: disable ScheduledDefrag',
+      tag: 'a',
+      presets: { balanced: false, performance: true, esports: true }
     }
   ],
   ov: [
