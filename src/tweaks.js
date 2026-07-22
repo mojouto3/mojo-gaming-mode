@@ -141,6 +141,34 @@ const TWEAK_DEFINITIONS = {
     requiresAdmin: true,
     applyCmd: `powercfg /setacvalueindex SCHEME_CURRENT 2a737441-1930-4402-8d77-b2bebba308a3 48e6b7a6-50f5-4782-a5d4-53bb8f07e226 0; powercfg /setdcvalueindex SCHEME_CURRENT 2a737441-1930-4402-8d77-b2bebba308a3 48e6b7a6-50f5-4782-a5d4-53bb8f07e226 0; powercfg /setactive SCHEME_CURRENT; Exit 0`,
     revertCmd: `powercfg /setacvalueindex SCHEME_CURRENT 2a737441-1930-4402-8d77-b2bebba308a3 48e6b7a6-50f5-4782-a5d4-53bb8f07e226 1; powercfg /setdcvalueindex SCHEME_CURRENT 2a737441-1930-4402-8d77-b2bebba308a3 48e6b7a6-50f5-4782-a5d4-53bb8f07e226 1; powercfg /setactive SCHEME_CURRENT; Exit 0`
+  },
+
+  xboxservices: {
+    name: 'Xbox background services off',
+    requiresAdmin: true,
+    // Stop+disable only, never delete - deleting these has left people
+    // unable to use Xbox/Game Pass/cross-play features at all afterward.
+    // Only restart a service on revert if it was actually running before.
+    // XblGameSave specifically is Trigger Start, not plain Manual - it can
+    // accept a start request without throwing yet still not transition to
+    // Running, so success is verified by checking actual status after,
+    // not by whether Start-Service threw an exception.
+    applyCmd: `$svcs = 'XblAuthManager','XblGameSave','XboxNetApiSvc','XboxGipSvc'; ForEach ($s in $svcs) { $svc = Get-Service -Name $s -ErrorAction SilentlyContinue; $marker = "$env:TEMP\\mgm_wasrunning_$s.flag"; If ($svc -and $svc.Status -eq 'Running') { New-Item -Path $marker -ItemType File -Force | Out-Null } Else { Remove-Item $marker -ErrorAction SilentlyContinue }; Stop-Service -Name $s -Force -ErrorAction SilentlyContinue; Set-Service -Name $s -StartupType Disabled -ErrorAction SilentlyContinue }; Exit 0`,
+    revertCmd: `$svcs = 'XblAuthManager','XblGameSave','XboxNetApiSvc','XboxGipSvc'; $failed = @(); ForEach ($s in $svcs) { $marker = "$env:TEMP\\mgm_wasrunning_$s.flag"; sc.exe config $s start= demand | Out-Null; If (Test-Path $marker) { Remove-Item $marker -ErrorAction SilentlyContinue; Start-Service -Name $s -ErrorAction SilentlyContinue; Start-Sleep -Milliseconds 500; $chk = Get-Service -Name $s -ErrorAction SilentlyContinue; If (-not $chk -or $chk.Status -ne 'Running') { Start-Sleep -Milliseconds 800; Start-Service -Name $s -ErrorAction SilentlyContinue; Start-Sleep -Milliseconds 500; $chk2 = Get-Service -Name $s -ErrorAction SilentlyContinue; If (-not $chk2 -or $chk2.Status -ne 'Running') { $failed += $s } } } }; If ($failed.Count -gt 0) { Write-Output ("Failed to restart: " + ($failed -join ', ')); Exit 1 }; Exit 0`
+  },
+
+  wersvc: {
+    name: 'Windows Error Reporting off',
+    requiresAdmin: true,
+    applyCmd: `Stop-Service -Name 'WerSvc' -Force -ErrorAction SilentlyContinue; Set-Service -Name 'WerSvc' -StartupType Disabled -ErrorAction SilentlyContinue; Exit 0`,
+    revertCmd: `sc.exe config WerSvc start= demand; sc.exe start WerSvc; Exit 0`
+  },
+
+  diskoptimize: {
+    name: 'Disk optimization schedule pause',
+    requiresAdmin: true,
+    applyCmd: `Disable-ScheduledTask -TaskName 'ScheduledDefrag' -TaskPath '\\Microsoft\\Windows\\Defrag\\' -ErrorAction SilentlyContinue; Exit 0`,
+    revertCmd: `Enable-ScheduledTask -TaskName 'ScheduledDefrag' -TaskPath '\\Microsoft\\Windows\\Defrag\\' -ErrorAction SilentlyContinue; Exit 0`
   }
 
 };
