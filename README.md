@@ -20,7 +20,7 @@ A lightweight Windows gaming optimizer that automatically detects your GPU vendo
 - Before/after performance snapshot on activation, shown as a toast and as a persistent card in the Performance tab
 - Network latency monitor in the Performance tab, color-coded with sparkline history
 - Import and export custom rules as JSON, for backup or sharing between PCs
-- 20 safe and fully revertible system tweaks
+- 23 safe and fully revertible system tweaks
 - Custom Rules engine with 25 quick rules in 5 categories
 - Game detection: auto-activate gaming mode when a monitored game launches, with Steam/Epic library scan to find games automatically
 - Global keyboard shortcuts: Ctrl+G (toggle), Ctrl+B/P/E (presets)

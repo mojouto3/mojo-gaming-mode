@@ -4,6 +4,14 @@ All notable changes to Mojo Gaming Mode are documented here.
 
 ---
 
+## [2.1.0] - 2026-07-22
+
+### Added
+
+- **Xbox background services off**: stops Xbox Live background services (auth, cloud saves, networking) that run even if you don't use Xbox features. Breaks Xbox Live sign-in, cloud saves, and cross-play while active, so it's off by default - only enable it if you don't use those.
+- **Windows Error Reporting off**: stops the background service that generates crash dump reports, avoiding disk/CPU spikes if something else crashes while gaming.
+- **Disk optimization schedule pause**: pauses the scheduled disk optimization task for the gaming session, avoiding disk contention if it happens to run while you play.
+
 ## [2.0.4] - 2026-07-21
 
 A full accuracy audit of all 20 core tweaks: does each one actually deliver what its name and description promise, not just whether the underlying command runs without error.
