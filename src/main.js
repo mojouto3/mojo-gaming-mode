@@ -122,7 +122,10 @@ const DEFAULT_CONFIG = {
     focusassist: false,
     winupdate: false,
     nicpower: false,
-    usbsuspend: false
+    usbsuspend: false,
+    xboxservices: false,
+    wersvc: false,
+    diskoptimize: false
   },
   customRules: [],
   games: [],
