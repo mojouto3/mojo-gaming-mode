@@ -99,8 +99,13 @@ const TWEAK_DEFINITIONS = {
   telemetry: {
     name: 'Telemetry off',
     requiresAdmin: true,
-    applyCmd: `Stop-Service -Name 'DiagTrack' -Force -ErrorAction SilentlyContinue; Set-Service -Name 'DiagTrack' -StartupType Disabled -ErrorAction SilentlyContinue; Exit 0`,
-    revertCmd: `sc.exe config DiagTrack start= auto; sc.exe start DiagTrack; Exit 0`
+    // DiagTrack is the main collection/transport service. AllowTelemetry
+    // is a separate policy controlling the "optional diagnostic data"
+    // toggle in Settings (may be partially ignored on Home editions, per
+    // Microsoft's own documented behavior - this does what's possible).
+    // dmwappushsvc is commonly disabled alongside these in privacy guides.
+    applyCmd: `Stop-Service -Name 'DiagTrack' -Force -ErrorAction SilentlyContinue; Set-Service -Name 'DiagTrack' -StartupType Disabled -ErrorAction SilentlyContinue; Stop-Service -Name 'dmwappushservice' -Force -ErrorAction SilentlyContinue; Set-Service -Name 'dmwappushservice' -StartupType Disabled -ErrorAction SilentlyContinue; $p='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection'; If(!(Test-Path $p)){New-Item -Path $p -Force|Out-Null}; Set-ItemProperty -Path $p -Name 'AllowTelemetry' -Value 0 -Type DWord; Exit 0`,
+    revertCmd: `sc.exe config DiagTrack start= auto; sc.exe start DiagTrack; sc.exe config dmwappushservice start= demand; sc.exe start dmwappushservice; $p='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection'; If(Test-Path $p){Remove-ItemProperty -Path $p -Name 'AllowTelemetry' -ErrorAction SilentlyContinue}; Exit 0`
   },
 
   // ── NETWORK ──────────────────────────────────────────────────────────────────
