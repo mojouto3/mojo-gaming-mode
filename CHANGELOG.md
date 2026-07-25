@@ -4,6 +4,17 @@ All notable changes to Mojo Gaming Mode are documented here.
 
 ---
 
+## [2.2.0] - 2026-07-23
+
+### Added
+
+- **Hardware-accelerated GPU Scheduling tweak**: lets the GPU manage its own memory scheduling instead of Windows, which can reduce latency on supported hardware. Results vary, and some driver/hardware combinations don't respond to it at all - the tweak captures your real prior setting and restores exactly that on revert, since many systems (especially NVIDIA) already default to this being enabled. Requires a restart to take effect.
+- **Inactive Custom Rules badge**: a small badge on the "Custom rules" nav item shows how many of the built-in Quick Rules are currently off, so it's clear at a glance whether they'll actually do anything on your next Activate.
+
+### Changed
+
+- **Telemetry off** now also stops `dmwappushsvc` and sets the "optional diagnostic data" policy to off, in addition to the existing DiagTrack service stop. Previously only covered DiagTrack.
+
 ## [2.1.0] - 2026-07-22
 
 ### Added
