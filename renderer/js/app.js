@@ -864,7 +864,22 @@ function toggleCustomRule(id, val) {
   const countEl = document.getElementById('cr-active-count');
   if (countEl) countEl.textContent = activeCount + ' active';
   refreshCustomCardState();
+  updateRulesBadge();
   persistConfig();
+}
+
+function updateRulesBadge() {
+  const total = Object.keys(customRulesState).length;
+  const activeCount = Object.values(customRulesState).filter(Boolean).length;
+  const inactiveCount = total - activeCount;
+  const badge = document.getElementById('nb-rules');
+  if (!badge) return;
+  if (inactiveCount > 0) {
+    badge.textContent = inactiveCount + ' off';
+    badge.style.display = '';
+  } else {
+    badge.style.display = 'none';
+  }
 }
 
 function renderCustomPresetActive() {
@@ -1122,6 +1137,7 @@ function renderAll() {
   renderRules();
   renderGames();
   renderStats();
+  updateRulesBadge();
 }
 
 // ── Actions ───────────────────────────────────────────────────────────────────
@@ -1594,8 +1610,10 @@ function updateDynamicTranslations() {
     const el = document.getElementById(id);
     if (el) {
       const icon = el.querySelector('i');
+      const badge = el.querySelector('.nav-badge');
       el.textContent = t(key);
       if (icon) el.prepend(icon);
+      if (badge) el.appendChild(badge);
     }
   });
 

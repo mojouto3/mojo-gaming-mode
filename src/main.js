@@ -125,7 +125,8 @@ const DEFAULT_CONFIG = {
     usbsuspend: false,
     xboxservices: false,
     wersvc: false,
-    diskoptimize: false
+    diskoptimize: false,
+    hags: false
   },
   customRules: [],
   games: [],

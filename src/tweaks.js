@@ -99,13 +99,8 @@ const TWEAK_DEFINITIONS = {
   telemetry: {
     name: 'Telemetry off',
     requiresAdmin: true,
-    // DiagTrack is the main collection/transport service. AllowTelemetry
-    // is a separate policy controlling the "optional diagnostic data"
-    // toggle in Settings (may be partially ignored on Home editions, per
-    // Microsoft's own documented behavior - this does what's possible).
-    // dmwappushsvc is commonly disabled alongside these in privacy guides.
-    applyCmd: `Stop-Service -Name 'DiagTrack' -Force -ErrorAction SilentlyContinue; Set-Service -Name 'DiagTrack' -StartupType Disabled -ErrorAction SilentlyContinue; Stop-Service -Name 'dmwappushservice' -Force -ErrorAction SilentlyContinue; Set-Service -Name 'dmwappushservice' -StartupType Disabled -ErrorAction SilentlyContinue; $p='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection'; If(!(Test-Path $p)){New-Item -Path $p -Force|Out-Null}; Set-ItemProperty -Path $p -Name 'AllowTelemetry' -Value 0 -Type DWord; Exit 0`,
-    revertCmd: `sc.exe config DiagTrack start= auto; sc.exe start DiagTrack; sc.exe config dmwappushservice start= demand; sc.exe start dmwappushservice; $p='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection'; If(Test-Path $p){Remove-ItemProperty -Path $p -Name 'AllowTelemetry' -ErrorAction SilentlyContinue}; Exit 0`
+    applyCmd: `Stop-Service -Name 'DiagTrack' -Force -ErrorAction SilentlyContinue; Set-Service -Name 'DiagTrack' -StartupType Disabled -ErrorAction SilentlyContinue; Exit 0`,
+    revertCmd: `sc.exe config DiagTrack start= auto; sc.exe start DiagTrack; Exit 0`
   },
 
   // ── NETWORK ──────────────────────────────────────────────────────────────────
@@ -174,6 +169,19 @@ const TWEAK_DEFINITIONS = {
     requiresAdmin: true,
     applyCmd: `Disable-ScheduledTask -TaskName 'ScheduledDefrag' -TaskPath '\\Microsoft\\Windows\\Defrag\\' -ErrorAction SilentlyContinue; Exit 0`,
     revertCmd: `Enable-ScheduledTask -TaskName 'ScheduledDefrag' -TaskPath '\\Microsoft\\Windows\\Defrag\\' -ErrorAction SilentlyContinue; Exit 0`
+  },
+
+  hags: {
+    name: 'Hardware-accelerated GPU Scheduling',
+    requiresAdmin: true,
+    requiresReboot: true,
+    // Many systems (especially NVIDIA) already default to this enabled,
+    // so capture the real prior value rather than assuming a default to
+    // restore to. Not all hardware/driver combinations respond to this
+    // registry change at all - a known, documented limitation, not
+    // something this app can fix.
+    applyCmd: `$p='HKLM:\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers'; $marker="$env:TEMP\\mgm_haqs_prior.flag"; $cur = Get-ItemProperty -Path $p -Name HwSchMode -ErrorAction SilentlyContinue; If ($cur) { Set-Content -Path $marker -Value $cur.HwSchMode } Else { Set-Content -Path $marker -Value 'none' }; Set-ItemProperty -Path $p -Name 'HwSchMode' -Value 2 -Type DWord; Exit 0`,
+    revertCmd: `$p='HKLM:\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers'; $marker="$env:TEMP\\mgm_haqs_prior.flag"; If (Test-Path $marker) { $prior = Get-Content -Path $marker; Remove-Item $marker -ErrorAction SilentlyContinue; If ($prior -eq 'none') { Remove-ItemProperty -Path $p -Name 'HwSchMode' -ErrorAction SilentlyContinue } Else { Set-ItemProperty -Path $p -Name 'HwSchMode' -Value ([int]$prior) -Type DWord } }; Exit 0`
   }
 
 };
