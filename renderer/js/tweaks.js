@@ -105,6 +105,14 @@ const TWEAKS = {
       cmd: 'schtasks: disable ScheduledDefrag',
       tag: 'a',
       presets: { balanced: false, performance: true, esports: true }
+    },
+    {
+      id: 'hags',
+      name: 'Hardware-accelerated GPU Scheduling',
+      desc: 'Lets the GPU manage its own memory scheduling instead of Windows. Can reduce latency on supported hardware - results vary, and some driver/hardware combinations don\'t respond to this at all. Requires a restart to take effect.',
+      cmd: 'Registry: HwSchMode=2 under GraphicsDrivers',
+      tag: 'a',
+      presets: { balanced: false, performance: false, esports: true }
     }
   ],
   ov: [
@@ -150,10 +158,10 @@ const TWEAKS = {
     },
     {
       id: 'telemetry',
-      name: 'Telemetry off',
-      desc: 'Stops the DiagTrack and dmwappushsvc data collection services, and sets the "optional diagnostic data" policy to off (may be partially ignored on Home editions - this does what Windows allows).',
-      cmd: 'sc stop DiagTrack, dmwappushsvc & AllowTelemetry=0',
-      tag: 'a',
+      name: 'Telemetry off (DiagTrack)',
+      desc: 'Stops Microsoft data collection background processing.',
+      cmd: 'sc stop DiagTrack & sc config DiagTrack start=disabled',
+      tag: 's',
       presets: { balanced: false, performance: true, esports: true }
     }
   ],
