@@ -158,10 +158,10 @@ const TWEAKS = {
     },
     {
       id: 'telemetry',
-      name: 'Telemetry off (DiagTrack)',
-      desc: 'Stops Microsoft data collection background processing.',
-      cmd: 'sc stop DiagTrack & sc config DiagTrack start=disabled',
-      tag: 's',
+      name: 'Telemetry off',
+      desc: 'Stops the DiagTrack and dmwappushsvc data collection services, and sets the "optional diagnostic data" policy to off (may be partially ignored on Home editions - this does what Windows allows).',
+      cmd: 'sc stop DiagTrack, dmwappushsvc & AllowTelemetry=0',
+      tag: 'a',
       presets: { balanced: false, performance: true, esports: true }
     }
   ],
