@@ -4,6 +4,24 @@ All notable changes to Mojo Gaming Mode are documented here.
 
 ---
 
+## [2.3.0] - 2026-07-23
+
+### Added
+
+- **5 new tweaks**: Print Spooler off, Fax service off, Retail Demo Service off, Windows Insider Service off, Downloaded Maps Manager off - all researched, low-risk services that are commonly enabled by default for no practical use on a gaming PC.
+- **Inactive Custom Rules badge**: a small badge on the "Custom rules" nav item shows how many built-in Quick Rules are currently off.
+- **"Show performance impact" setting**: toggles the before/after CPU/RAM/GPU comparison shown on Activate. Off by choice, this shaves a few seconds off every Activate for anyone who doesn't need the comparison.
+
+### Changed
+
+- **Telemetry off** now also stops `dmwappushsvc` and disables the "optional diagnostic data" policy, not just DiagTrack.
+- **EA App off** (Quick Rule) now targets the current `EADesktop.exe` process - it previously targeted `EAGD`, the process name from the discontinued Origin client, and had likely stopped doing anything since Origin's shutdown in April 2025.
+- Tweak/rule execution now runs with bounded concurrency instead of either fully unbounded parallel or fully sequential, which was causing unnecessary slowdowns on presets with many tweaks and Quick Rules enabled at once.
+
+### Removed
+
+- **Skype off** (Quick Rule): Skype was fully discontinued by Microsoft in May 2025 and no longer functions as a standalone app.
+
 ## [2.2.0] - 2026-07-23
 
 ### Added
