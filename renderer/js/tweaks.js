@@ -373,14 +373,6 @@ const CUSTOM_RULES = [
     category: 'cloud'
   },
   {
-    id: 'cr_skype',
-    name: 'Skype off',
-    desc: 'Closes Skype during gaming.',
-    cmd: 'Stop-Process: Skype.exe',
-    tag: 's',
-    category: 'communication'
-  },
-  {
     id: 'cr_gamesprior',
     category: 'system',
     name: 'Windows games scheduling priority',
