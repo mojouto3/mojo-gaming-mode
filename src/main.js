@@ -128,7 +128,10 @@ const DEFAULT_CONFIG = {
     diskoptimize: false,
     hags: false,
     printspooler: false,
-    fax: false
+    fax: false,
+    retaildemo: false,
+    wisvc: false,
+    mapsbroker: false
   },
   customRules: [],
   games: [],

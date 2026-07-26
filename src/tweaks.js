@@ -207,6 +207,35 @@ const TWEAK_DEFINITIONS = {
     // same as the wasRunning pattern used elsewhere.
     applyCmd: `$marker = "$env:TEMP\\mgm_wasrunning_fax.flag"; $svc = Get-Service -Name 'Fax' -ErrorAction SilentlyContinue; If ($svc -and $svc.Status -eq 'Running') { New-Item -Path $marker -ItemType File -Force | Out-Null } Else { Remove-Item $marker -ErrorAction SilentlyContinue }; Stop-Service -Name 'Fax' -Force -ErrorAction SilentlyContinue; Set-Service -Name 'Fax' -StartupType Disabled -ErrorAction SilentlyContinue; Exit 0`,
     revertCmd: `$marker = "$env:TEMP\\mgm_wasrunning_fax.flag"; sc.exe config Fax start= demand | Out-Null; If (Test-Path $marker) { Remove-Item $marker -ErrorAction SilentlyContinue; Start-Service -Name 'Fax' -ErrorAction SilentlyContinue }; Exit 0`
+  },
+
+  retaildemo: {
+    name: 'Retail Demo Service off',
+    requiresAdmin: true,
+    // Enabled by default on most consumer installs for no practical
+    // reason (it's meant for in-store display units). Uses the wasRunning
+    // pattern since sources disagree on its exact default startup type.
+    applyCmd: `$marker = "$env:TEMP\\mgm_wasrunning_retaildemo.flag"; $svc = Get-Service -Name 'RetailDemo' -ErrorAction SilentlyContinue; If ($svc -and $svc.Status -eq 'Running') { New-Item -Path $marker -ItemType File -Force | Out-Null } Else { Remove-Item $marker -ErrorAction SilentlyContinue }; Stop-Service -Name 'RetailDemo' -Force -ErrorAction SilentlyContinue; Set-Service -Name 'RetailDemo' -StartupType Disabled -ErrorAction SilentlyContinue; Exit 0`,
+    revertCmd: `$marker = "$env:TEMP\\mgm_wasrunning_retaildemo.flag"; sc.exe config RetailDemo start= demand | Out-Null; If (Test-Path $marker) { Remove-Item $marker -ErrorAction SilentlyContinue; Start-Service -Name 'RetailDemo' -ErrorAction SilentlyContinue }; Exit 0`
+  },
+
+  wisvc: {
+    name: 'Windows Insider Service off',
+    requiresAdmin: true,
+    // Present on every Windows 10/11 install regardless of Insider
+    // Program enrollment. Safe to disable unless actively using Insider
+    // preview builds.
+    applyCmd: `$marker = "$env:TEMP\\mgm_wasrunning_wisvc.flag"; $svc = Get-Service -Name 'wisvc' -ErrorAction SilentlyContinue; If ($svc -and $svc.Status -eq 'Running') { New-Item -Path $marker -ItemType File -Force | Out-Null } Else { Remove-Item $marker -ErrorAction SilentlyContinue }; Stop-Service -Name 'wisvc' -Force -ErrorAction SilentlyContinue; Set-Service -Name 'wisvc' -StartupType Disabled -ErrorAction SilentlyContinue; Exit 0`,
+    revertCmd: `$marker = "$env:TEMP\\mgm_wasrunning_wisvc.flag"; sc.exe config wisvc start= demand | Out-Null; If (Test-Path $marker) { Remove-Item $marker -ErrorAction SilentlyContinue; Start-Service -Name 'wisvc' -ErrorAction SilentlyContinue }; Exit 0`
+  },
+
+  mapsbroker: {
+    name: 'Downloaded Maps Manager off',
+    requiresAdmin: true,
+    // Keeps offline map data updated in the background. Lightweight even
+    // when running, but unnecessary if offline maps aren't used.
+    applyCmd: `$marker = "$env:TEMP\\mgm_wasrunning_mapsbroker.flag"; $svc = Get-Service -Name 'MapsBroker' -ErrorAction SilentlyContinue; If ($svc -and $svc.Status -eq 'Running') { New-Item -Path $marker -ItemType File -Force | Out-Null } Else { Remove-Item $marker -ErrorAction SilentlyContinue }; Stop-Service -Name 'MapsBroker' -Force -ErrorAction SilentlyContinue; Set-Service -Name 'MapsBroker' -StartupType Disabled -ErrorAction SilentlyContinue; Exit 0`,
+    revertCmd: `$marker = "$env:TEMP\\mgm_wasrunning_mapsbroker.flag"; sc.exe config MapsBroker start= demand | Out-Null; If (Test-Path $marker) { Remove-Item $marker -ErrorAction SilentlyContinue; Start-Service -Name 'MapsBroker' -ErrorAction SilentlyContinue }; Exit 0`
   }
 
 };
