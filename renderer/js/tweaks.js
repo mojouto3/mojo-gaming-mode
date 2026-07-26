@@ -129,6 +129,30 @@ const TWEAKS = {
       cmd: 'sc stop Fax & sc config Fax start=disabled',
       tag: 'a',
       presets: { balanced: false, performance: true, esports: true }
+    },
+    {
+      id: 'retaildemo',
+      name: 'Retail Demo Service off',
+      desc: 'Stops a service meant for in-store display units, enabled by default on most PCs for no practical reason.',
+      cmd: 'sc stop RetailDemo & sc config RetailDemo start=disabled',
+      tag: 'a',
+      presets: { balanced: false, performance: true, esports: true }
+    },
+    {
+      id: 'wisvc',
+      name: 'Windows Insider Service off',
+      desc: 'Stops the Windows Insider Program service. Safe to disable unless you\'re enrolled in Insider preview builds.',
+      cmd: 'sc stop wisvc & sc config wisvc start=disabled',
+      tag: 'a',
+      presets: { balanced: false, performance: true, esports: true }
+    },
+    {
+      id: 'mapsbroker',
+      name: 'Downloaded Maps Manager off',
+      desc: 'Stops the service that keeps offline map data updated. Unnecessary unless you use offline maps.',
+      cmd: 'sc stop MapsBroker & sc config MapsBroker start=disabled',
+      tag: 'a',
+      presets: { balanced: false, performance: true, esports: true }
     }
   ],
   ov: [
