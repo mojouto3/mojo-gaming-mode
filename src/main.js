@@ -126,7 +126,9 @@ const DEFAULT_CONFIG = {
     xboxservices: false,
     wersvc: false,
     diskoptimize: false,
-    hags: false
+    hags: false,
+    printspooler: false,
+    fax: false
   },
   customRules: [],
   games: [],
