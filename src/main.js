@@ -589,7 +589,7 @@ const CUSTOM_RULE_CMDS = {
     revert: `$e = "C:\\Program Files (x86)\\Epic Games\\Launcher\\Portal\\Binaries\\Win32\\EpicGamesLauncher.exe"; $marker = "$env:TEMP\\mgm_wasrunning_epicgames.flag"; If ((Test-Path $marker) -and (Test-Path $e)) { Remove-Item $marker -ErrorAction SilentlyContinue; $tn = 'MGM_' + [guid]::NewGuid().ToString('N').Substring(0,8); $act = New-ScheduledTaskAction -Execute $e; $pri = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel Limited; Register-ScheduledTask -TaskName $tn -Action $act -Principal $pri -Force | Out-Null; Start-ScheduledTask -TaskName $tn; Start-Sleep -Milliseconds 1000; Unregister-ScheduledTask -TaskName $tn -Confirm:$false -ErrorAction SilentlyContinue }; Exit 0`
   },
   cr_eaapp: {
-    apply: `Get-Process -Name 'EABackgroundService','EAGD' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    apply: `Get-Process -Name 'EABackgroundService','EADesktop','EALauncher' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
     revert: `Exit 0`
   },
   cr_spotify: {
