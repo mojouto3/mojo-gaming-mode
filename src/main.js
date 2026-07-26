@@ -616,10 +616,6 @@ const CUSTOM_RULE_CMDS = {
     apply: `Get-Process -Name 'iCloudDrive','iCloudPhotos','iCloudServices' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
     revert: `Exit 0`
   },
-  cr_skype: {
-    apply: `Get-Process -Name 'Skype' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
-    revert: `Exit 0`
-  },
   cr_slack: {
     apply: `$names = @('slack'); $marker = "$env:TEMP\\mgm_wasrunning_slack.flag"; $running = Get-Process -Name $names -ErrorAction SilentlyContinue; If ($running) { New-Item -Path $marker -ItemType File -Force | Out-Null } Else { Remove-Item $marker -ErrorAction SilentlyContinue }; $running | Stop-Process -Force; Exit 0`,
     revert: `$s = "$env:LOCALAPPDATA\\slack\\slack.exe"; $marker = "$env:TEMP\\mgm_wasrunning_slack.flag"; If ((Test-Path $marker) -and (Test-Path $s)) { Remove-Item $marker -ErrorAction SilentlyContinue; $tn = 'MGM_' + [guid]::NewGuid().ToString('N').Substring(0,8); $act = New-ScheduledTaskAction -Execute $s; $pri = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel Limited; Register-ScheduledTask -TaskName $tn -Action $act -Principal $pri -Force | Out-Null; Start-ScheduledTask -TaskName $tn; Start-Sleep -Milliseconds 1000; Unregister-ScheduledTask -TaskName $tn -Confirm:$false -ErrorAction SilentlyContinue }; Exit 0`
