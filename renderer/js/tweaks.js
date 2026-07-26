@@ -233,7 +233,7 @@ const CUSTOM_RULES = [
     category: 'launchers',
     name: 'EA App off',
     desc: 'Closes the EA App background process during gaming.',
-    cmd: 'Stop-Process: EABackgroundService.exe',
+    cmd: 'Stop-Process: EABackgroundService.exe, EADesktop.exe',
     tag: 's'
   },
   {
