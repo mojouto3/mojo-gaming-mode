@@ -113,6 +113,22 @@ const TWEAKS = {
       cmd: 'Registry: HwSchMode=2 under GraphicsDrivers',
       tag: 'a',
       presets: { balanced: false, performance: false, esports: true }
+    },
+    {
+      id: 'printspooler',
+      name: 'Print Spooler off',
+      desc: 'Stops the print job management service. Safe if you don\'t print from this PC during your gaming session.',
+      cmd: 'sc stop Spooler & sc config Spooler start=disabled',
+      tag: 'a',
+      presets: { balanced: false, performance: true, esports: true }
+    },
+    {
+      id: 'fax',
+      name: 'Fax service off',
+      desc: 'Stops the Windows Fax service. Almost nobody uses this on a gaming PC.',
+      cmd: 'sc stop Fax & sc config Fax start=disabled',
+      tag: 'a',
+      presets: { balanced: false, performance: true, esports: true }
     }
   ],
   ov: [

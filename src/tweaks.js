@@ -187,6 +187,26 @@ const TWEAK_DEFINITIONS = {
     // something this app can fix.
     applyCmd: `$p='HKLM:\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers'; $marker="$env:TEMP\\mgm_haqs_prior.flag"; $cur = Get-ItemProperty -Path $p -Name HwSchMode -ErrorAction SilentlyContinue; If ($cur) { Set-Content -Path $marker -Value $cur.HwSchMode } Else { Set-Content -Path $marker -Value 'none' }; Set-ItemProperty -Path $p -Name 'HwSchMode' -Value 2 -Type DWord; Exit 0`,
     revertCmd: `$p='HKLM:\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers'; $marker="$env:TEMP\\mgm_haqs_prior.flag"; If (Test-Path $marker) { $prior = Get-Content -Path $marker; Remove-Item $marker -ErrorAction SilentlyContinue; If ($prior -eq 'none') { Remove-ItemProperty -Path $p -Name 'HwSchMode' -ErrorAction SilentlyContinue } Else { Set-ItemProperty -Path $p -Name 'HwSchMode' -Value ([int]$prior) -Type DWord } }; Exit 0`
+  },
+
+  printspooler: {
+    name: 'Print Spooler off',
+    requiresAdmin: true,
+    // Spooler is Automatic startup by default on most systems, so the
+    // simple restore-to-auto pattern (matching sysmain/wersvc) is
+    // appropriate here - not a Manual/Trigger Start service.
+    applyCmd: `Stop-Service -Name 'Spooler' -Force -ErrorAction SilentlyContinue; Set-Service -Name 'Spooler' -StartupType Disabled -ErrorAction SilentlyContinue; Exit 0`,
+    revertCmd: `sc.exe config Spooler start= auto; sc.exe start Spooler; Exit 0`
+  },
+
+  fax: {
+    name: 'Fax service off',
+    requiresAdmin: true,
+    // Fax is Manual startup by default and almost never actually running,
+    // so capture whether it was genuinely running before touching it,
+    // same as the wasRunning pattern used elsewhere.
+    applyCmd: `$marker = "$env:TEMP\\mgm_wasrunning_fax.flag"; $svc = Get-Service -Name 'Fax' -ErrorAction SilentlyContinue; If ($svc -and $svc.Status -eq 'Running') { New-Item -Path $marker -ItemType File -Force | Out-Null } Else { Remove-Item $marker -ErrorAction SilentlyContinue }; Stop-Service -Name 'Fax' -Force -ErrorAction SilentlyContinue; Set-Service -Name 'Fax' -StartupType Disabled -ErrorAction SilentlyContinue; Exit 0`,
+    revertCmd: `$marker = "$env:TEMP\\mgm_wasrunning_fax.flag"; sc.exe config Fax start= demand | Out-Null; If (Test-Path $marker) { Remove-Item $marker -ErrorAction SilentlyContinue; Start-Service -Name 'Fax' -ErrorAction SilentlyContinue }; Exit 0`
   }
 
 };
