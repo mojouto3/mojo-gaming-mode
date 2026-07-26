@@ -44,8 +44,29 @@ function runPS(command) {
   });
 }
 
+// Runs `worker` over `items` with at most `limit` running concurrently.
+// Used instead of either full Promise.all (which can spawn dozens of
+// PowerShell processes at once, slowing everything down via OS-level
+// process-creation contention) or a plain sequential for-loop (which is
+// safe but adds up fast when applying many things in one go).
+async function runWithConcurrencyLimit(items, limit, worker) {
+  const results = new Array(items.length);
+  let nextIndex = 0;
+  async function runOne() {
+    while (nextIndex < items.length) {
+      const i = nextIndex++;
+      results[i] = await worker(items[i], i);
+    }
+  }
+  const workerCount = Math.min(limit, items.length);
+  await Promise.all(Array.from({ length: workerCount }, runOne));
+  return results;
+}
+
+const CONCURRENCY_LIMIT = 5;
+
 async function executeTweaks(tweakIds, tweak_definitions, mode = 'apply') {
-  const promises = tweakIds.map(async (id) => {
+  return runWithConcurrencyLimit(tweakIds, CONCURRENCY_LIMIT, async (id) => {
     const def = tweak_definitions[id];
     if (!def) return { id, success: false, error: 'Unknown tweak' };
 
@@ -59,8 +80,6 @@ async function executeTweaks(tweakIds, tweak_definitions, mode = 'apply') {
       return { id, success: false, error: e.message };
     }
   });
-
-  return Promise.all(promises);
 }
 
 // Escape a value for use inside a single-quoted PowerShell string.
@@ -122,11 +141,7 @@ async function executeCustomRule(rule, mode) {
 }
 
 async function executeCustomRules(rules, mode = 'apply') {
-  const results = [];
-  for (const rule of rules) {
-    results.push(await executeCustomRule(rule, mode));
-  }
-  return results;
+  return runWithConcurrencyLimit(rules, CONCURRENCY_LIMIT, (rule) => executeCustomRule(rule, mode));
 }
 
 // Executes the built-in Quick Rules (the 25 predefined toggles, e.g. "close
@@ -134,20 +149,18 @@ async function executeCustomRules(rules, mode = 'apply') {
 // honest tracking as executeCustomRules, instead of the previous
 // fire-and-forget pattern that discarded every result.
 async function executeQuickRules(ids, cmdsMap, mode = 'apply') {
-  const results = [];
-  for (const id of ids) {
+  return runWithConcurrencyLimit(ids, CONCURRENCY_LIMIT, async (id) => {
     const def = cmdsMap[id];
-    if (!def) { results.push({ id, success: false, error: 'Unknown quick rule' }); continue; }
+    if (!def) return { id, success: false, error: 'Unknown quick rule' };
     const command = mode === 'apply' ? def.apply : def.revert;
-    if (!command) { results.push({ id, success: true, skipped: true }); continue; }
+    if (!command) return { id, success: true, skipped: true };
     try {
       const result = await runPS(command);
-      results.push({ id, success: result.success, error: result.error });
+      return { id, success: result.success, error: result.error };
     } catch (e) {
-      results.push({ id, success: false, error: e.message });
+      return { id, success: false, error: e.message };
     }
-  }
-  return results;
+  });
 }
 
 module.exports = { runPS, executeTweaks, executeCustomRule, executeCustomRules, executeQuickRules };

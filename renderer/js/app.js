@@ -17,7 +17,8 @@ const state = {
   lastRestorePoint: null,
   lang: 'en',
   manualTheme: null,
-  notifPrefs: { activate: true, deactivate: true, update: true }
+  notifPrefs: { activate: true, deactivate: true, update: true },
+  showPerfImpact: true
 };
 
 ALL_TWEAKS.forEach(t => { state.tweaks[t.id] = t.presets.balanced; });
@@ -236,6 +237,7 @@ async function init() {
     if (config.lang) state.lang = config.lang;
     if (config.manualTheme) state.manualTheme = config.manualTheme;
     if (config.notifPrefs) state.notifPrefs = { ...state.notifPrefs, ...config.notifPrefs };
+    if (typeof config.showPerfImpact === 'boolean') state.showPerfImpact = config.showPerfImpact;
     state.games = Array.isArray(config.games) ? config.games : [];
     state.gameDetectionEnabled = !!config.gameDetectionEnabled;
 
@@ -492,6 +494,14 @@ function bindEvents() {
       persistConfig();
     });
   });
+
+  const perfImpactCb = document.getElementById('cb-perf-impact');
+  if (perfImpactCb) {
+    perfImpactCb.addEventListener('change', (e) => {
+      state.showPerfImpact = e.target.checked;
+      persistConfig();
+    });
+  }
 
   // Games
   document.getElementById('btn-add-game')?.addEventListener('click', addGame);
@@ -1220,7 +1230,7 @@ async function applyMode(silent = false) {
   btn.innerHTML = '<i class="ti ti-loader"></i> Applying...';
   if (!silent) showToast('Applying tweaks...');
 
-  const beforeSnapshot = await takeAveragedSnapshot();
+  const beforeSnapshot = state.showPerfImpact ? await takeAveragedSnapshot() : null;
 
   const result = await window.mgm.applyMode({ tweaks: state.tweaks, rules: state.rules, preset: state.preset, customRulesActive: customRulesState });
   btn.disabled = false;
@@ -1259,10 +1269,13 @@ async function applyMode(silent = false) {
   }
 
   const failed = (result.failed ? result.failed.length : 0) + (result.customRuleFailed ? result.customRuleFailed.length : 0) + (result.quickRuleFailed ? result.quickRuleFailed.length : 0);
-  // Let the system settle after the tweak-applying PowerShell processes exit
-  // before reading the "after" numbers, or they read artificially high.
-  await new Promise(r => setTimeout(r, 1500));
-  const afterSnapshot = await takeAveragedSnapshot();
+  let afterSnapshot = null;
+  if (state.showPerfImpact) {
+    // Let the system settle after the tweak-applying PowerShell processes exit
+    // before reading the "after" numbers, or they read artificially high.
+    await new Promise(r => setTimeout(r, 1500));
+    afterSnapshot = await takeAveragedSnapshot();
+  }
   let showedImpactToast = false;
   if (beforeSnapshot && afterSnapshot) {
     lastActivationImpact = { before: beforeSnapshot, after: afterSnapshot, timestamp: Date.now() };
@@ -1686,6 +1699,8 @@ function initSettingsTab() {
     const el = document.getElementById(id);
     if (el) el.checked = state.notifPrefs[key] !== false;
   });
+  const perfImpactCbInit = document.getElementById('cb-perf-impact');
+  if (perfImpactCbInit) perfImpactCbInit.checked = state.showPerfImpact !== false;
   // Settings vendor theme - show vendor name and logo
   const badge = document.getElementById('settings-gpu-badge');
   const vendorIcon = document.getElementById('settings-vendor-icon');
@@ -1708,6 +1723,7 @@ async function persistConfig() {
     lang: state.lang,
     manualTheme: state.manualTheme,
     notifPrefs: state.notifPrefs,
+    showPerfImpact: state.showPerfImpact,
     games: state.games,
     gameDetectionEnabled: state.gameDetectionEnabled
   });
