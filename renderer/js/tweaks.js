@@ -7,7 +7,7 @@ const TWEAKS = {
       name: 'Windows Game Mode',
       desc: 'Dedicates CPU and GPU resources to the active game.',
       cmd: 'GameConfigStore registry tweak',
-      tag: 's',
+      category: 'system',
       presets: { balanced: true, performance: true, esports: true }
     },
     {
@@ -15,7 +15,7 @@ const TWEAKS = {
       name: 'SysMain (Superfetch) off',
       desc: 'Stops RAM preloading. Recommended on SSD systems.',
       cmd: 'sc stop SysMain & sc config SysMain start=disabled',
-      tag: 's',
+      category: 'system',
       presets: { balanced: true, performance: true, esports: true }
     },
     {
@@ -23,7 +23,7 @@ const TWEAKS = {
       name: 'High performance power plan',
       desc: 'Prevents CPU throttling for maximum clock speeds.',
       cmd: 'powercfg /setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c',
-      tag: 'a',
+      category: 'performance',
       presets: { balanced: false, performance: true, esports: true }
     },
     {
@@ -31,7 +31,7 @@ const TWEAKS = {
       name: 'Windows Search off',
       desc: 'Stops continuous file indexing during your gaming session.',
       cmd: 'sc stop WSearch & sc config WSearch start=disabled',
-      tag: 's',
+      category: 'system',
       presets: { balanced: false, performance: true, esports: true }
     },
     {
@@ -39,23 +39,25 @@ const TWEAKS = {
       name: 'Fullscreen optimizations off',
       desc: 'Exclusive fullscreen mode reduces DWM compositor overhead.',
       cmd: 'Per-app registry override at HKCU\\Software\\Microsoft\\DirectX',
-      tag: 'r',
+      category: 'media',
       presets: { balanced: false, performance: true, esports: true }
     },
     {
       id: 'hpet',
       name: 'Disable HPET timer',
-      desc: 'May reduce interrupt latency. Test on your CPU - results vary. Requires a restart to take effect.',
+      desc: 'May reduce interrupt latency. Test on your CPU - results vary.',
       cmd: 'bcdedit /set useplatformclock false',
-      tag: 'a',
+      category: 'performance',
+      restartInfo: 'Restart PC',
       presets: { balanced: false, performance: true, esports: true }
     },
     {
       id: 'msi',
       name: 'MSI interrupt mode',
-      desc: 'Message Signaled Interrupts reduce GPU latency on supported hardware. Requires a restart to take effect.',
+      desc: 'Message Signaled Interrupts reduce GPU latency on supported hardware.',
       cmd: 'Registry: MSISupported=1 under GPU device key',
-      tag: 'r',
+      category: 'performance',
+      restartInfo: 'Restart PC',
       presets: { balanced: false, performance: false, esports: true }
     },
     {
@@ -63,7 +65,7 @@ const TWEAKS = {
       name: 'Focus Assist (notifications) off',
       desc: 'Locks the Notification Center panel so it can\'t be opened during gaming.',
       cmd: 'Registry: DisableNotificationCenter=1',
-      tag: 's',
+      category: 'system',
       presets: { balanced: false, performance: true, esports: true }
     },
     {
@@ -71,7 +73,7 @@ const TWEAKS = {
       name: 'Windows Update pause',
       desc: "Pauses Windows Update for the gaming session so a background download or install doesn't interrupt you.",
       cmd: 'sc stop wuauserv & sc config wuauserv start=disabled',
-      tag: 'a',
+      category: 'system',
       presets: { balanced: false, performance: true, esports: true }
     },
     {
@@ -79,7 +81,7 @@ const TWEAKS = {
       name: 'USB selective suspend off',
       desc: 'Stops USB devices like your mouse and keyboard from suspending, removing wake-up latency.',
       cmd: 'powercfg USB selective suspend setting',
-      tag: 's',
+      category: 'performance',
       presets: { balanced: false, performance: true, esports: true }
     },
     {
@@ -87,7 +89,7 @@ const TWEAKS = {
       name: 'Xbox background services off',
       desc: 'Stops Xbox Live background services (auth, cloud saves, networking) that run even if you don\'t use Xbox features. Breaks Xbox Live sign-in, cloud saves, and cross-play while active - only enable if you don\'t use those.',
       cmd: 'sc stop/disable XblAuthManager, XblGameSave, XboxNetApiSvc, XboxGipSvc',
-      tag: 'a',
+      category: 'system',
       presets: { balanced: false, performance: false, esports: true }
     },
     {
@@ -95,7 +97,7 @@ const TWEAKS = {
       name: 'Windows Error Reporting off',
       desc: 'Stops the background service that generates crash dump reports, avoiding disk/CPU spikes if something else crashes while gaming.',
       cmd: 'sc stop WerSvc & sc config WerSvc start=disabled',
-      tag: 'a',
+      category: 'system',
       presets: { balanced: false, performance: true, esports: true }
     },
     {
@@ -103,15 +105,16 @@ const TWEAKS = {
       name: 'Disk optimization schedule pause',
       desc: 'Pauses the scheduled disk optimization task for the gaming session, avoiding disk contention if it happens to run while you play.',
       cmd: 'schtasks: disable ScheduledDefrag',
-      tag: 'a',
+      category: 'system',
       presets: { balanced: false, performance: true, esports: true }
     },
     {
       id: 'hags',
       name: 'Hardware-accelerated GPU Scheduling',
-      desc: 'Lets the GPU manage its own memory scheduling instead of Windows. Can reduce latency on supported hardware - results vary, and some driver/hardware combinations don\'t respond to this at all. Requires a restart to take effect.',
+      desc: 'Lets the GPU manage its own memory scheduling instead of Windows. Can reduce latency on supported hardware - results vary, and some driver/hardware combinations don\'t respond to this at all.',
       cmd: 'Registry: HwSchMode=2 under GraphicsDrivers',
-      tag: 'a',
+      category: 'performance',
+      restartInfo: 'Restart PC',
       presets: { balanced: false, performance: false, esports: true }
     },
     {
@@ -119,7 +122,7 @@ const TWEAKS = {
       name: 'Print Spooler off',
       desc: 'Stops the print job management service. Safe if you don\'t print from this PC during your gaming session.',
       cmd: 'sc stop Spooler & sc config Spooler start=disabled',
-      tag: 'a',
+      category: 'system',
       presets: { balanced: false, performance: true, esports: true }
     },
     {
@@ -127,7 +130,7 @@ const TWEAKS = {
       name: 'Fax service off',
       desc: 'Stops the Windows Fax service. Almost nobody uses this on a gaming PC.',
       cmd: 'sc stop Fax & sc config Fax start=disabled',
-      tag: 'a',
+      category: 'system',
       presets: { balanced: false, performance: true, esports: true }
     },
     {
@@ -135,7 +138,7 @@ const TWEAKS = {
       name: 'Retail Demo Service off',
       desc: 'Stops a service meant for in-store display units, enabled by default on most PCs for no practical reason.',
       cmd: 'sc stop RetailDemo & sc config RetailDemo start=disabled',
-      tag: 'a',
+      category: 'system',
       presets: { balanced: false, performance: true, esports: true }
     },
     {
@@ -143,7 +146,7 @@ const TWEAKS = {
       name: 'Windows Insider Service off',
       desc: 'Stops the Windows Insider Program service. Safe to disable unless you\'re enrolled in Insider preview builds.',
       cmd: 'sc stop wisvc & sc config wisvc start=disabled',
-      tag: 'a',
+      category: 'system',
       presets: { balanced: false, performance: true, esports: true }
     },
     {
@@ -151,7 +154,7 @@ const TWEAKS = {
       name: 'Downloaded Maps Manager off',
       desc: 'Stops the service that keeps offline map data updated. Unnecessary unless you use offline maps.',
       cmd: 'sc stop MapsBroker & sc config MapsBroker start=disabled',
-      tag: 'a',
+      category: 'system',
       presets: { balanced: false, performance: true, esports: true }
     }
   ],
@@ -161,7 +164,7 @@ const TWEAKS = {
       name: 'Xbox Game Bar off',
       desc: 'Disables Win+G overlay and frees background CPU usage.',
       cmd: 'Registry: GameConfigStore\\GameDVR_Enabled=0',
-      tag: 's',
+      category: 'media',
       presets: { balanced: false, performance: true, esports: true }
     },
     {
@@ -169,7 +172,7 @@ const TWEAKS = {
       name: 'Steam overlay off',
       desc: 'Reduces stutters in DX12 and Vulkan titles.',
       cmd: 'Steam launch option: -nooverlay per game',
-      tag: 's',
+      category: 'media',
       presets: { balanced: false, performance: true, esports: true }
     },
     {
@@ -177,7 +180,7 @@ const TWEAKS = {
       name: 'GPU vendor overlay off',
       desc: 'Terminates the NVIDIA or AMD in-game overlay process.',
       cmd: 'nvcontainer.exe / RadeonSoftware.exe - process terminate',
-      tag: 's',
+      category: 'media',
       presets: { balanced: false, performance: true, esports: true }
     },
     {
@@ -185,7 +188,7 @@ const TWEAKS = {
       name: 'OneDrive sync pause',
       desc: 'Stops cloud sync to free bandwidth and disk I/O.',
       cmd: 'OneDrive.exe /shutdown',
-      tag: 's',
+      category: 'cloud',
       presets: { balanced: true, performance: true, esports: true }
     },
     {
@@ -193,7 +196,8 @@ const TWEAKS = {
       name: 'Discord GPU acceleration off',
       desc: 'Disables hardware acceleration in Discord to free VRAM. Requires restarting Discord yourself to take effect (Discord\'s own updater requires admin rights, so this can\'t be done automatically).',
       cmd: 'Discord settings.json: hardwareAcceleration=false',
-      tag: 's',
+      category: 'communication',
+      restartInfo: 'Restart Discord',
       presets: { balanced: false, performance: false, esports: true }
     },
     {
@@ -201,7 +205,7 @@ const TWEAKS = {
       name: 'Telemetry off',
       desc: 'Stops the DiagTrack and dmwappushsvc data collection services, and sets the "optional diagnostic data" policy to off (may be partially ignored on Home editions - this does what Windows allows).',
       cmd: 'sc stop DiagTrack, dmwappushsvc & AllowTelemetry=0',
-      tag: 'a',
+      category: 'system',
       presets: { balanced: false, performance: true, esports: true }
     }
   ],
@@ -209,9 +213,10 @@ const TWEAKS = {
     {
       id: 'nagle',
       name: "Disable Nagle's algorithm",
-      desc: 'Reduces TCP packet delay for lower ping in online games. Requires a restart to take effect for existing connections.',
+      desc: 'Reduces TCP packet delay for lower ping in online games.',
       cmd: 'Registry: TcpAckFrequency=1, TCPNoDelay=1',
-      tag: 'r',
+      category: 'performance',
+      restartInfo: 'Restart PC',
       presets: { balanced: false, performance: false, esports: true }
     },
     {
@@ -219,7 +224,7 @@ const TWEAKS = {
       name: 'Network adapter power-saving off',
       desc: 'Prevents the network adapter from powering down mid-session, reducing micro-stutter and packet loss.',
       cmd: 'Set-NetAdapterPowerManagement -AllowComputerToTurnOffDevice Disabled',
-      tag: 's',
+      category: 'performance',
       presets: { balanced: false, performance: true, esports: true }
     }
   ]
