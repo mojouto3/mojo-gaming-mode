@@ -24,7 +24,4 @@
 
   ; Remove shutdown registry entries
   DeleteRegKey HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\Scripts\Shutdown\0"
-
-  ; Remove app data
-  RMDir /r "$APPDATA\mojo-gaming-mode"
 !macroend
