@@ -360,7 +360,7 @@ app.commandLine.appendSwitch('no-sandbox');
 // app in the packaged build. Electron auto-sets this for Squirrel-based
 // installers, but this app uses NSIS, so it must be set explicitly here,
 // matching the "appId" in package.json's electron-builder config exactly.
-app.setAppUserModelId('com.mojomultimedia.gaming-mode');
+app.setAppUserModelId('com.mojomultimedia.gaming-mode.test1');
 
 app.whenReady().then(async () => {
   detectedGPU = await detectGPU();
@@ -429,7 +429,15 @@ app.whenReady().then(async () => {
     let recoveryFailedCount = 0;
 
     if (hadActiveTweaks) {
-      activeTweakIds = [...startupConfig.activeTweakIds];
+      // Tweaks that require a PC restart to take effect (HPET, MSI, Nagle,
+      // HAGS) are meant to have the user restart while they're "active" -
+      // that's the whole point of the restart. Reverting them here on the
+      // very next startup would silently undo the exact thing the user
+      // just restarted to apply. Their effect (registry/bcdedit) persists
+      // across reboot on its own, so they're excluded from this recovery
+      // and stay considered active until a real Deactivate reverts them.
+      const restartRequiredIds = new Set(Object.keys(TWEAK_DEFINITIONS).filter(id => TWEAK_DEFINITIONS[id].requiresReboot));
+      activeTweakIds = startupConfig.activeTweakIds.filter(id => !restartRequiredIds.has(id));
       try {
         const recoveryResults = await executeTweaks(activeTweakIds, TWEAK_DEFINITIONS, 'revert');
         const recoveryFailed = recoveryResults.filter(r => !r.success && !r.skipped);
@@ -472,8 +480,16 @@ app.whenReady().then(async () => {
       }
     }
 
-    startupConfig.wasActive = false;
-    startupConfig.activeTweakIds = [];
+    // Restart-required tweaks that were deliberately left applied above
+    // stay recorded as active, so a later, real Deactivate still reverts
+    // them, and so this same protection applies again if the app closes
+    // unexpectedly again before that happens.
+    const stillActiveTweakIds = hadActiveTweaks
+      ? startupConfig.activeTweakIds.filter(id => TWEAK_DEFINITIONS[id] && TWEAK_DEFINITIONS[id].requiresReboot)
+      : [];
+    activeTweakIds = stillActiveTweakIds;
+    startupConfig.wasActive = stillActiveTweakIds.length > 0;
+    startupConfig.activeTweakIds = stillActiveTweakIds;
     startupConfig.activeCustomRules = [];
     startupConfig.activeQuickRuleIds = [];
     saveConfig(startupConfig);

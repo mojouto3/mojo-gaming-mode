@@ -147,6 +147,14 @@
               <input type="text" id="tweak-search" class="tweak-search-input" placeholder="Search tweaks...">
               <button class="tweak-search-clear" id="tweak-search-clear" style="display:none"><i class="ti ti-x"></i></button>
             </div>
+            <div class="cat-filter-row" id="tweak-cat-filters">
+              <button class="cat-filter-btn cat-all active" data-cat="all">All</button>
+              <button class="cat-filter-btn cat-system" data-cat="system">System</button>
+              <button class="cat-filter-btn cat-performance" data-cat="performance">Performance</button>
+              <button class="cat-filter-btn cat-media" data-cat="media">Media</button>
+              <button class="cat-filter-btn cat-communication" data-cat="communication">Communication</button>
+              <button class="cat-filter-btn cat-cloud" data-cat="cloud">Cloud</button>
+            </div>
             <div id="tweak-no-results" class="tweak-no-results" style="display:none">No tweaks match your search.</div>
             <div class="section-header" id="sh-win"><span class="sh-title">WINDOWS SYSTEM</span><span class="sh-count" id="count-win"></span><label class="tog tog-sm" style="margin-left:auto"><input type="checkbox" data-tweak-cat="win"><div class="tog-track"></div><div class="tog-thumb"></div></label></div>
             <div id="tw-win"></div>
@@ -186,25 +194,40 @@
           </div>
 
           <div id="tab-rules" class="tab-panel">
-            <div class="cr-io-row">
-              <button class="btn-restore" id="btn-export-rules"><i class="ti ti-download"></i> Export</button>
-              <button class="btn-restore" id="btn-import-rules"><i class="ti ti-upload"></i> Import</button>
+            <div class="cr-subtabs">
+              <button class="cr-subtab-btn active" data-subtab="quick">Quick Rules</button>
+              <button class="cr-subtab-btn" data-subtab="custom">My Rules</button>
             </div>
-            <div class="section-header" style="margin-bottom:8px">
-              <span class="sh-title">QUICK RULES</span>
-              <span class="sh-count" id="cr-active-count">0 active</span>
-            </div>
-            <div class="rules-info" style="margin-bottom:12px">Enable rules to add them to your Custom preset. They will run alongside your active preset when gaming mode is on.</div>
-            <div id="cr-list"></div>
 
-            <div class="section-header" style="margin-top:16px">
-              <span class="sh-title">CUSTOM RULES</span>
-              <span class="sh-count" id="rules-count">0</span>
+            <div id="cr-subtab-quick" class="cr-subtab-panel active">
+              <div class="section-header" style="margin-bottom:8px">
+                <span class="sh-title">QUICK RULES</span>
+                <span class="sh-count" id="cr-active-count">0 active</span>
+              </div>
+              <div class="cat-filter-row" id="cr-cat-filters">
+                <button class="cat-filter-btn cat-all active" data-cat="all">All</button>
+                <button class="cat-filter-btn cat-launchers" data-cat="launchers">Launchers</button>
+                <button class="cat-filter-btn cat-communication" data-cat="communication">Communication</button>
+                <button class="cat-filter-btn cat-media" data-cat="media">Media</button>
+                <button class="cat-filter-btn cat-cloud" data-cat="cloud">Cloud</button>
+                <button class="cat-filter-btn cat-system" data-cat="system">System</button>
+              </div>
+              <div class="rules-info" style="margin-bottom:12px">Enable rules to add them to your Custom preset. They will run alongside your active preset when gaming mode is on.</div>
+              <div id="cr-list"></div>
             </div>
-            <div id="rules-list"></div>
-            <button class="btn-add-rule" id="btn-add-rule">
-              <i class="ti ti-plus"></i> Add custom rule
-            </button>
+
+            <div id="cr-subtab-custom" class="cr-subtab-panel">
+              <div class="section-header" style="margin-bottom:8px">
+                <span class="sh-title">CUSTOM RULES</span>
+                <span class="sh-count" id="rules-count">0</span>
+                <div class="cr-header-actions">
+                  <button class="btn-icon-header" id="btn-export-rules" aria-label="Export"><i class="ti ti-download"></i></button>
+                  <button class="btn-icon-header" id="btn-import-rules" aria-label="Import"><i class="ti ti-upload"></i></button>
+                  <button class="btn-icon-header btn-icon-header-accent" id="btn-add-rule"><i class="ti ti-plus"></i> Add rule</button>
+                </div>
+              </div>
+              <div id="rules-list"></div>
+            </div>
           </div>
 
           <div id="tab-settings" class="tab-panel">
