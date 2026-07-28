@@ -34,7 +34,7 @@
       "shortcutName": "Mojo Gaming Mode",
       "runAfterFinish": true,
       "perMachine": false,
-      "deleteAppDataOnUninstall": true,
+      "deleteAppDataOnUninstall": false,
       "include": "assets/installer.nsh"
     },
     "files": [
