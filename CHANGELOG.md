@@ -4,6 +4,12 @@ All notable changes to Mojo Gaming Mode are documented here.
 
 ---
 
+## [2.4.1] - 2026-07-24
+
+### Fixed
+
+- **Critical: data loss on update**. The NSIS installer had `deleteAppDataOnUninstall: true`, which wiped the entire AppData config (games, custom rules, tweak selections) if an update went through an implicit uninstall-then-reinstall step. This is now disabled. If you lost your games or custom rules in a previous update, unfortunately that data isn't recoverable and will need to be re-added manually - sorry about that.
+
 ## [2.4.0] - 2026-07-24
 
 ### Added
