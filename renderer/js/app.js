@@ -471,6 +471,26 @@ function bindEvents() {
     });
   }
 
+  // Tweak category filter buttons
+  document.querySelectorAll('#tweak-cat-filters .cat-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => setTweakCategoryFilter(btn.dataset.cat));
+  });
+
+  // Custom Rules category filter buttons
+  document.querySelectorAll('#cr-cat-filters .cat-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => setCRCategoryFilter(btn.dataset.cat));
+  });
+
+  // Custom Rules sub-tabs (Quick Rules / My Rules)
+  document.querySelectorAll('.cr-subtab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.cr-subtab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.cr-subtab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('cr-subtab-' + btn.dataset.subtab).classList.add('active');
+    });
+  });
+
   // Applied Changes collapsible
   const changesToggle = document.getElementById('changes-toggle');
   if (changesToggle) changesToggle.addEventListener('click', toggleChanges);
@@ -665,10 +685,15 @@ function switchTab(name, el) {
 
 // ── Render helpers ────────────────────────────────────────────────────────────
 
-function tagHtml(tag) {
-  const map = { s: ['tag-s', 'No admin'], a: ['tag-a', 'Admin'], r: ['tag-r', 'Registry'] };
-  const [cls, label] = map[tag] || ['tag-r', tag];
-  return `<span class="tag ${cls}">${label}</span>`;
+function categoryBadgeHtml(category) {
+  const labels = { system: 'System', performance: 'Performance', media: 'Media', communication: 'Communication', cloud: 'Cloud', launchers: 'Launchers' };
+  const label = labels[category] || 'System';
+  return `<span class="cat-badge cat-${category || 'system'}">${label}</span>`;
+}
+
+function restartBadgeHtml(restartInfo) {
+  if (!restartInfo) return '';
+  return `<span class="restart-badge">${restartInfo}</span>`;
 }
 
 function iconFor(id) {
@@ -686,7 +711,8 @@ function statusHtml(id) {
   if (state.active) {
     return `<span class="status-tag on"><span class="status-tag-dot"></span>ON</span>`;
   }
-  return tagHtml(ALL_TWEAKS.find(t => t.id === id)?.tag || '');
+  const t = ALL_TWEAKS.find(t => t.id === id);
+  return categoryBadgeHtml(t?.category);
 }
 
 function buildTweakRow(t, mini = false) {
@@ -705,10 +731,11 @@ function buildTweakRow(t, mini = false) {
     row.style.cursor = 'default';
   } else {
     row.id = 'tr-' + t.id;
+    row.dataset.category = t.category || 'system';
     row.innerHTML = `
       <div class="tr-icon"><i class="ti ti-${iconFor(t.id)}"></i></div>
       <div class="tr-info">
-        <div class="tr-name">${t.name} ${tagHtml(t.tag)}</div>
+        <div class="tr-name">${t.name} ${categoryBadgeHtml(t.category)} ${restartBadgeHtml(t.restartInfo)}</div>
         <div class="tr-desc">${t.desc}</div>
         <div class="tr-cmd">${t.cmd}</div>
       </div>
@@ -804,6 +831,7 @@ function renderCustomRules() {
 
   categoryOrder.forEach(cat => {
     if (!grouped[cat]) return;
+    if (activeCRCategoryFilter !== 'all' && activeCRCategoryFilter !== cat) return;
     const rules = grouped[cat];
 
     // Category header with "Close all" toggle
@@ -824,8 +852,6 @@ function renderCustomRules() {
       const isOn = !!customRulesState[r.id];
       if (isOn) activeCount++;
       const icon = iconMap[r.id] || 'settings';
-      const tagCls = r.tag === 'r' ? 'tag-r' : 'tag-s';
-      const tagLabel = r.tag === 'r' ? 'Registry' : 'No admin';
 
       const row = document.createElement('div');
       row.className = 'tweak-row' + (isOn ? ' active' : '');
@@ -833,7 +859,7 @@ function renderCustomRules() {
       row.innerHTML = `
         <div class="tr-icon"><i class="ti ti-${icon}"></i></div>
         <div class="tr-info">
-          <div class="tr-name">${r.name} <span class="tag ${tagCls}">${tagLabel}</span></div>
+          <div class="tr-name">${r.name}</div>
           <div class="tr-desc">${r.desc}</div>
         </div>
         <label class="tog">
@@ -916,7 +942,8 @@ function renderCustomPresetActive() {
     row.className = 'tweak-row active';
     row.innerHTML = `
       <div class="tr-icon"><i class="ti ti-puzzle"></i></div>
-      <div class="tr-info"><div class="tr-name">${r.name} <span class="tag tag-s">Custom</span></div></div>`;
+      <div class="tr-info"><div class="tr-name">${r.name}</div></div>
+      ${categoryBadgeHtml(r.category)}`;
     container.appendChild(row);
   });
 }
@@ -1552,9 +1579,19 @@ async function checkForUpdates() {
   if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-refresh"></i> Check for updates'; }
 }
 
+let activeTweakCategoryFilter = 'all';
+let activeCRCategoryFilter = 'all';
+
+function setCRCategoryFilter(cat) {
+  activeCRCategoryFilter = cat;
+  document.querySelectorAll('#cr-cat-filters .cat-filter-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.cat === cat);
+  });
+  renderCustomRules();
+}
+
 function filterTweaks(q) {
   const noResults = document.getElementById('tweak-no-results');
-  const shWin = document.getElementById('sh-win');
   let visible = 0;
 
   ['tw-win', 'tw-ov', 'tw-net'].forEach(containerId => {
@@ -1565,7 +1602,9 @@ function filterTweaks(q) {
     rows.forEach(row => {
       const name = row.querySelector('.tr-name')?.textContent?.toLowerCase() || '';
       const desc = row.querySelector('.tr-desc')?.textContent?.toLowerCase() || '';
-      const matches = !q || name.includes(q) || desc.includes(q);
+      const matchesQuery = !q || name.includes(q) || desc.includes(q);
+      const matchesCategory = activeTweakCategoryFilter === 'all' || row.dataset.category === activeTweakCategoryFilter;
+      const matches = matchesQuery && matchesCategory;
       row.style.display = matches ? '' : 'none';
       if (matches) { sectionVisible++; visible++; }
     });
@@ -1576,7 +1615,16 @@ function filterTweaks(q) {
     }
   });
 
-  if (noResults) noResults.style.display = visible === 0 && q ? 'block' : 'none';
+  if (noResults) noResults.style.display = visible === 0 ? 'block' : 'none';
+}
+
+function setTweakCategoryFilter(cat) {
+  activeTweakCategoryFilter = cat;
+  document.querySelectorAll('#tweak-cat-filters .cat-filter-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.cat === cat);
+  });
+  const q = (document.getElementById('tweak-search')?.value || '').toLowerCase();
+  filterTweaks(q);
 }
 
 function setManualTheme(theme) {
