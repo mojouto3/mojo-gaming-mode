@@ -4,6 +4,12 @@ All notable changes to Mojo Gaming Mode are documented here.
 
 ---
 
+## [2.4.2] - 2026-07-24
+
+### Fixed
+
+- **Critical: data loss on update, second cause**. The v2.4.1 fix wasn't enough. A separate, hardcoded `RMDir /r` command in the project's custom NSIS uninstall script was also deleting the entire AppData folder (games, custom rules, tweak selections) on every uninstall, independent of the setting fixed in 2.4.1. This is now removed. Verified with a real local build and a full install/uninstall cycle, confirming a test marker written to config.json survives.
+
 ## [2.4.1] - 2026-07-24
 
 ### Fixed
