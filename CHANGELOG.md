@@ -4,6 +4,21 @@ All notable changes to Mojo Gaming Mode are documented here.
 
 ---
 
+## [2.4.0] - 2026-07-24
+
+### Added
+
+- **Category badges**: replaced the Admin/No-admin/Registry tags (which were purely informational and had no effect on execution, since the app always runs elevated) with 6 category badges (System, Performance, Media, Communication, Cloud, Launchers), using a consistent color palette shared between the Tweaks and Custom Rules tabs.
+- **Category filter buttons** on both the Tweaks and Custom Rules tabs.
+- **Custom Rules sub-tabs**: split into Quick Rules and My Rules, so a growing personal rule list no longer pushes the built-in rules further down the page. Export/Import/Add actions are now grouped together in one place.
+- Restart-required tweaks now show specifically what needs restarting (for example "Restart PC" or "Restart Discord") instead of a note buried in the description.
+
+### Fixed
+
+- Crash-recovery on startup no longer reverts restart-required tweaks (HPET, MSI, Nagle, HAGS). Previously, enabling one of these, activating, and restarting the PC (the intended workflow) would get silently undone the moment the app relaunched, since the recovery logic couldn't tell an intentional restart apart from an unexpected crash.
+- The "Active in this preset" list on the Presets tab showed a generic "Custom" tag for Quick Rules instead of their real category, and badge alignment was inconsistent depending on name length. Both fixed.
+- Two Dependabot-flagged vulnerabilities (fast-uri, node-tar) resolved via dependency updates.
+
 ## [2.3.0] - 2026-07-23
 
 ### Added
