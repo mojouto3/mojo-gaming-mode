@@ -102,10 +102,24 @@ const NORMAL_SIZE = { width: 860, height: 680 };
 const MINI_SIZE = { width: 220, height: 280 };
 const BAR_SIZE = { width: 420, height: 44 };
 
+// Remembers where the user last positioned the floating mini/bar window,
+// so re-entering either mode returns to the same spot instead of a fixed
+// default position every time.
+let lastFloatingPosition = null;
+
+function centerOnCurrentDisplay(width, height) {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  const bounds = mainWindow.getBounds();
+  const display = screen.getDisplayMatching(bounds) || screen.getDisplayNearestPoint({ x: bounds.x, y: bounds.y });
+  const area = display.workArea;
+  const x = Math.round(area.x + (area.width - width) / 2);
+  const y = Math.round(area.y + (area.height - height) / 2);
+  mainWindow.setBounds({ x, y, width, height });
+}
+
 const DEFAULT_CONFIG = {
   gpu: null,
   preset: 'balanced',
-  windowOpacity: 1,
   tweaks: {
     gm: true,
     sysmain: true,
@@ -137,7 +151,8 @@ const DEFAULT_CONFIG = {
   },
   customRules: [],
   games: [],
-  gameDetectionEnabled: false
+  gameDetectionEnabled: false,
+  seenMiniBarHint: false
 };
 
 function loadConfig() {
@@ -251,8 +266,6 @@ function createWindow() {
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
-    const savedOpacity = loadConfig().windowOpacity;
-    if (typeof savedOpacity === 'number') mainWindow.setOpacity(savedOpacity);
   });
 
   // Reliable fallback for the game-closed prompt: Windows notification
@@ -1251,6 +1264,18 @@ ipcMain.on('ping-stop', () => {
   metrics.stopPing();
 });
 
+function maybeShowMiniBarHint() {
+  const cfg = loadConfig();
+  if (cfg.seenMiniBarHint) return;
+  cfg.seenMiniBarHint = true;
+  saveConfig(cfg);
+  new Notification({
+    title: 'Mojo Gaming Mode',
+    body: 'The icons here let you: adjust window transparency (droplet), switch between card and bar layouts, and return to the full app.',
+    icon: path.join(ASSETS_PATH, 'icons', 'icon.ico')
+  }).show();
+}
+
 ipcMain.on('set-mini-mode', (e, enabled) => {
   if (!mainWindow || mainWindow.isDestroyed()) return;
   if (enabled) {
@@ -1259,13 +1284,20 @@ ipcMain.on('set-mini-mode', (e, enabled) => {
     // window stayed stuck at the normal-mode minimum (760x580) instead of
     // shrinking down to the mini-mode size.
     mainWindow.setMinimumSize(MINI_SIZE.width, MINI_SIZE.height);
-    mainWindow.setSize(MINI_SIZE.width, MINI_SIZE.height);
+    if (lastFloatingPosition) {
+      mainWindow.setBounds({ ...lastFloatingPosition, width: MINI_SIZE.width, height: MINI_SIZE.height });
+    } else {
+      mainWindow.setSize(MINI_SIZE.width, MINI_SIZE.height);
+    }
     mainWindow.setResizable(false);
     // Mini-mode is meant to float over a game, so keep it on top
     mainWindow.setAlwaysOnTop(true, 'floating');
+    maybeShowMiniBarHint();
   } else {
+    const b = mainWindow.getBounds();
+    lastFloatingPosition = { x: b.x, y: b.y };
     mainWindow.setMinimumSize(NORMAL_MIN_SIZE.width, NORMAL_MIN_SIZE.height);
-    mainWindow.setSize(NORMAL_SIZE.width, NORMAL_SIZE.height);
+    centerOnCurrentDisplay(NORMAL_SIZE.width, NORMAL_SIZE.height);
     mainWindow.setResizable(true);
     mainWindow.setAlwaysOnTop(false);
   }
@@ -1275,18 +1307,25 @@ ipcMain.on('set-bar-mode', (e, enabled) => {
   if (!mainWindow || mainWindow.isDestroyed()) return;
   if (enabled) {
     mainWindow.setMinimumSize(BAR_SIZE.width, BAR_SIZE.height);
-    mainWindow.setSize(BAR_SIZE.width, BAR_SIZE.height);
     mainWindow.setResizable(false);
     mainWindow.setAlwaysOnTop(true, 'floating');
-    // Start centered near the top of the primary display; the user can
-    // then drag it wherever they like for the rest of the session.
-    const display = screen.getPrimaryDisplay();
-    const x = Math.round(display.workArea.x + (display.workArea.width - BAR_SIZE.width) / 2);
-    const y = display.workArea.y + 12;
-    mainWindow.setPosition(x, y);
+    if (lastFloatingPosition) {
+      mainWindow.setBounds({ ...lastFloatingPosition, width: BAR_SIZE.width, height: BAR_SIZE.height });
+    } else {
+      mainWindow.setSize(BAR_SIZE.width, BAR_SIZE.height);
+      // Start centered near the top of the primary display; the user can
+      // then drag it wherever they like for the rest of the session.
+      const display = screen.getPrimaryDisplay();
+      const x = Math.round(display.workArea.x + (display.workArea.width - BAR_SIZE.width) / 2);
+      const y = display.workArea.y + 12;
+      mainWindow.setPosition(x, y);
+    }
+    maybeShowMiniBarHint();
   } else {
+    const b = mainWindow.getBounds();
+    lastFloatingPosition = { x: b.x, y: b.y };
     mainWindow.setMinimumSize(NORMAL_MIN_SIZE.width, NORMAL_MIN_SIZE.height);
-    mainWindow.setSize(NORMAL_SIZE.width, NORMAL_SIZE.height);
+    centerOnCurrentDisplay(NORMAL_SIZE.width, NORMAL_SIZE.height);
     mainWindow.setResizable(true);
     mainWindow.setAlwaysOnTop(false);
   }
@@ -1296,9 +1335,9 @@ ipcMain.on('set-window-opacity', (e, value) => {
   if (!mainWindow || mainWindow.isDestroyed()) return;
   const v = Math.min(1, Math.max(0.3, value));
   mainWindow.setOpacity(v);
-  const cfg = loadConfig();
-  cfg.windowOpacity = v;
-  saveConfig(cfg);
+  // Deliberately not persisted: opacity is a mini/bar-mode-only feature.
+  // Saving it would leave the normal window unexpectedly dim on next
+  // launch if the user quit while it was reduced.
 });
 
 ipcMain.on('window-close', () => {
