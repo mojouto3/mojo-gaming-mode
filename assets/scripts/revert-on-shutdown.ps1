@@ -62,11 +62,6 @@ if ($tweaks -contains 'fso') {
     Remove-ItemProperty -Path 'HKCU:\System\GameConfigStore' -Name 'GameDVR_FSEBehavior' -ErrorAction SilentlyContinue
 }
 
-# Revert QoS
-if ($tweaks -contains 'qos') {
-    Remove-ItemProperty -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Psched' -Name 'NonBestEffortLimit' -ErrorAction SilentlyContinue
-}
-
 # Revert Nagle
 if ($tweaks -contains 'nagle') {
     $ifaces = Get-ChildItem 'HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces'
@@ -79,6 +74,6 @@ if ($tweaks -contains 'nagle') {
 # Clear wasActive flag
 $config.wasActive = $false
 $config.activeTweakIds = @()
-$config | ConvertTo-Json | Set-Content $configPath
+$config | ConvertTo-Json -Depth 10 | Set-Content $configPath
 
 Exit 0
