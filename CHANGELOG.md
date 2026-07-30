@@ -4,6 +4,30 @@ All notable changes to Mojo Gaming Mode are documented here.
 
 ---
 
+## [2.5.0] - 2026-07-30
+
+### Added
+
+- **Category badges**: replaced the Admin/No-admin/Registry tags (which had no actual effect on execution, since the app always runs elevated) with 6 color-coded categories: System, Performance, Media, Communication, Cloud, Launchers. Consistent between the Tweaks and Custom Rules tabs, with filter buttons on both.
+- **Custom Rules sub-tabs**: split into Quick Rules and My Rules, so a growing personal rule list no longer pushes the built-in rules further down the page.
+- Restart-required tweaks now say exactly what needs restarting (e.g. "Restart PC" or "Restart Discord") instead of a note buried in the description.
+- **Automatic config backup and restore**: every config save now rotates two generations of backups, used automatically if the main config is ever missing or corrupted, plus a manual "Restore config from backup" option in Settings.
+- **Live ping in mini-mode and bar-mode**, matching the CPU/RAM/GPU stats already shown there.
+- **One-time hint notification** the first time mini or bar mode is entered, explaining the control icons.
+- Breathing glow, pulsing status dot, and fade-in transitions for mini/bar mode.
+- Mini/bar mode now remembers its last position and which of the two was last used, so returning to floating mode goes straight back to where you left it.
+
+### Fixed
+
+- **Critical: crash-recovery on startup no longer reverts restart-required tweaks** (HPET, MSI, Nagle, HAGS). Previously, enabling one of these, activating, and restarting the PC (the intended workflow) would get silently undone the moment the app relaunched.
+- **Critical, two separate causes of data loss on update**: an installer setting that deleted all app data (games, custom rules, tweak selections) during updates that go through an implicit uninstall step, and a second, independent hardcoded delete command in the custom install script. Both removed and verified with real install/uninstall tests.
+- A PowerShell JSON serialization issue in the shutdown-revert script and the Discord tweak could silently corrupt nested config/settings data due to a missing depth parameter. Fixed and reproduced/verified.
+- The "Active in this preset" list showed a generic "Custom" tag for Quick Rules instead of their real category, with inconsistent badge alignment. Both fixed.
+- Mini-mode's Activate button gave no loading feedback, which could look like the app had hung on slower systems.
+- Opacity changes in mini/bar mode were leaking into the normal window and persisting across app restarts.
+- The window could end up straddling two monitors when returning to full size from mini/bar mode near a screen edge.
+- Two Dependabot-flagged dependency vulnerabilities resolved.
+
 ## [2.4.3] - 2026-07-24
 
 ### Fixed
