@@ -26,8 +26,11 @@ ALL_TWEAKS.forEach(t => { state.tweaks[t.id] = t.presets.balanced; });
 // ── Init ──────────────────────────────────────────────────────────────────────
 
 let miniModeActive = false;
+let lastFloatingMode = 'mini';
 let barModeActive = false;
 let lastMetrics = {};
+let lastPing = {};
+let miniActivateInProgress = false;
 let lastActivationImpact = null;
 
 function anyLiveViewActive() {
@@ -39,6 +42,10 @@ function stopMetricsIfIdle() {
   if (!anyLiveViewActive()) window.mgm.metricsStop();
 }
 
+function stopPingIfIdle() {
+  if (!anyLiveViewActive()) window.mgm.pingStop();
+}
+
 function hideNormalApp() {
   const appEl = document.getElementById('app');
   if (appEl) appEl.style.display = 'none';
@@ -48,6 +55,9 @@ function showNormalAppIfIdle() {
   if (miniModeActive || barModeActive) return;
   const appEl = document.getElementById('app');
   if (appEl) appEl.style.display = '';
+  // Opacity is a window-level property, not scoped to mini/bar mode, so
+  // it must be explicitly reset or the normal view stays dimmed too.
+  window.mgm.setWindowOpacity(1);
 }
 
 function enterMiniMode() {
@@ -57,18 +67,24 @@ function enterMiniMode() {
   const mini = document.getElementById('mini-mode');
   mini.style.display = 'flex';
   const vendor = state.gpu?.vendor || 'nvidia';
-  mini.className = 'mini-mode theme-' + (state.manualTheme || vendor);
+  mini.className = 'mini-mode entering theme-' + (state.manualTheme || vendor);
+  requestAnimationFrame(() => requestAnimationFrame(() => mini.classList.remove('entering')));
   updateLiveViews();
   window.mgm.setMiniMode(true);
   window.mgm.metricsStart();
+  window.mgm.pingStart();
 }
 
 function exitMiniMode(skipWindowReset) {
   miniModeActive = false;
   document.getElementById('mini-mode').style.display = 'none';
   showNormalAppIfIdle();
-  if (!skipWindowReset) window.mgm.setMiniMode(false);
+  if (!skipWindowReset) {
+    lastFloatingMode = 'mini';
+    window.mgm.setMiniMode(false);
+  }
   stopMetricsIfIdle();
+  stopPingIfIdle();
 }
 
 function enterBarMode() {
@@ -78,18 +94,24 @@ function enterBarMode() {
   const bar = document.getElementById('bar-mode');
   bar.style.display = 'flex';
   const vendor = state.gpu?.vendor || 'nvidia';
-  bar.className = 'bar-mode theme-' + (state.manualTheme || vendor);
+  bar.className = 'bar-mode entering theme-' + (state.manualTheme || vendor);
+  requestAnimationFrame(() => requestAnimationFrame(() => bar.classList.remove('entering')));
   updateLiveViews();
   window.mgm.setBarMode(true);
   window.mgm.metricsStart();
+  window.mgm.pingStart();
 }
 
 function exitBarMode(skipWindowReset) {
   barModeActive = false;
   document.getElementById('bar-mode').style.display = 'none';
   showNormalAppIfIdle();
-  if (!skipWindowReset) window.mgm.setBarMode(false);
+  if (!skipWindowReset) {
+    lastFloatingMode = 'bar';
+    window.mgm.setBarMode(false);
+  }
   stopMetricsIfIdle();
+  stopPingIfIdle();
 }
 
 function toggleOpacityPopover(anchorEl) {
@@ -112,6 +134,15 @@ function toggleOpacityPopover(anchorEl) {
   pop.style.left = left + 'px';
 }
 
+function toggleBarOpacityInline() {
+  const stats = document.getElementById('bar-stats');
+  const inline = document.getElementById('bar-opacity-inline');
+  if (!stats || !inline) return;
+  const isShowing = inline.style.display !== 'none';
+  inline.style.display = isShowing ? 'none' : 'flex';
+  stats.style.display = isShowing ? 'flex' : 'none';
+}
+
 function updateLiveViews() {
   updateMiniMode();
   updateBarMode();
@@ -129,6 +160,7 @@ function updateBarMode() {
   const cpuEl = document.getElementById('bar-cpu');
   const ramEl = document.getElementById('bar-ram');
   const gpuEl = document.getElementById('bar-gpu');
+  const pingEl = document.getElementById('bar-ping');
 
   if (barEl) barEl.classList.toggle('active', !!state.active);
   if (dotEl) dotEl.classList.toggle('on', !!state.active);
@@ -149,6 +181,16 @@ function updateBarMode() {
     gpuEl.textContent = v + '%';
     gpuEl.className = 'bar-stat-val' + statClass(v, 50, 80);
   }
+  if (pingEl && lastPing.ping !== undefined) {
+    const v = Math.round(lastPing.ping);
+    if (v <= 0) {
+      pingEl.textContent = 'N/A';
+      pingEl.className = 'bar-stat-val danger';
+    } else {
+      pingEl.textContent = v + 'ms';
+      pingEl.className = 'bar-stat-val' + statClass(v, 60, 120);
+    }
+  }
 }
 
 function updateMiniMode() {
@@ -161,6 +203,7 @@ function updateMiniMode() {
   const cpuEl = document.getElementById('mm-cpu');
   const ramEl = document.getElementById('mm-ram');
   const gpuEl = document.getElementById('mm-gpu');
+  const pingEl = document.getElementById('mm-ping');
 
   // Glow border while gaming mode is on
   if (miniEl) miniEl.classList.toggle('active', !!state.active);
@@ -171,10 +214,10 @@ function updateMiniMode() {
     tweaksEl.textContent = count + ' tweak' + (count !== 1 ? 's' : '') + ' selected';
   }
   if (statusEl) {
-    statusEl.textContent = state.active ? '● Gaming mode on' : '● Gaming mode off';
+    statusEl.innerHTML = '<span class="mm-status-dot" id="mm-status-dot"></span>' + (state.active ? 'Gaming mode on' : 'Gaming mode off');
     statusEl.className = 'mm-status' + (state.active ? ' active' : '');
   }
-  if (btnEl) {
+  if (btnEl && !miniActivateInProgress) {
     btnEl.textContent = state.active ? 'Deactivate' : 'Activate';
     btnEl.className = 'mm-activate-btn' + (state.active ? ' deact' : '');
   }
@@ -196,6 +239,16 @@ function updateMiniMode() {
     gpuEl.textContent = v + '%';
     gpuEl.className = 'mm-stat-val' + (v > 80 ? ' danger' : v > 50 ? ' warn' : '');
     renderSparkline('mm-gpu-spark', gpuHistory, v > 80 ? '#ed1c24' : v > 50 ? '#f0a500' : 'var(--acc)', 12);
+  }
+  if (pingEl && lastPing.ping !== undefined) {
+    const v = Math.round(lastPing.ping);
+    if (v <= 0) {
+      pingEl.textContent = 'N/A';
+      pingEl.className = 'mm-stat-val danger';
+    } else {
+      pingEl.textContent = v + 'ms';
+      pingEl.className = 'mm-stat-val' + (v > 120 ? ' danger' : v > 60 ? ' warn' : '');
+    }
   }
 }
 
@@ -321,9 +374,11 @@ async function init() {
     updateLiveViews();
   });
 
-  // Live ping listener (Performance tab only)
+  // Live ping listener (Performance tab and bar-mode)
   window.mgm.onPingData((data) => {
+    lastPing = data;
     updatePingUI(data);
+    updateLiveViews();
   });
 
   // Auto-updater status handler
@@ -402,7 +457,9 @@ function bindEvents() {
   if (btnUpdate) btnUpdate.addEventListener('click', checkForUpdates);
 
   // Mini mode toggle
-  document.getElementById('btn-mini-mode')?.addEventListener('click', enterMiniMode);
+  document.getElementById('btn-mini-mode')?.addEventListener('click', () => {
+    if (lastFloatingMode === 'bar') enterBarMode(); else enterMiniMode();
+  });
   document.getElementById('mm-expand')?.addEventListener('click', () => exitMiniMode());
   document.getElementById('mm-bar-btn')?.addEventListener('click', enterBarMode);
   document.querySelector('.mm-stats')?.addEventListener('click', () => {
@@ -410,12 +467,19 @@ function bindEvents() {
     const statsNav = document.getElementById('ni-stats');
     if (statsNav) switchTab('stats', statsNav);
   });
-  document.getElementById('mm-activate-btn')?.addEventListener('click', async () => {
-    if (state.active) {
+  document.getElementById('mm-activate-btn')?.addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    const wasActive = state.active;
+    miniActivateInProgress = true;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ti ti-loader"></i> ' + (wasActive ? 'Deactivating...' : 'Activating...');
+    if (wasActive) {
       await revertMode();
     } else {
       await applyMode();
     }
+    miniActivateInProgress = false;
+    btn.disabled = false;
     updateLiveViews();
   });
 
@@ -428,12 +492,19 @@ function bindEvents() {
     if (statsNav) switchTab('stats', statsNav);
   });
 
-  // Quick-access opacity popover, shared between mini card and bar
+  // Quick-access opacity popover for mini card; bar mode uses an inline
+  // toggle instead since the bar window (44px tall) has no room for a
+  // floating popover without it overlapping the bar's own content.
   document.getElementById('mm-opacity-btn')?.addEventListener('click', (e) => toggleOpacityPopover(e.currentTarget));
-  document.getElementById('bar-opacity-btn')?.addEventListener('click', (e) => toggleOpacityPopover(e.currentTarget));
+  document.getElementById('bar-opacity-btn')?.addEventListener('click', toggleBarOpacityInline);
   document.getElementById('opacity-slider')?.addEventListener('input', (e) => {
     const pct = parseInt(e.target.value, 10);
     document.getElementById('opacity-val').textContent = pct + '%';
+    window.mgm.setWindowOpacity(pct / 100);
+  });
+  document.getElementById('bar-opacity-slider')?.addEventListener('input', (e) => {
+    const pct = parseInt(e.target.value, 10);
+    document.getElementById('bar-opacity-val').textContent = pct + '%';
     window.mgm.setWindowOpacity(pct / 100);
   });
   document.getElementById('opacity-popover-close')?.addEventListener('click', () => {
@@ -687,8 +758,9 @@ function switchTab(name, el) {
   } else {
     window.mgm.metricsStop();
   }
-  // Ping monitor only runs while the Performance tab itself is open
-  if (name === 'stats') {
+  // Ping monitor runs while the Performance tab is open, or while
+  // mini-mode/bar-mode is showing live stats (same condition as metrics).
+  if (name === 'stats' || miniModeActive || barModeActive) {
     window.mgm.pingStart();
   } else {
     window.mgm.pingStop();

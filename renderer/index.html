@@ -626,7 +626,7 @@
           <div class="mm-tweaks" id="mm-tweaks">0 tweaks selected</div>
         </div>
       </div>
-      <div class="mm-status" id="mm-status">● Gaming mode off</div>
+      <div class="mm-status" id="mm-status"><span class="mm-status-dot" id="mm-status-dot"></span>Gaming mode off</div>
       <button class="mm-activate-btn" id="mm-activate-btn">Activate</button>
       <div class="mm-stats">
         <div class="mm-stat">
@@ -644,6 +644,10 @@
           <div class="mm-stat-val" id="mm-gpu">--</div>
           <div class="mm-spark" id="mm-gpu-spark"></div>
         </div>
+        <div class="mm-stat">
+          <div class="mm-stat-label">PING</div>
+          <div class="mm-stat-val" id="mm-ping">--</div>
+        </div>
       </div>
     </div>
   </div>
@@ -655,10 +659,16 @@
       <span class="bar-dot" id="bar-dot"></span>
       <span class="bar-preset" id="bar-preset">Esports</span>
     </div>
-    <div class="bar-stats">
+    <div class="bar-stats" id="bar-stats">
       <div class="bar-stat"><span class="bar-stat-label">CPU</span><span class="bar-stat-val" id="bar-cpu">--</span></div>
       <div class="bar-stat"><span class="bar-stat-label">RAM</span><span class="bar-stat-val" id="bar-ram">--</span></div>
       <div class="bar-stat"><span class="bar-stat-label">GPU</span><span class="bar-stat-val" id="bar-gpu">--</span></div>
+      <div class="bar-stat"><span class="bar-stat-label">PING</span><span class="bar-stat-val" id="bar-ping">--</span></div>
+    </div>
+    <div class="bar-opacity-inline" id="bar-opacity-inline" style="display:none">
+      <i class="ti ti-droplet-half-2"></i>
+      <input type="range" id="bar-opacity-slider" min="30" max="100" value="100">
+      <span id="bar-opacity-val">100%</span>
     </div>
     <div class="bar-controls">
       <button class="bar-icon-btn" id="bar-opacity-btn" title="Opacity"><i class="ti ti-droplet-half-2"></i></button>
