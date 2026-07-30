@@ -250,6 +250,18 @@
             <div class="settings-card" style="margin-top:8px">
               <div class="settings-row">
                 <div class="settings-info">
+                  <div class="settings-label">Restore config from backup</div>
+                  <div class="settings-desc">Restores your games, custom rules, and tweak selections from the most recent automatic backup. Use this if your config was ever lost or corrupted.</div>
+                </div>
+                <button class="btn-restore" id="btn-restore-config">
+                  <i class="ti ti-history"></i> Restore backup
+                </button>
+              </div>
+            </div>
+
+            <div class="settings-card" style="margin-top:8px">
+              <div class="settings-row">
+                <div class="settings-info">
                   <div class="settings-label">Start with Windows</div>
                   <div class="settings-desc">Launch Mojo Gaming Mode automatically when Windows starts. Opens minimized to tray.</div>
                 </div>
@@ -573,6 +585,22 @@
       <div class="modal-footer">
         <button class="btn-cancel" id="app-restart-confirm-cancel">Cancel</button>
         <button class="btn-ok" id="app-restart-confirm-ok">Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="restore-backup-confirm-overlay">
+    <div class="modal" style="max-width:340px">
+      <div class="modal-header">
+        <span class="modal-title"><i class="ti ti-history"></i> Restore from backup</span>
+        <button class="modal-close" id="restore-backup-confirm-close"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:13px; color:var(--text2); margin:0;">This will replace your current games, custom rules, and tweak selections with the most recent automatic backup. Continue?</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="restore-backup-confirm-cancel">Cancel</button>
+        <button class="btn-ok" id="restore-backup-confirm-ok">Restore</button>
       </div>
     </div>
   </div>

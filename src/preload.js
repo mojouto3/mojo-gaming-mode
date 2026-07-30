@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('mgm', {
   getConfig: () => ipcRenderer.invoke('get-config'),
   saveConfig: (config) => ipcRenderer.invoke('save-config', config),
   createRestorePoint: () => ipcRenderer.invoke('create-restore-point'),
+  restoreConfigBackup: () => ipcRenderer.invoke('restore-config-backup'),
   setAutostart: (enabled) => ipcRenderer.invoke('set-autostart', enabled),
   applyMode: (config) => ipcRenderer.invoke('apply-mode', config),
   revertMode: () => ipcRenderer.invoke('revert-mode'),
