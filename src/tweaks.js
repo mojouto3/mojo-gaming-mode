@@ -92,8 +92,8 @@ const TWEAK_DEFINITIONS = {
   discord: {
     name: 'Discord GPU acceleration off',
     requiresAdmin: false,
-    applyCmd: `$s="$env:APPDATA\\discord\\settings.json"; If(Test-Path $s){$j=Get-Content $s|ConvertFrom-Json; $j|Add-Member -NotePropertyName 'HARDWARE_ACCELERATION' -NotePropertyValue $false -Force; $j|ConvertTo-Json|Set-Content $s}; Exit 0`,
-    revertCmd: `$s="$env:APPDATA\\discord\\settings.json"; If(Test-Path $s){$j=Get-Content $s|ConvertFrom-Json; $j|Add-Member -NotePropertyName 'HARDWARE_ACCELERATION' -NotePropertyValue $true -Force; $j|ConvertTo-Json|Set-Content $s}; Exit 0`
+    applyCmd: `$s="$env:APPDATA\\discord\\settings.json"; If(Test-Path $s){$j=Get-Content $s|ConvertFrom-Json; $j|Add-Member -NotePropertyName 'HARDWARE_ACCELERATION' -NotePropertyValue $false -Force; $j|ConvertTo-Json -Depth 10|Set-Content $s}; Exit 0`,
+    revertCmd: `$s="$env:APPDATA\\discord\\settings.json"; If(Test-Path $s){$j=Get-Content $s|ConvertFrom-Json; $j|Add-Member -NotePropertyName 'HARDWARE_ACCELERATION' -NotePropertyValue $true -Force; $j|ConvertTo-Json -Depth 10|Set-Content $s}; Exit 0`
   },
 
   telemetry: {
