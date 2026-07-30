@@ -497,6 +497,18 @@ function bindEvents() {
 
   // Settings - Restore Point
   document.getElementById('btn-restore').addEventListener('click', createRestorePoint);
+  document.getElementById('btn-restore-config')?.addEventListener('click', restoreConfigFromBackup);
+
+  document.getElementById('restore-backup-confirm-close')?.addEventListener('click', () => {
+    document.getElementById('restore-backup-confirm-overlay')?.classList.remove('open');
+  });
+  document.getElementById('restore-backup-confirm-cancel')?.addEventListener('click', () => {
+    document.getElementById('restore-backup-confirm-overlay')?.classList.remove('open');
+  });
+  document.getElementById('restore-backup-confirm-ok')?.addEventListener('click', () => {
+    document.getElementById('restore-backup-confirm-overlay')?.classList.remove('open');
+    doRestoreConfigFromBackup();
+  });
 
   // Settings - Autostart
   document.getElementById('cb-autostart').addEventListener('change', (e) => {
@@ -1722,6 +1734,27 @@ async function createRestorePoint() {
     showToast('Restore point created');
   } else {
     showToast(result.error || 'Failed to create restore point');
+  }
+}
+
+async function restoreConfigFromBackup() {
+  document.getElementById('restore-backup-confirm-overlay')?.classList.add('open');
+}
+
+async function doRestoreConfigFromBackup() {
+  const btn = document.getElementById('btn-restore-config');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader"></i> Restoring...';
+
+  const result = await window.mgm.restoreConfigBackup();
+
+  if (result.success) {
+    showToast('Backup restored - reloading...');
+    setTimeout(() => location.reload(), 1000);
+  } else {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-history"></i> Restore backup';
+    showToast(result.error || 'Failed to restore backup');
   }
 }
 

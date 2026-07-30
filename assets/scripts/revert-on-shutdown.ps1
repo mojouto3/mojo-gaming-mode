@@ -74,6 +74,14 @@ if ($tweaks -contains 'nagle') {
 # Clear wasActive flag
 $config.wasActive = $false
 $config.activeTweakIds = @()
+
+# Back up the current config before overwriting it, matching the main
+# app's rotation, in case this write (or any other) ever goes wrong.
+$backup1 = "$env:APPDATA\mojo-gaming-mode\config.backup1.json"
+$backup2 = "$env:APPDATA\mojo-gaming-mode\config.backup2.json"
+if (Test-Path $backup1) { Copy-Item $backup1 $backup2 -Force -ErrorAction SilentlyContinue }
+Copy-Item $configPath $backup1 -Force -ErrorAction SilentlyContinue
+
 $config | ConvertTo-Json -Depth 10 | Set-Content $configPath
 
 Exit 0
