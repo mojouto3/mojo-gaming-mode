@@ -4,6 +4,14 @@ All notable changes to Mojo Gaming Mode are documented here.
 
 ---
 
+## [2.4.3] - 2026-07-24
+
+### Fixed
+
+- Found while auditing for more issues after the recent data-loss fixes: `assets/scripts/revert-on-shutdown.ps1` (which runs on every Windows shutdown while gaming mode is active) rewrote config.json using PowerShell's `ConvertTo-Json` without specifying `-Depth`, which defaults to a depth limit of 2. Nested data beyond that, like games list entries, could get silently corrupted into a useless string. Reproduced directly and confirmed the fix resolves it.
+- The Discord GPU acceleration tweak had the same missing-`-Depth` issue when reading and rewriting Discord's own settings.json, risking corruption of Discord's own nested settings on every use.
+- Removed a stale reference to the long-removed `qos` tweak from the shutdown script.
+
 ## [2.4.2] - 2026-07-24
 
 ### Fixed
