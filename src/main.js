@@ -81,6 +81,8 @@ const { autoUpdater } = require('electron-updater');
 const { TWEAK_DEFINITIONS } = require('./tweaks');
 
 const CONFIG_PATH = path.join(app.getPath('userData'), 'config.json');
+const CONFIG_BACKUP1 = path.join(app.getPath('userData'), 'config.backup1.json');
+const CONFIG_BACKUP2 = path.join(app.getPath('userData'), 'config.backup2.json');
 const ASSETS_PATH = path.join(__dirname, '..', 'assets');
 
 let mainWindow = null;
@@ -143,7 +145,21 @@ function loadConfig() {
     if (fs.existsSync(CONFIG_PATH)) {
       return JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
     }
-  } catch (e) {}
+  } catch (e) {
+    console.error('loadConfig: main config unreadable/corrupted, trying backups:', e.message);
+  }
+  // Main config missing or corrupted - try the rotating backups before
+  // giving up and falling back to bare defaults, which would otherwise
+  // silently lose everything (games, custom rules, tweak selections).
+  for (const backupPath of [CONFIG_BACKUP1, CONFIG_BACKUP2]) {
+    try {
+      if (fs.existsSync(backupPath)) {
+        const recovered = JSON.parse(fs.readFileSync(backupPath, 'utf8'));
+        console.error('loadConfig: recovered from backup:', backupPath);
+        return recovered;
+      }
+    } catch (e) {}
+  }
   return { ...DEFAULT_CONFIG };
 }
 
@@ -159,6 +175,20 @@ function saveConfig(config) {
     try {
       if (fs.existsSync(CONFIG_PATH)) existing = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
     } catch (e) {}
+    // Rotate two generations of backups before writing, so a corrupted or
+    // unexpected write (from this app or elsewhere) can be recovered from.
+    // Only backs up a config that parsed successfully above, so a known-bad
+    // file never overwrites a known-good backup.
+    try {
+      if (fs.existsSync(CONFIG_PATH) && Object.keys(existing).length > 0) {
+        if (fs.existsSync(CONFIG_BACKUP1)) fs.copyFileSync(CONFIG_BACKUP1, CONFIG_BACKUP2);
+        fs.copyFileSync(CONFIG_PATH, CONFIG_BACKUP1);
+      } else {
+        console.error('saveConfig: skipped backup - CONFIG_PATH exists:', fs.existsSync(CONFIG_PATH), 'existing keys:', Object.keys(existing).length);
+      }
+    } catch (e) {
+      console.error('saveConfig: backup step failed:', e.message);
+    }
     const merged = { ...existing, ...config };
     fs.writeFileSync(CONFIG_PATH, JSON.stringify(merged, null, 2));
     return true;
@@ -535,6 +565,19 @@ ipcMain.handle('get-gpu-info', () => detectedGPU);
 ipcMain.handle('get-config', () => loadConfig());
 
 ipcMain.handle('save-config', (e, config) => saveConfig(config));
+
+ipcMain.handle('restore-config-backup', async () => {
+  try {
+    if (!fs.existsSync(CONFIG_BACKUP1)) {
+      return { success: false, error: 'No backup available yet.' };
+    }
+    const restored = JSON.parse(fs.readFileSync(CONFIG_BACKUP1, 'utf8'));
+    fs.writeFileSync(CONFIG_PATH, JSON.stringify(restored, null, 2));
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
 
 ipcMain.handle('create-restore-point', async () => {
   return new Promise((resolve) => {
