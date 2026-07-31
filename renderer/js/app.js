@@ -569,6 +569,8 @@ function bindEvents() {
   // Settings - Restore Point
   document.getElementById('btn-restore').addEventListener('click', createRestorePoint);
   document.getElementById('btn-restore-config')?.addEventListener('click', restoreConfigFromBackup);
+  document.getElementById('btn-export-settings')?.addEventListener('click', exportFullConfigToFile);
+  document.getElementById('btn-import-settings')?.addEventListener('click', importFullConfigFromFile);
 
   document.getElementById('restore-backup-confirm-close')?.addEventListener('click', () => {
     document.getElementById('restore-backup-confirm-overlay')?.classList.remove('open');
@@ -1508,6 +1510,98 @@ async function saveRule() {
   renderStats();
   persistConfig();
   showToast('Rule added');
+}
+
+function exportFullConfigToFile() {
+  const quickRuleIds = typeof CUSTOM_RULES !== 'undefined' ? CUSTOM_RULES.map(r => r.id) : Object.keys(customRulesState);
+  const quickRules = {};
+  quickRuleIds.forEach(id => { quickRules[id] = !!customRulesState[id]; });
+
+  const payload = {
+    app: 'mojo-gaming-mode',
+    exportType: 'full-config',
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    preset: state.preset,
+    tweaks: state.tweaks,
+    quickRules,
+    customRules: state.rules,
+    games: state.games,
+    gameDetectionEnabled: state.gameDetectionEnabled,
+    notifPrefs: state.notifPrefs,
+    showPerfImpact: state.showPerfImpact,
+    lang: state.lang,
+    manualTheme: state.manualTheme,
+    autostart: state.autostart
+  };
+
+  window.mgm.exportFullConfig(JSON.stringify(payload, null, 2)).then((result) => {
+    if (result.canceled) return;
+    showToast(result.success ? 'Settings exported' : 'Export failed');
+  });
+}
+
+async function importFullConfigFromFile() {
+  const result = await window.mgm.importFullConfig();
+  if (result.canceled) return;
+  if (!result.success) { showToast('Import failed - could not read file'); return; }
+
+  let data;
+  try {
+    data = JSON.parse(result.content);
+  } catch (e) {
+    showToast('Import failed - invalid JSON');
+    return;
+  }
+
+  if (!data || data.exportType !== 'full-config') {
+    showToast('Import failed - not a Mojo Gaming Mode settings file');
+    return;
+  }
+
+  if (!confirm('This will replace your current tweaks, rules, games, and settings with the imported file. Continue?')) return;
+
+  const cfg = {};
+
+  // Only accept known tweak ids with boolean values
+  if (data.tweaks && typeof data.tweaks === 'object') {
+    const knownTweakIds = new Set(ALL_TWEAKS.map(t => t.id));
+    cfg.tweaks = {};
+    Object.entries(data.tweaks).forEach(([id, val]) => {
+      if (knownTweakIds.has(id)) cfg.tweaks[id] = !!val;
+    });
+  }
+
+  // Only accept known quick-rule ids, same guard as the custom rules import
+  if (data.quickRules && typeof data.quickRules === 'object') {
+    const knownRuleIds = typeof CUSTOM_RULES !== 'undefined' ? new Set(CUSTOM_RULES.map(r => r.id)) : null;
+    cfg.customRulesActive = {};
+    Object.entries(data.quickRules).forEach(([id, val]) => {
+      if (knownRuleIds && knownRuleIds.has(id)) cfg.customRulesActive[id] = !!val;
+    });
+  }
+
+  if (Array.isArray(data.customRules)) {
+    cfg.customRules = data.customRules.filter(r => r && typeof r.name === 'string' && typeof r.type === 'string' && typeof r.target === 'string');
+  }
+
+  if (Array.isArray(data.games)) {
+    cfg.games = data.games.filter(g => g && typeof g.name === 'string' && typeof g.exeName === 'string');
+  }
+
+  if (typeof data.preset === 'string' && ['balanced', 'performance', 'esports', 'custom'].includes(data.preset)) {
+    cfg.preset = data.preset;
+  }
+  if (typeof data.gameDetectionEnabled === 'boolean') cfg.gameDetectionEnabled = data.gameDetectionEnabled;
+  if (typeof data.showPerfImpact === 'boolean') cfg.showPerfImpact = data.showPerfImpact;
+  if (typeof data.autostart === 'boolean') cfg.autostart = data.autostart;
+  if (typeof data.lang === 'string') cfg.lang = data.lang;
+  if (data.manualTheme === null || typeof data.manualTheme === 'string') cfg.manualTheme = data.manualTheme;
+  if (data.notifPrefs && typeof data.notifPrefs === 'object') cfg.notifPrefs = data.notifPrefs;
+
+  await window.mgm.saveConfig(cfg);
+  showToast('Settings imported - reloading...');
+  setTimeout(() => location.reload(), 1000);
 }
 
 function exportCustomRulesToFile() {
