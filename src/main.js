@@ -46,9 +46,10 @@ function updateDiscordPresence(preset, tweakCount, sessionStart) {
   try {
     if (!rpcClient) return;
     if (gamingModeActive) {
+      const rulesCount = (activeCustomRules?.length || 0) + (activeQuickRuleIds?.length || 0);
       rpcClient.user?.setActivity({
-        details: `Gaming Mode: ON`,
-        state: `${preset || currentPreset || 'Balanced'} preset - ${tweakCount || activeTweakIds.length} tweaks active`,
+        details: `${preset || currentPreset || 'Balanced'} preset - ${tweakCount || activeTweakIds.length} tweaks`,
+        state: rulesCount > 0 ? `+ ${rulesCount} rules active` : 'Gaming Mode: ON',
         startTimestamp: sessionStart || Date.now(),
         largeImageKey: 'mgm_logo',
         largeImageText: 'Mojo Gaming Mode',
