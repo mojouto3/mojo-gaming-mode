@@ -1090,6 +1090,16 @@ ipcMain.handle('browse-for-exe', async () => {
   }
 });
 
+ipcMain.handle('get-file-icon', async (e, filePath) => {
+  try {
+    if (!filePath || !fs.existsSync(filePath)) return { success: false };
+    const icon = await app.getFileIcon(filePath, { size: 'large' });
+    return { success: true, dataUrl: icon.toDataURL() };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
 ipcMain.handle('scan-installed-games', async () => {
   const script = `
 $ProgressPreference = 'SilentlyContinue'
