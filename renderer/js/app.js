@@ -2056,6 +2056,18 @@ function buildGameRow(g) {
     persistConfig();
     restartGameDetectionIfActive();
   });
+
+  // Load the game's real icon asynchronously; the generic controller icon
+  // set above stays in place until/unless this succeeds.
+  if (g.exePath) {
+    window.mgm.getFileIcon(g.exePath).then((result) => {
+      if (result && result.success && result.dataUrl) {
+        const iconEl = row.querySelector('.game-icon');
+        if (iconEl) iconEl.innerHTML = `<img src="${result.dataUrl}" alt="">`;
+      }
+    }).catch(() => {});
+  }
+
   return row;
 }
 

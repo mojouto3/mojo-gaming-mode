@@ -23,6 +23,7 @@ contextBridge.exposeInMainWorld('mgm', {
   onPingData: (cb) => ipcRenderer.on('ping-data', (e, data) => cb(data)),
   findProcessPath: (processName) => ipcRenderer.invoke('find-process-path', processName),
   browseForExe: () => ipcRenderer.invoke('browse-for-exe'),
+  getFileIcon: (filePath) => ipcRenderer.invoke('get-file-icon', filePath),
   scanInstalledGames: () => ipcRenderer.invoke('scan-installed-games'),
   startGameDetection: (processNames) => ipcRenderer.send('game-detection-start', processNames),
   stopGameDetection: () => ipcRenderer.send('game-detection-stop'),
