@@ -4,6 +4,22 @@ All notable changes to Mojo Gaming Mode are documented here.
 
 ---
 
+## [2.6.0] - 2026-07-31
+
+### Added
+
+- **Real game icons**: the Games tab now shows each game's actual icon (extracted from its executable) instead of a generic controller icon.
+- **Full settings export/import**: back up or transfer your complete setup (tweaks, Quick Rules, custom rules, games, and preferences), not just custom rules.
+- Discord Rich Presence now shows the count of active rules alongside tweaks, not just tweaks.
+
+### Fixed
+
+- The "Custom rules" stat on the Performance tab only counted user-created rules, showing 0 even with many Quick Rules enabled. Now counts both, and relabeled to "Active rules" for clarity.
+
+### Removed
+
+- Cleaned up 24 leftover unused fields in the Custom Rules data (no functional change).
+
 ## [2.5.0] - 2026-07-30
 
 ### Added
