@@ -239,7 +239,6 @@ const CUSTOM_RULES = [
     name: 'Microsoft Teams off',
     desc: 'Closes Microsoft Teams during gaming. Restarts automatically after.',
     cmd: 'Stop-Process: Teams.exe',
-    tag: 's'
   },
   {
     id: 'cr_phonelink',
@@ -247,7 +246,6 @@ const CUSTOM_RULES = [
     name: 'Phone Link off',
     desc: 'Closes the Phone Link app (formerly Your Phone) during gaming.',
     cmd: 'Stop-Process: PhoneExperienceHost.exe',
-    tag: 's'
   },
   {
     id: 'cr_copilot',
@@ -255,7 +253,6 @@ const CUSTOM_RULES = [
     name: 'Windows Copilot off',
     desc: 'Closes the Windows Copilot sidebar during gaming.',
     cmd: 'Stop-Process: Copilot.exe',
-    tag: 's'
   },
   {
     id: 'cr_widgets',
@@ -263,7 +260,6 @@ const CUSTOM_RULES = [
     name: 'Windows Widgets off',
     desc: 'Closes the Windows Widgets panel during gaming.',
     cmd: 'Stop-Process: Widgets.exe',
-    tag: 's'
   },
   {
     id: 'cr_epicgames',
@@ -271,7 +267,6 @@ const CUSTOM_RULES = [
     name: 'Epic Games Launcher off',
     desc: 'Closes the Epic Games Launcher background process during gaming.',
     cmd: 'Stop-Process: EpicGamesLauncher.exe',
-    tag: 's'
   },
   {
     id: 'cr_eaapp',
@@ -279,7 +274,6 @@ const CUSTOM_RULES = [
     name: 'EA App off',
     desc: 'Closes the EA App background process during gaming.',
     cmd: 'Stop-Process: EABackgroundService.exe, EADesktop.exe',
-    tag: 's'
   },
   {
     id: 'cr_spotify',
@@ -287,7 +281,6 @@ const CUSTOM_RULES = [
     name: 'Spotify off',
     desc: 'Closes Spotify during gaming to free up RAM and CPU.',
     cmd: 'Stop-Process: Spotify.exe',
-    tag: 's'
   },
   {
     id: 'cr_battlenet',
@@ -295,7 +288,6 @@ const CUSTOM_RULES = [
     name: 'Battle.net off',
     desc: 'Closes the Battle.net launcher during gaming.',
     cmd: 'Stop-Process: Battle.net.exe',
-    tag: 's'
   },
   {
     id: 'cr_ubisoft',
@@ -303,7 +295,6 @@ const CUSTOM_RULES = [
     name: 'Ubisoft Connect off',
     desc: 'Closes the Ubisoft Connect launcher during gaming.',
     cmd: 'Stop-Process: UbisoftConnect.exe',
-    tag: 's'
   },
   {
     id: 'cr_gog',
@@ -311,7 +302,6 @@ const CUSTOM_RULES = [
     name: 'GOG Galaxy off',
     desc: 'Closes the GOG Galaxy launcher during gaming.',
     cmd: 'Stop-Process: GalaxyClient.exe',
-    tag: 's'
   },
   {
     id: 'cr_xbox',
@@ -319,7 +309,6 @@ const CUSTOM_RULES = [
     name: 'Xbox App off',
     desc: 'Closes the Xbox App background process during gaming.',
     cmd: 'Stop-Process: XboxApp.exe',
-    tag: 's'
   },
   {
     id: 'cr_rockstar',
@@ -327,14 +316,12 @@ const CUSTOM_RULES = [
     name: 'Rockstar Games Launcher off',
     desc: 'Closes the Rockstar Games Launcher during gaming.',
     cmd: 'Stop-Process: RockstarService.exe',
-    tag: 's'
   },
   {
     id: 'cr_slack',
     name: 'Slack off',
     desc: 'Closes Slack during gaming to free up RAM.',
     cmd: 'Stop-Process: slack.exe',
-    tag: 's',
     category: 'communication'
   },
   {
@@ -342,7 +329,6 @@ const CUSTOM_RULES = [
     name: 'Zoom off',
     desc: 'Closes Zoom during gaming.',
     cmd: 'Stop-Process: Zoom.exe',
-    tag: 's',
     category: 'communication'
   },
   {
@@ -350,7 +336,6 @@ const CUSTOM_RULES = [
     name: 'WhatsApp Desktop off',
     desc: 'Closes WhatsApp Desktop during gaming.',
     cmd: 'Stop-Process: WhatsApp.exe',
-    tag: 's',
     category: 'communication'
   },
   {
@@ -358,7 +343,6 @@ const CUSTOM_RULES = [
     name: 'Telegram Desktop off',
     desc: 'Closes Telegram Desktop during gaming.',
     cmd: 'Stop-Process: Telegram.exe',
-    tag: 's',
     category: 'communication'
   },
   {
@@ -366,7 +350,6 @@ const CUSTOM_RULES = [
     name: 'Google Drive off',
     desc: 'Closes Google Drive sync during gaming.',
     cmd: 'Stop-Process: GoogleDriveFS.exe',
-    tag: 's',
     category: 'cloud'
   },
   {
@@ -374,7 +357,6 @@ const CUSTOM_RULES = [
     name: 'Dropbox off',
     desc: 'Closes Dropbox sync during gaming.',
     cmd: 'Stop-Process: Dropbox.exe',
-    tag: 's',
     category: 'cloud'
   },
   {
@@ -382,7 +364,6 @@ const CUSTOM_RULES = [
     name: 'Minecraft Launcher off',
     desc: 'Closes the Minecraft Launcher during gaming.',
     cmd: 'Stop-Process: MinecraftLauncher.exe',
-    tag: 's',
     category: 'launchers'
   },
   {
@@ -390,7 +371,6 @@ const CUSTOM_RULES = [
     name: 'iTunes / Apple Music off',
     desc: 'Closes iTunes or Apple Music during gaming.',
     cmd: 'Stop-Process: iTunes.exe',
-    tag: 's',
     category: 'media'
   },
   {
@@ -398,7 +378,6 @@ const CUSTOM_RULES = [
     name: 'Riot Games Client off',
     desc: 'Closes the Riot Games client during gaming (Valorant, League of Legends).',
     cmd: 'Stop-Process: RiotClientServices.exe',
-    tag: 's',
     category: 'launchers'
   },
   {
@@ -406,7 +385,6 @@ const CUSTOM_RULES = [
     name: 'OneDrive close',
     desc: 'Closes OneDrive completely during gaming. Unlike the main tweak, this kills the process entirely.',
     cmd: 'Stop-Process: OneDrive.exe',
-    tag: 's',
     category: 'cloud'
   },
   {
@@ -414,7 +392,6 @@ const CUSTOM_RULES = [
     name: 'iCloud off',
     desc: 'Closes iCloud sync during gaming.',
     cmd: 'Stop-Process: iCloudDrive.exe',
-    tag: 's',
     category: 'cloud'
   },
   {
@@ -423,6 +400,5 @@ const CUSTOM_RULES = [
     name: 'Windows games scheduling priority',
     desc: 'Sets high CPU scheduling priority for games via Windows Multimedia registry.',
     cmd: 'Registry: HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games',
-    tag: 'r'
   }
 ];
