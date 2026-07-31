@@ -1105,7 +1105,8 @@ function renderStats() {
   const active = ALL_TWEAKS.filter(t => state.tweaks[t.id]);
   document.getElementById('sv-tweaks').textContent = active.length;
   document.getElementById('sv-sessions').textContent = state.sessions;
-  document.getElementById('sv-rules').textContent = state.rules.length;
+  const activeQuickRules = Object.values(customRulesState).filter(Boolean).length;
+  document.getElementById('sv-rules').textContent = activeQuickRules + state.rules.length;
   // FPS removed - replaced by live CPU/RAM/GPU metrics
 
   const container = document.getElementById('stats-changes');
