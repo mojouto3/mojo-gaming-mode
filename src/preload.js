@@ -29,6 +29,8 @@ contextBridge.exposeInMainWorld('mgm', {
   onGameDetectionEvent: (cb) => ipcRenderer.on('game-detection-event', (e, data) => cb(data)),
   notifyGameClosed: (gameName) => ipcRenderer.send('notify-game-closed', gameName),
   onGameClosedPrompt: (cb) => ipcRenderer.on('game-closed-prompt', (e, gameName) => cb(gameName)),
+  exportFullConfig: (jsonContent) => ipcRenderer.invoke('export-full-config', jsonContent),
+  importFullConfig: () => ipcRenderer.invoke('import-full-config'),
   exportCustomRules: (jsonContent) => ipcRenderer.invoke('export-custom-rules', jsonContent),
   importCustomRules: () => ipcRenderer.invoke('import-custom-rules'),
   onMetricsData: (cb) => ipcRenderer.on('metrics-data', (e, data) => cb(data)),

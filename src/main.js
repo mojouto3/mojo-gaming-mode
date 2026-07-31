@@ -1222,6 +1222,36 @@ ipcMain.on('notify-game-closed', (e, gameName) => {
   notif.show();
 });
 
+ipcMain.handle('export-full-config', async (e, jsonContent) => {
+  try {
+    const result = await dialog.showSaveDialog(mainWindow, {
+      title: 'Export Settings',
+      defaultPath: 'mgm-settings.json',
+      filters: [{ name: 'JSON', extensions: ['json'] }]
+    });
+    if (result.canceled || !result.filePath) return { success: false, canceled: true };
+    fs.writeFileSync(result.filePath, jsonContent, 'utf8');
+    return { success: true, path: result.filePath };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('import-full-config', async () => {
+  try {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: 'Import Settings',
+      filters: [{ name: 'JSON', extensions: ['json'] }],
+      properties: ['openFile']
+    });
+    if (result.canceled || !result.filePaths.length) return { success: false, canceled: true };
+    const content = fs.readFileSync(result.filePaths[0], 'utf8');
+    return { success: true, content };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
 ipcMain.handle('export-custom-rules', async (e, jsonContent) => {
   try {
     const result = await dialog.showSaveDialog(mainWindow, {
