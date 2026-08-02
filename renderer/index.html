@@ -10,6 +10,11 @@
   <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
+  <div class="bg-ambient" aria-hidden="true">
+    <div class="blob blob-a"></div>
+    <div class="blob blob-b"></div>
+    <div class="grain"></div>
+  </div>
   <div class="app" id="app">
 
     <div class="titlebar" id="titlebar">
@@ -35,6 +40,7 @@
     <div class="layout">
 
       <aside class="sidebar">
+        <div class="nav-active-indicator" id="nav-active-indicator" aria-hidden="true"></div>
         <div class="sidebar-gpu-card">
           <img src="../assets/icons/nvidia_logo.png" id="gpu-detected-icon" class="gpu-card-icon">
           <div class="gpu-card-info">
@@ -109,25 +115,25 @@
 
           <div id="tab-presets" class="tab-panel active">
             <div class="preset-grid" id="preset-grid">
-              <div class="preset-card active" id="pc-balanced" data-preset="balanced">
+              <div class="preset-card glass-card spotlight active" id="pc-balanced" data-preset="balanced">
                 <div class="pc-check"><i class="ti ti-check"></i></div>
                 <i class="ti ti-adjustments pc-icon"></i>
                 <div class="pc-name">Balanced</div>
                 <div class="pc-sub">Safe defaults, no admin needed</div>
               </div>
-              <div class="preset-card" id="pc-performance" data-preset="performance">
+              <div class="preset-card glass-card spotlight" id="pc-performance" data-preset="performance">
                 <div class="pc-check"><i class="ti ti-check"></i></div>
                 <i class="ti ti-rocket pc-icon"></i>
                 <div class="pc-name">Performance</div>
                 <div class="pc-sub">Max FPS, some admin tweaks</div>
               </div>
-              <div class="preset-card" id="pc-esports" data-preset="esports">
+              <div class="preset-card glass-card spotlight" id="pc-esports" data-preset="esports">
                 <div class="pc-check"><i class="ti ti-check"></i></div>
                 <i class="ti ti-trophy pc-icon"></i>
                 <div class="pc-name">Esports</div>
                 <div class="pc-sub">Ultra low latency, all tweaks</div>
               </div>
-              <div class="preset-card" id="pc-custom" data-preset="custom" style="display:none">
+              <div class="preset-card glass-card spotlight" id="pc-custom" data-preset="custom" style="display:none">
                 <div class="pc-check"><i class="ti ti-check"></i></div>
                 <i class="ti ti-puzzle pc-icon"></i>
                 <div class="pc-name">Custom</div>
@@ -234,7 +240,7 @@
 
             <div class="section-header"><span class="sh-title">SYSTEM</span></div>
 
-            <div class="settings-card">
+            <div class="settings-card glass-card spotlight">
               <div class="settings-row">
                 <div class="settings-info">
                   <div class="settings-label">System Restore Point</div>
@@ -247,7 +253,7 @@
               </div>
             </div>
 
-            <div class="settings-card" style="margin-top:8px">
+            <div class="settings-card glass-card spotlight" style="margin-top:8px">
               <div class="settings-row">
                 <div class="settings-info">
                   <div class="settings-label">Restore config from backup</div>
@@ -259,7 +265,7 @@
               </div>
             </div>
 
-            <div class="settings-card" style="margin-top:8px">
+            <div class="settings-card glass-card spotlight" style="margin-top:8px">
               <div class="settings-row">
                 <div class="settings-info">
                   <div class="settings-label">Export / Import settings</div>
@@ -276,7 +282,7 @@
               </div>
             </div>
 
-            <div class="settings-card" style="margin-top:8px">
+            <div class="settings-card glass-card spotlight" style="margin-top:8px">
               <div class="settings-row">
                 <div class="settings-info">
                   <div class="settings-label">Start with Windows</div>
@@ -290,7 +296,7 @@
               </div>
             </div>
 
-            <div class="settings-card" style="margin-top:8px">
+            <div class="settings-card glass-card spotlight" style="margin-top:8px">
               <div class="settings-row">
                 <div class="settings-info">
                   <div class="settings-label">Updates</div>
@@ -304,7 +310,7 @@
             </div>
 
             <div class="section-header" style="margin-top:16px"><span class="sh-title" data-t="settings_theme">THEME</span></div>
-            <div class="settings-card">
+            <div class="settings-card glass-card spotlight">
               <div class="settings-info" style="margin-bottom:12px">
                 <div class="settings-label" data-t="settings_vendor">Vendor theme</div>
                 <div class="settings-desc" data-t="settings_vendor_desc">Choose your GPU vendor theme. Auto-detected by default.</div>
@@ -330,7 +336,7 @@
             </div>
 
             <div class="section-header" style="margin-top:16px"><span class="sh-title">NOTIFICATIONS</span></div>
-            <div class="settings-card">
+            <div class="settings-card glass-card spotlight">
               <div class="settings-row">
                 <div class="settings-info">
                   <div class="settings-label">Gaming mode activated</div>
@@ -367,7 +373,7 @@
             </div>
 
             <div class="section-header" style="margin-top:16px"><span class="sh-title">PERFORMANCE</span></div>
-            <div class="settings-card" style="margin-top:0">
+            <div class="settings-card glass-card spotlight" style="margin-top:0">
               <div class="settings-row">
                 <div class="settings-info">
                   <div class="settings-label">Show performance impact</div>
@@ -382,7 +388,7 @@
             </div>
 
             <div class="section-header" style="margin-top:16px"><span class="sh-title">RESET</span></div>
-            <div class="settings-card" style="margin-top:0">
+            <div class="settings-card glass-card spotlight" style="margin-top:0">
               <div class="settings-row">
                 <div class="settings-info">
                   <div class="settings-label">Reset to defaults</div>
@@ -393,7 +399,7 @@
             </div>
 
             <div class="section-header" style="margin-top:16px"><span class="sh-title" data-t="settings_lang">LANGUAGE</span></div>
-            <div class="settings-card">
+            <div class="settings-card glass-card spotlight">
               <div class="settings-row">
                 <div class="settings-info">
                   <div class="settings-label" data-t="settings_lang_label">Display language</div>
@@ -418,7 +424,7 @@
 
           <div id="tab-stats" class="tab-panel">
 
-            <div class="impact-card" id="activation-impact-card" style="display:none">
+            <div class="impact-card glass-card spotlight" id="activation-impact-card" style="display:none">
               <div class="impact-card-header">
                 <span class="impact-card-title">Last activation impact</span>
                 <span class="impact-card-time" id="impact-time"></span>
@@ -465,35 +471,35 @@
             </div>
 
             <div class="gauge-grid-big">
-              <div class="gauge-card-big">
+              <div class="gauge-card-big glass-card spotlight">
                 <div class="gauge-big-label">CPU</div>
                 <div class="gauge-big-val" id="cpu-val">--</div>
                 <div class="gauge-bar-wrap-big"><div class="gauge-bar-fill" id="cpu-bar" style="width:0%"></div></div>
                 <div class="gauge-big-sub" id="cpu-sub">Waiting...</div>
                 <div class="gauge-sparkline" id="cpu-spark"></div>
               </div>
-              <div class="gauge-card-big">
+              <div class="gauge-card-big glass-card spotlight">
                 <div class="gauge-big-label">RAM</div>
                 <div class="gauge-big-val" id="ram-val">--</div>
                 <div class="gauge-bar-wrap-big"><div class="gauge-bar-fill" id="ram-bar" style="width:0%"></div></div>
                 <div class="gauge-big-sub" id="ram-sub">Waiting...</div>
                 <div class="gauge-sparkline" id="ram-spark"></div>
               </div>
-              <div class="gauge-card-big">
+              <div class="gauge-card-big glass-card spotlight">
                 <div class="gauge-big-label">GPU</div>
                 <div class="gauge-big-val" id="gpu-val-live">--</div>
                 <div class="gauge-bar-wrap-big"><div class="gauge-bar-fill" id="gpu-bar" style="width:0%"></div></div>
                 <div class="gauge-big-sub" id="gpu-sub-live">Waiting...</div>
                 <div class="gauge-sparkline" id="gpu-spark"></div>
               </div>
-              <div class="gauge-card-big">
+              <div class="gauge-card-big glass-card spotlight">
                 <div class="gauge-big-label">GPU TEMP</div>
                 <div class="gauge-big-val" id="gpu-temp-val">--</div>
                 <div class="gauge-bar-wrap-big"><div class="gauge-bar-fill" id="gpu-temp-bar" style="width:0%"></div></div>
                 <div class="gauge-big-sub" id="gpu-temp-sub">Waiting...</div>
                 <div class="gauge-sparkline" id="gpu-temp-spark"></div>
               </div>
-              <div class="gauge-card-big">
+              <div class="gauge-card-big glass-card spotlight">
                 <div class="gauge-big-label">PING</div>
                 <div class="gauge-big-val" id="ping-val">--</div>
                 <div class="gauge-bar-wrap-big"><div class="gauge-bar-fill" id="ping-bar" style="width:0%"></div></div>
@@ -804,5 +810,6 @@
 
   <script src="js/tweaks.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/motion.js"></script>
 </body>
 </html>
