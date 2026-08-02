@@ -648,6 +648,9 @@ function applyGPUTheme(vendor) {
   if (!app) return;
   app.classList.remove('theme-nvidia', 'theme-amd', 'theme-intel');
   app.classList.add('theme-' + vendor);
+  // Ambient background sits outside #app, so it needs the theme class too.
+  document.documentElement.classList.remove('theme-nvidia', 'theme-amd', 'theme-intel');
+  document.documentElement.classList.add('theme-' + vendor);
 
   const isVendorTheme = ['nvidia', 'amd', 'intel'].includes(vendor);
   const isManualVendor = state.manualTheme && isVendorTheme;
@@ -2018,7 +2021,7 @@ function renderGames() {
 
 function buildGameRow(g) {
   const row = document.createElement('div');
-  row.className = 'game-row' + (g.enabled ? ' active' : '');
+  row.className = 'game-row glass-card spotlight' + (g.enabled ? ' active' : '');
   row.innerHTML = `
     <div class="game-icon"><i class="ti ti-device-gamepad-2"></i></div>
     <div class="game-info">
@@ -2046,7 +2049,7 @@ function buildGameRow(g) {
   });
   row.querySelector('input[type="checkbox"]').addEventListener('change', (e) => {
     g.enabled = e.target.checked;
-    row.className = 'game-row' + (g.enabled ? ' active' : '');
+    row.className = 'game-row glass-card spotlight' + (g.enabled ? ' active' : '');
     persistConfig();
     restartGameDetectionIfActive();
   });

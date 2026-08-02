@@ -15,6 +15,19 @@
   --border: rgba(255, 255, 255, 0.08);
   --border-acc: rgba(118, 185, 0, 0.35);
   --font: 'Inter', system-ui, sans-serif;
+
+  /* Glass / motion design tokens (vendor-invariant defaults; accent-derived
+     ones reference --acc-rgb so they re-theme automatically per vendor) */
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-highlight: rgba(255, 255, 255, 0.14);
+  --radius: 14px;
+  --radius-sm: 8px;
+  --radius-pill: 999px;
+  --danger: #e74c3c;
+  --danger-rgb: 231, 76, 60;
+  --border-danger: rgba(231, 76, 60, 0.4);
+  --blob-a: rgba(var(--acc-rgb), 0.22);
+  --blob-b: rgba(var(--acc-rgb), 0.12);
 }
 
 /* AMD theme */
@@ -51,4 +64,9 @@
   --border: rgba(0, 113, 197, 0.15);
   --border-acc: rgba(0, 113, 197, 0.4);
   --font: 'Inter', system-ui, sans-serif;
+
+  /* Intel's near-black background needs a touch more glass contrast than
+     the NVIDIA/AMD default to read clearly. */
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-highlight: rgba(255, 255, 255, 0.08);
 }
