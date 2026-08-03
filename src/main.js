@@ -77,6 +77,7 @@ const { exec } = require('child_process');
 const { executeTweaks, runPS, executeCustomRules, executeQuickRules } = require('./executor');
 const gameDetection = require('./game-detection');
 const metrics = require('./metrics');
+const fps = require('./fps');
 const { autoUpdater } = require('electron-updater');
 
 const { TWEAK_DEFINITIONS } = require('./tweaks');
@@ -565,7 +566,7 @@ app.on('window-all-closed', (e) => {
 });
 
 app.on('quit', () => {
-  try { metrics.stop(); metrics.stopPing(); clearDiscordPresence(); gameDetection.stop(); } catch(e) {}
+  try { metrics.stop(); metrics.stopPing(); clearDiscordPresence(); gameDetection.stop(); fps.stopTracking(); } catch(e) {}
 });
 
 app.on('activate', () => {
@@ -1095,6 +1096,22 @@ ipcMain.on('metrics-start', () => {
 
 ipcMain.on('metrics-stop', () => {
   metrics.stop();
+});
+
+// FPS tracking follows the same tab-visibility lifecycle as metrics
+// polling (Performance tab open, or mini/bar mode active) - independent of
+// the user's curated Games list, since that list is only for auto-applying
+// tweaks. It tracks whatever is currently the foreground window instead.
+ipcMain.on('fps-tracking-start', () => {
+  fps.startTracking((data) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('fps-data', data);
+    }
+  });
+});
+
+ipcMain.on('fps-tracking-stop', () => {
+  fps.stopTracking();
 });
 
 ipcMain.handle('get-metrics-snapshot', async () => {
