@@ -4,6 +4,20 @@ All notable changes to Mojo Gaming Mode are documented here.
 
 ---
 
+## [2.7.0] - 2026-08-03
+
+### Added
+
+- **2026-style glass UI redesign**: translucent blurred titlebar/sidebar/topbar and cards, a subtle theme-reactive ambient background, cursor-tracked spotlight glow on preset/settings/game/gauge/impact cards, pill-shaped action buttons, a sliding sidebar active-item indicator, and a sequential fade/slide transition between tabs. Mini-mode and the game bar deliberately use a lighter blur than the main window, since they're visible while a game is actually running and shouldn't compete with it for GPU headroom.
+- **6 new Quick Rules**: Viber, Signal, Messenger, Box, MEGA, pCloud.
+- **5 new Quick Rules for gaming peripheral manager software**: Razer Synapse, Logitech G HUB, Corsair iCUE, SteelSeries GG, NZXT CAM. Off by default with an explicit warning in each description, since closing these (unlike the communication/cloud apps) can disable in-game macros, lighting profiles, or DPI switching while stopped.
+- **3 new Windows System tweaks**: Background Intelligent Transfer Service off, Program Compatibility Assistant off, Delivery Optimization off.
+
+### Fixed
+
+- Three CSS variables referenced throughout the onboarding modal, what's-new popup, mini mode, bar mode, and games tab were never actually defined, so those surfaces silently rendered with broken (transparent/inherited) colors regardless of theme.
+- Several controls (primary buttons, card hover glow, toggle track, remove-app button, danger-state colors) had the accent or danger color hardcoded instead of following the active GPU-vendor theme or the shared danger token, so switching to AMD or Intel left them the wrong color.
+
 ## [2.6.0] - 2026-07-31
 
 ### Added
