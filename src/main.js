@@ -77,6 +77,7 @@ const { exec } = require('child_process');
 const { executeTweaks, runPS, executeCustomRules, executeQuickRules } = require('./executor');
 const gameDetection = require('./game-detection');
 const metrics = require('./metrics');
+const fps = require('./fps');
 const { autoUpdater } = require('electron-updater');
 
 const { TWEAK_DEFINITIONS } = require('./tweaks');
@@ -565,7 +566,7 @@ app.on('window-all-closed', (e) => {
 });
 
 app.on('quit', () => {
-  try { metrics.stop(); metrics.stopPing(); clearDiscordPresence(); gameDetection.stop(); } catch(e) {}
+  try { metrics.stop(); metrics.stopPing(); clearDiscordPresence(); gameDetection.stop(); fps.stop(); } catch(e) {}
 });
 
 app.on('activate', () => {
@@ -1250,11 +1251,27 @@ ipcMain.on('game-detection-start', (e, processNames) => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('game-detection-event', data);
     }
+    // FPS tracking follows the same monitored-game lifecycle - start
+    // capturing the instant a monitored game launches, stop the instant it
+    // closes, so the UI never shows a stale number from a previous session.
+    if (data.event === 'started') {
+      fps.start(data.process, (fpsData) => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('fps-data', fpsData);
+        }
+      });
+    } else if (data.event === 'stopped') {
+      fps.stop();
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('fps-data', { fps: null, frameTimeMs: null });
+      }
+    }
   });
 });
 
 ipcMain.on('game-detection-stop', () => {
   gameDetection.stop();
+  fps.stop();
 });
 
 let pendingGameClosePrompt = null; // gameName, or null - fallback for when the notification click doesn't fire (known Electron/Windows issue)
