@@ -1587,6 +1587,46 @@ html, body {
   border: 1px solid rgba(var(--danger-rgb), .3);
 }
 
+/* Secondary metric row inside a merged gauge card (e.g. GPU temperature
+   living inside the GPU usage tile) - a compact value + thin bar + tag,
+   deliberately smaller than the tile's own primary gauge-bar-wrap-big so
+   the headline number/bar stays the visual focus. */
+.gauge-secondary-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.gauge-secondary-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+  min-width: 30px;
+}
+
+.gauge-bar-wrap-mini {
+  flex: 1;
+  height: 4px;
+  background: var(--surface);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.gauge-secondary-tag {
+  font-size: 9px;
+  color: var(--text3);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.gauge-big-val.muted {
+  color: var(--text3);
+  font-size: 20px;
+}
+
 .gauge-big-label {
   font-size: 9px;
   font-weight: 700;
