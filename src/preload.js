@@ -38,6 +38,7 @@ contextBridge.exposeInMainWorld('mgm', {
   importCustomRules: () => ipcRenderer.invoke('import-custom-rules'),
   onMetricsData: (cb) => ipcRenderer.on('metrics-data', (e, data) => cb(data)),
   onFpsData: (cb) => ipcRenderer.on('fps-data', (e, data) => cb(data)),
+  onFpsDebug: (cb) => ipcRenderer.on('fps-debug', (e, msg) => cb(msg)),
   onUpdaterStatus: (cb) => ipcRenderer.on('updater-status', (e, data) => cb(data)),
   onTrayPresetSwitch: (cb) => ipcRenderer.on('tray-switch-preset', (e, preset) => cb(preset)),
   notifyPresetChanged: (preset) => ipcRenderer.send('preset-changed', preset),

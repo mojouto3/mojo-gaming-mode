@@ -30,6 +30,7 @@ let lastFloatingMode = 'mini';
 let barModeActive = false;
 let lastMetrics = {};
 let lastPing = {};
+let lastFps = {};
 let miniActivateInProgress = false;
 let lastActivationImpact = null;
 
@@ -169,6 +170,7 @@ function updateBarMode() {
   const ramEl = document.getElementById('bar-ram');
   const gpuEl = document.getElementById('bar-gpu');
   const pingEl = document.getElementById('bar-ping');
+  const fpsEl = document.getElementById('bar-fps');
 
   if (barEl) barEl.classList.toggle('active', !!state.active);
   if (dotEl) dotEl.classList.toggle('on', !!state.active);
@@ -199,6 +201,16 @@ function updateBarMode() {
       pingEl.className = 'bar-stat-val' + statClass(v, 60, 120);
     }
   }
+  if (fpsEl) {
+    if (lastFps.fps === null || lastFps.fps === undefined) {
+      fpsEl.textContent = '--';
+      fpsEl.className = 'bar-stat-val';
+    } else {
+      const v = Math.round(lastFps.fps);
+      fpsEl.textContent = String(v);
+      fpsEl.className = 'bar-stat-val' + (v < 30 ? ' danger' : v < 60 ? ' warn' : '');
+    }
+  }
 }
 
 function updateMiniMode() {
@@ -212,6 +224,7 @@ function updateMiniMode() {
   const ramEl = document.getElementById('mm-ram');
   const gpuEl = document.getElementById('mm-gpu');
   const pingEl = document.getElementById('mm-ping');
+  const fpsEl = document.getElementById('mm-fps');
 
   // Glow border while gaming mode is on
   if (miniEl) miniEl.classList.toggle('active', !!state.active);
@@ -256,6 +269,16 @@ function updateMiniMode() {
     } else {
       pingEl.textContent = v + 'ms';
       pingEl.className = 'mm-stat-val' + (v > 120 ? ' danger' : v > 60 ? ' warn' : '');
+    }
+  }
+  if (fpsEl) {
+    if (lastFps.fps === null || lastFps.fps === undefined) {
+      fpsEl.textContent = '--';
+      fpsEl.className = 'mm-stat-val';
+    } else {
+      const v = Math.round(lastFps.fps);
+      fpsEl.textContent = String(v);
+      fpsEl.className = 'mm-stat-val' + (v < 30 ? ' danger' : v < 60 ? ' warn' : '');
     }
   }
 }
@@ -389,10 +412,15 @@ async function init() {
     updateLiveViews();
   });
 
-  // Live FPS listener - capture is driven entirely by game-detection events
-  // in the main process (see handleGameDetectionEvent), this just displays
-  // whatever it pushes.
-  window.mgm.onFpsData((data) => updateFpsUI(data));
+  // Live FPS listener (Performance tab and mini/bar mode) - capture itself
+  // is driven by whichever process is currently the foreground window
+  // (src/fps.js), this just displays whatever it pushes.
+  window.mgm.onFpsData((data) => {
+    lastFps = data || {};
+    updateFpsUI(data);
+    updateLiveViews();
+  });
+  window.mgm.onFpsDebug((msg) => console.log('[FPS]', msg));
 
   // Auto-updater status handler
   window.mgm.onUpdaterStatus((data) => {

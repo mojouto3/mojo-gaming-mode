@@ -56,11 +56,16 @@ while ($true) {
 let foregroundProcess = null;
 let pmProcess = null;
 let onDataCallback = null;
+let onDebugCallback = null;
 let emitInterval = null;
 let frameTimesMs = [];
 let headerCols = null;
 let msBetweenPresentsIdx = -1;
 let currentTarget = null;
+
+function debugLog(msg) {
+  if (onDebugCallback) onDebugCallback(msg);
+}
 
 function parseHeader(cols) {
   headerCols = cols;
@@ -88,17 +93,22 @@ function startCapture(processName) {
   headerCols = null;
   msBetweenPresentsIdx = -1;
 
-  pmProcess = spawn(getExePath(), [
+  const exePath = getExePath();
+  debugLog(`starting PresentMon for "${processName}" (${exePath})`);
+  const thisProcess = spawn(exePath, [
     '--process_name', processName,
     '--output_stdout',
-    '--no_console_stats'
+    '--no_console_stats',
+    '--terminate_on_proc_exit',
+    '--stop_existing_session'
   ], {
     windowsHide: true,
-    stdio: ['ignore', 'pipe', 'ignore']
+    stdio: ['ignore', 'pipe', 'pipe']
   });
+  pmProcess = thisProcess;
 
   let buffer = '';
-  pmProcess.stdout.on('data', (data) => {
+  thisProcess.stdout.on('data', (data) => {
     buffer += data.toString();
     const lines = buffer.split('\n');
     buffer = lines.pop();
@@ -116,8 +126,23 @@ function startCapture(processName) {
     });
   });
 
-  pmProcess.on('error', () => { pmProcess = null; });
-  pmProcess.on('close', () => { pmProcess = null; });
+  thisProcess.stderr.on('data', (data) => {
+    debugLog(`PresentMon stderr: ${data.toString().trim()}`);
+  });
+  thisProcess.on('error', (err) => {
+    debugLog(`PresentMon spawn error: ${err.message}`);
+    if (pmProcess !== thisProcess) return; // superseded by a newer capture, ignore
+    pmProcess = null;
+    stopCapture();
+    if (onDataCallback) onDataCallback({ fps: null, frameTimeMs: null, processName: null });
+  });
+  thisProcess.on('close', (code) => {
+    debugLog(`PresentMon exited (code ${code}) - target process likely closed`);
+    if (pmProcess !== thisProcess) return; // superseded by a newer capture, ignore
+    pmProcess = null;
+    stopCapture();
+    if (onDataCallback) onDataCallback({ fps: null, frameTimeMs: null, processName: null });
+  });
 
   // Frames arrive far more often than once per second at real framerates
   // (60-240+/sec) - aggregate to a single smoothed value per second instead
@@ -138,9 +163,14 @@ function startCapture(processName) {
   }, 1000);
 }
 
-function startTracking(callback) {
-  if (foregroundProcess) return;
+function startTracking(callback, debugCallback) {
+  onDebugCallback = debugCallback || null;
+  if (foregroundProcess) {
+    debugLog('startTracking called but foreground poller already running - ignored');
+    return;
+  }
   onDataCallback = callback;
+  debugLog('starting foreground-window poller');
 
   const encoded = Buffer.from(FOREGROUND_POLL_SCRIPT, 'utf16le').toString('base64');
   foregroundProcess = spawn('powershell.exe', [
@@ -148,7 +178,7 @@ function startTracking(callback) {
     '-EncodedCommand', encoded
   ], {
     windowsHide: true,
-    stdio: ['ignore', 'pipe', 'ignore']
+    stdio: ['ignore', 'pipe', 'pipe']
   });
 
   let buffer = '';
@@ -170,19 +200,40 @@ function startTracking(callback) {
 
       const isExcluded = OWN_PROCESS_NAMES.includes(name) || EXCLUDED_PROCESS_NAMES.includes(name);
       if (isExcluded) {
-        if (pmProcess) stopCapture();
-        if (onDataCallback) onDataCallback({ fps: null, frameTimeMs: null, processName: null });
+        // MGM itself (or the desktop/shell) took focus - e.g. the user tabbed
+        // back to check the Performance tab. The previous game, if any, is
+        // presumably still running in the background, so keep its capture
+        // going instead of blanking the number the moment focus leaves it;
+        // capture only stops when PresentMon itself reports the process gone
+        // (see the 'close' handler in startCapture) or a different real
+        // foreground app takes over below.
+        if (!pmProcess) {
+          debugLog(`foreground is "${name}" (excluded), no game running - no capture`);
+          if (onDataCallback) onDataCallback({ fps: null, frameTimeMs: null, processName: null });
+        } else {
+          debugLog(`foreground is "${name}" (excluded) - keeping existing capture on "${currentTarget}"`);
+        }
         return;
       }
 
       // Foreground app changed to something new - retarget capture.
+      debugLog(`foreground changed to "${name}" - retargeting capture`);
       if (pmProcess) stopCapture();
       startCapture(name);
     });
   });
 
-  foregroundProcess.on('error', () => { foregroundProcess = null; });
-  foregroundProcess.on('close', () => { foregroundProcess = null; });
+  foregroundProcess.stderr.on('data', (data) => {
+    debugLog(`foreground poller stderr: ${data.toString().trim()}`);
+  });
+  foregroundProcess.on('error', (err) => {
+    debugLog(`foreground poller spawn error: ${err.message}`);
+    foregroundProcess = null;
+  });
+  foregroundProcess.on('close', (code) => {
+    debugLog(`foreground poller exited (code ${code})`);
+    foregroundProcess = null;
+  });
 }
 
 function stopTracking() {
@@ -192,6 +243,7 @@ function stopTracking() {
     foregroundProcess = null;
   }
   onDataCallback = null;
+  onDebugCallback = null;
 }
 
 module.exports = { startTracking, stopTracking };
