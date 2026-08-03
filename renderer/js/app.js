@@ -46,6 +46,10 @@ function stopPingIfIdle() {
   if (!anyLiveViewActive()) window.mgm.pingStop();
 }
 
+function stopFpsTrackingIfIdle() {
+  if (!anyLiveViewActive()) window.mgm.fpsTrackingStop();
+}
+
 function hideNormalApp() {
   const appEl = document.getElementById('app');
   if (appEl) appEl.style.display = 'none';
@@ -73,6 +77,7 @@ function enterMiniMode() {
   window.mgm.setMiniMode(true);
   window.mgm.metricsStart();
   window.mgm.pingStart();
+  window.mgm.fpsTrackingStart();
 }
 
 function exitMiniMode(skipWindowReset) {
@@ -85,6 +90,7 @@ function exitMiniMode(skipWindowReset) {
   }
   stopMetricsIfIdle();
   stopPingIfIdle();
+  stopFpsTrackingIfIdle();
 }
 
 function enterBarMode() {
@@ -100,6 +106,7 @@ function enterBarMode() {
   window.mgm.setBarMode(true);
   window.mgm.metricsStart();
   window.mgm.pingStart();
+  window.mgm.fpsTrackingStart();
 }
 
 function exitBarMode(skipWindowReset) {
@@ -112,6 +119,7 @@ function exitBarMode(skipWindowReset) {
   }
   stopMetricsIfIdle();
   stopPingIfIdle();
+  stopFpsTrackingIfIdle();
 }
 
 function toggleOpacityPopover(anchorEl) {
@@ -380,6 +388,11 @@ async function init() {
     updatePingUI(data);
     updateLiveViews();
   });
+
+  // Live FPS listener - capture is driven entirely by game-detection events
+  // in the main process (see handleGameDetectionEvent), this just displays
+  // whatever it pushes.
+  window.mgm.onFpsData((data) => updateFpsUI(data));
 
   // Auto-updater status handler
   window.mgm.onUpdaterStatus((data) => {
@@ -770,6 +783,13 @@ function switchTab(name, el) {
   } else {
     window.mgm.pingStop();
   }
+  // FPS tracking (foreground-window based, independent of the Games list)
+  // follows the same visibility rule as metrics/ping.
+  if (name === 'stats' || miniModeActive || barModeActive) {
+    window.mgm.fpsTrackingStart();
+  } else {
+    window.mgm.fpsTrackingStop();
+  }
 }
 
 // ── Render helpers ────────────────────────────────────────────────────────────
@@ -1135,6 +1155,7 @@ const ramHistory = Array(20).fill(0);
 const gpuHistory = Array(20).fill(0);
 const pingHistory = Array(20).fill(0);
 const cpuThrottleHistory = Array(20).fill(0);
+const fpsHistory = Array(20).fill(0);
 
 function renderSparkline(containerId, history, color, maxHeight = 28) {
   const el = document.getElementById(containerId);
@@ -1179,6 +1200,40 @@ function updatePingUI(data) {
   }
 }
 
+// Real FPS via PresentMon (src/fps.js), driven by game-detection events -
+// data.fps is null whenever no monitored game is running, which must show
+// an explicit placeholder rather than a stale number from the last session.
+function updateFpsUI(data) {
+  const fpsVal = document.getElementById('fps-val');
+  const fpsBar = document.getElementById('fps-bar');
+  const fpsSub = document.getElementById('fps-sub');
+  const fpsGamePill = document.getElementById('fps-game-pill');
+  const fpsGameName = document.getElementById('fps-game-name');
+  if (!fpsVal) return;
+  if (!data || data.fps === null || data.fps === undefined) {
+    fpsVal.textContent = '--';
+    fpsVal.className = 'gauge-big-val muted';
+    if (fpsBar) { fpsBar.style.width = '0%'; fpsBar.style.background = 'var(--text3)'; }
+    if (fpsSub) fpsSub.textContent = 'No game detected';
+    if (fpsGamePill) fpsGamePill.style.display = 'none';
+    fpsHistory.fill(0);
+    renderSparkline('fps-spark', fpsHistory, 'var(--text3)');
+    return;
+  }
+  if (fpsGamePill && fpsGameName && data.processName) {
+    fpsGameName.textContent = data.processName;
+    fpsGamePill.style.display = '';
+  }
+  const v = Math.round(data.fps);
+  fpsVal.textContent = String(v);
+  fpsVal.className = 'gauge-big-val' + (v < 30 ? ' danger' : v < 60 ? ' warn' : '');
+  const color = v < 30 ? '#ed1c24' : v < 60 ? '#f0a500' : 'var(--acc)';
+  if (fpsBar) { fpsBar.style.width = Math.min(100, Math.round((v / 144) * 100)) + '%'; fpsBar.style.background = color; }
+  if (fpsSub) fpsSub.textContent = data.frameTimeMs !== null && data.frameTimeMs !== undefined ? 'Frame time: ' + data.frameTimeMs + 'ms avg' : '';
+  fpsHistory.shift(); fpsHistory.push(v);
+  renderSparkline('fps-spark', fpsHistory, color);
+}
+
 function updateMetricsUI(data) {
   if (!data) return;
 
@@ -1221,8 +1276,10 @@ function updateMetricsUI(data) {
       const v = Math.round(data.gpuUsage);
       gpuValLive.textContent = v + '%';
       gpuValLive.className = 'gauge-big-val' + (v > 80 ? ' danger' : v > 50 ? ' warn' : '');
-    gpuHistory.shift(); gpuHistory.push(v);
-    renderSparkline('gpu-spark', gpuHistory, v > 80 ? '#ed1c24' : v > 50 ? '#f0a500' : 'var(--acc)');
+      // gpuHistory has no sparkline of its own on this tile anymore (dropped
+      // when GPU/GPU TEMP merged), but mini-mode's GPU sparkline still reads
+      // from it, so it must keep being populated here.
+      gpuHistory.shift(); gpuHistory.push(v);
       if (gpuBar) { gpuBar.style.width = v + '%'; gpuBar.style.background = v > 80 ? '#ed1c24' : v > 50 ? '#f0a500' : 'var(--acc)'; }
       if (gpuSubLive && data.gpuVramUsed !== undefined) {
         gpuSubLive.textContent = 'VRAM: ' + data.gpuVramUsed + ' / ' + data.gpuVramTotal + ' GB';
@@ -1261,20 +1318,23 @@ function updateMetricsUI(data) {
     }
   }
 
-  // GPU Temperature
+  // GPU Temperature - now a secondary row inside the merged GPU tile rather
+  // than its own tile.
   const gpuTempVal = document.getElementById('gpu-temp-val');
   const gpuTempBar = document.getElementById('gpu-temp-bar');
   const gpuTempSub = document.getElementById('gpu-temp-sub');
   if (gpuTempVal && data.gpuTemp !== undefined && data.gpuTemp > 0) {
     const t = data.gpuTemp;
+    const tempColor = t > 85 ? '#ed1c24' : t > 70 ? '#f0a500' : '';
     gpuTempVal.textContent = t + '°C';
-    gpuTempVal.className = 'gauge-big-val' + (t > 85 ? ' danger' : t > 70 ? ' warn' : '');
+    gpuTempVal.style.color = tempColor;
     const pct = Math.min(Math.round((t / 100) * 100), 100);
     if (gpuTempBar) { gpuTempBar.style.width = pct + '%'; gpuTempBar.style.background = t > 85 ? '#ed1c24' : t > 70 ? '#f0a500' : 'var(--acc)'; }
-    if (gpuTempSub) gpuTempSub.textContent = t > 85 ? 'Hot' : t > 70 ? 'Warm' : 'Normal';
+    if (gpuTempSub) { gpuTempSub.textContent = t > 85 ? 'Hot' : t > 70 ? 'Warm' : 'Normal'; gpuTempSub.style.color = tempColor; }
   } else if (gpuTempVal) {
     gpuTempVal.textContent = 'N/A';
-    if (gpuTempSub) gpuTempSub.textContent = 'Not available';
+    gpuTempVal.style.color = '';
+    if (gpuTempSub) { gpuTempSub.textContent = 'Not available'; gpuTempSub.style.color = ''; }
   }
 
   // CPU Throttle - 0 means running at full clock speed; higher means the

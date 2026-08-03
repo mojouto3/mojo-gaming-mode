@@ -498,15 +498,12 @@
                 <div class="gauge-big-val" id="gpu-val-live">--</div>
                 <div class="gauge-bar-wrap-big"><div class="gauge-bar-fill" id="gpu-bar" style="width:0%"></div></div>
                 <div class="gauge-big-sub" id="gpu-sub-live">Waiting...</div>
-                <div class="gauge-sparkline" id="gpu-spark"></div>
+                <div class="gauge-secondary-row">
+                  <span class="gauge-secondary-label" id="gpu-temp-val">--</span>
+                  <div class="gauge-bar-wrap-mini"><div class="gauge-bar-fill" id="gpu-temp-bar" style="width:0%"></div></div>
+                  <span class="gauge-secondary-tag" id="gpu-temp-sub">--</span>
+                </div>
                 <span class="gauge-big-badge" id="gpu-throttle-badge" style="display:none"></span>
-              </div>
-              <div class="gauge-card-big glass-card spotlight">
-                <div class="gauge-big-label">GPU TEMP</div>
-                <div class="gauge-big-val" id="gpu-temp-val">--</div>
-                <div class="gauge-bar-wrap-big"><div class="gauge-bar-fill" id="gpu-temp-bar" style="width:0%"></div></div>
-                <div class="gauge-big-sub" id="gpu-temp-sub">Waiting...</div>
-                <div class="gauge-sparkline" id="gpu-temp-spark"></div>
               </div>
               <div class="gauge-card-big glass-card spotlight" id="cpu-throttle-card">
                 <div class="gauge-big-label">CPU THROTTLE</div>
@@ -521,6 +518,13 @@
                 <div class="gauge-bar-wrap-big"><div class="gauge-bar-fill" id="ping-bar" style="width:0%"></div></div>
                 <div class="gauge-big-sub" id="ping-sub">Waiting...</div>
                 <div class="gauge-sparkline" id="ping-spark"></div>
+              </div>
+              <div class="gauge-card-big glass-card spotlight">
+                <div class="gauge-big-label">FPS <span class="live-pill" id="fps-game-pill" style="display:none;margin-left:6px"><span class="live-dot-anim"></span><span id="fps-game-name"></span></span></div>
+                <div class="gauge-big-val" id="fps-val">--</div>
+                <div class="gauge-bar-wrap-big"><div class="gauge-bar-fill" id="fps-bar" style="width:0%"></div></div>
+                <div class="gauge-big-sub" id="fps-sub">No game detected</div>
+                <div class="gauge-sparkline" id="fps-spark"></div>
               </div>
             </div>
 
