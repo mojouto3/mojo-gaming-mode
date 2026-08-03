@@ -101,8 +101,8 @@ let currentPreset = 'balanced';
 // Window size constants — keep createWindow() and the mini-mode toggle in sync
 const NORMAL_MIN_SIZE = { width: 760, height: 580 };
 const NORMAL_SIZE = { width: 860, height: 680 };
-const MINI_SIZE = { width: 220, height: 280 };
-const BAR_SIZE = { width: 420, height: 44 };
+const MINI_SIZE = { width: 264, height: 280 };
+const BAR_SIZE = { width: 480, height: 44 };
 
 // Remembers where the user last positioned the floating mini/bar window,
 // so re-entering either mode returns to the same spot instead of a fixed
@@ -1107,6 +1107,11 @@ ipcMain.on('fps-tracking-start', () => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('fps-data', data);
     }
+  }, (msg) => {
+    console.log('[FPS]', msg);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('fps-debug', msg);
+    }
   });
 });
 
@@ -1398,7 +1403,10 @@ ipcMain.on('set-mini-mode', (e, enabled) => {
     }
     mainWindow.setResizable(false);
     // Mini-mode is meant to float over a game, so keep it on top
-    mainWindow.setAlwaysOnTop(true, 'floating');
+    // 'screen-saver' is the highest level Electron supports - 'floating'
+    // could be overridden by an exclusive-fullscreen game's own topmost
+    // surface, which defeats the entire point of a during-game overlay.
+    mainWindow.setAlwaysOnTop(true, 'screen-saver');
     maybeShowMiniBarHint();
   } else {
     const b = mainWindow.getBounds();
@@ -1415,7 +1423,10 @@ ipcMain.on('set-bar-mode', (e, enabled) => {
   if (enabled) {
     mainWindow.setMinimumSize(BAR_SIZE.width, BAR_SIZE.height);
     mainWindow.setResizable(false);
-    mainWindow.setAlwaysOnTop(true, 'floating');
+    // 'screen-saver' is the highest level Electron supports - 'floating'
+    // could be overridden by an exclusive-fullscreen game's own topmost
+    // surface, which defeats the entire point of a during-game overlay.
+    mainWindow.setAlwaysOnTop(true, 'screen-saver');
     if (lastFloatingPosition) {
       mainWindow.setBounds({ ...lastFloatingPosition, width: BAR_SIZE.width, height: BAR_SIZE.height });
     } else {
