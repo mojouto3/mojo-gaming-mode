@@ -4,6 +4,19 @@ All notable changes to Mojo Gaming Mode are documented here.
 
 ---
 
+## [2.8.0] - 2026-08-03
+
+### Added
+
+- **CPU and GPU throttle detection** in the Performance tab: a CPU Throttle percentage (0% = running at full speed) read from Windows' own Processor Information performance counters, and an NVIDIA GPU throttle badge (thermal/power) read from `nvidia-smi`. Read-only monitoring, not an overclocking feature - shows how much the CPU/GPU are already being held back by thermal or power limits.
+- **Real FPS tracking** via Intel's PresentMon (MIT licensed, ETW-based frame timing capture - no DLL injection into the game process, so no anti-cheat false-positive risk). Tracks whatever is currently the foreground window, independent of the Games list, so it works for any game without adding it anywhere first. Shown in the Performance tab, mini-mode, and bar-mode.
+- Mini-mode and bar-mode now stay on top of exclusive-fullscreen games too (previously could end up hidden behind them), and both grew slightly to fit the new FPS stat.
+
+### Fixed
+
+- PresentMon left its ETW trace session dangling every time it stopped (retargeting to a new game, losing focus, app quit), so every subsequent capture attempt failed instantly - the FPS tile could end up never showing a number at all. Now always clears a stale session before starting, and exits cleanly when the tracked game closes.
+- The FPS reading no longer blanks out the instant you tab back to check it (e.g. to look at the Performance tab) - the game is presumably still running in the background, so the existing reading is kept until the game actually closes.
+
 ## [2.7.0] - 2026-08-03
 
 ### Added
