@@ -1567,6 +1567,26 @@ html, body {
   border-color: var(--border-acc);
 }
 
+/* Small conditional badge for GPU throttle-reason state, shown only when
+   the active GPU reports it (NVIDIA-only today - never shown as a false
+   "not throttling" on GPUs where this can't be detected). Relies on
+   .glass-card's own position:relative (always paired with .gauge-card-big
+   in the HTML) to anchor correctly. */
+.gauge-big-badge {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(var(--danger-rgb), .12);
+  color: var(--danger);
+  border: 1px solid rgba(var(--danger-rgb), .3);
+}
+
 .gauge-big-label {
   font-size: 9px;
   font-weight: 700;

@@ -454,6 +454,14 @@
                     <span class="impact-after" id="impact-gpu-after">--</span>
                   </div>
                 </div>
+                <div class="impact-stat">
+                  <div class="impact-label">CPU Throttle</div>
+                  <div class="impact-values">
+                    <span class="impact-before" id="impact-cputhrottle-before">--</span>
+                    <i class="ti ti-arrow-right"></i>
+                    <span class="impact-after" id="impact-cputhrottle-after">--</span>
+                  </div>
+                </div>
                 <div class="impact-stat" id="impact-ping-stat" style="display:none">
                   <div class="impact-label">PING</div>
                   <div class="impact-values">
@@ -491,6 +499,7 @@
                 <div class="gauge-bar-wrap-big"><div class="gauge-bar-fill" id="gpu-bar" style="width:0%"></div></div>
                 <div class="gauge-big-sub" id="gpu-sub-live">Waiting...</div>
                 <div class="gauge-sparkline" id="gpu-spark"></div>
+                <span class="gauge-big-badge" id="gpu-throttle-badge" style="display:none"></span>
               </div>
               <div class="gauge-card-big glass-card spotlight">
                 <div class="gauge-big-label">GPU TEMP</div>
@@ -498,6 +507,13 @@
                 <div class="gauge-bar-wrap-big"><div class="gauge-bar-fill" id="gpu-temp-bar" style="width:0%"></div></div>
                 <div class="gauge-big-sub" id="gpu-temp-sub">Waiting...</div>
                 <div class="gauge-sparkline" id="gpu-temp-spark"></div>
+              </div>
+              <div class="gauge-card-big glass-card spotlight" id="cpu-throttle-card">
+                <div class="gauge-big-label">CPU THROTTLE</div>
+                <div class="gauge-big-val" id="cpu-throttle-val">--</div>
+                <div class="gauge-bar-wrap-big"><div class="gauge-bar-fill" id="cpu-throttle-bar" style="width:0%"></div></div>
+                <div class="gauge-big-sub" id="cpu-throttle-sub">Waiting...</div>
+                <div class="gauge-sparkline" id="cpu-throttle-spark"></div>
               </div>
               <div class="gauge-card-big glass-card spotlight">
                 <div class="gauge-big-label">PING</div>
