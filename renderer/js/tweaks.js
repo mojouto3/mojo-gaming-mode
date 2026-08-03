@@ -156,6 +156,30 @@ const TWEAKS = {
       cmd: 'sc stop MapsBroker & sc config MapsBroker start=disabled',
       category: 'system',
       presets: { balanced: false, performance: true, esports: true }
+    },
+    {
+      id: 'bits',
+      name: 'Background Intelligent Transfer Service off',
+      desc: 'Stops the service Windows uses for background downloads (updates, some app content), freeing a small amount of background bandwidth and disk I/O.',
+      cmd: 'sc stop BITS & sc config BITS start=disabled',
+      category: 'system',
+      presets: { balanced: false, performance: true, esports: true }
+    },
+    {
+      id: 'pca',
+      name: 'Program Compatibility Assistant off',
+      desc: 'Stops the background service that monitors programs for compatibility issues and shows "This program might not have installed correctly" prompts.',
+      cmd: 'sc stop PcaSvc & sc config PcaSvc start=disabled',
+      category: 'system',
+      presets: { balanced: false, performance: true, esports: true }
+    },
+    {
+      id: 'deliveryopt',
+      name: 'Delivery Optimization off',
+      desc: "Stops Windows from using your bandwidth to share update files with other PCs on your network or the internet (peer-to-peer update distribution).",
+      cmd: 'sc stop DoSvc & sc config DoSvc start=disabled',
+      category: 'system',
+      presets: { balanced: false, performance: true, esports: true }
     }
   ],
   ov: [
@@ -400,5 +424,82 @@ const CUSTOM_RULES = [
     name: 'Windows games scheduling priority',
     desc: 'Sets high CPU scheduling priority for games via Windows Multimedia registry.',
     cmd: 'Registry: HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games',
+  },
+  {
+    id: 'cr_viber',
+    name: 'Viber off',
+    desc: 'Closes Viber during gaming to free up RAM.',
+    cmd: 'Stop-Process: Viber.exe',
+    category: 'communication'
+  },
+  {
+    id: 'cr_signal',
+    name: 'Signal off',
+    desc: 'Closes Signal Desktop during gaming.',
+    cmd: 'Stop-Process: Signal.exe',
+    category: 'communication'
+  },
+  {
+    id: 'cr_messenger',
+    name: 'Messenger off',
+    desc: 'Closes the Facebook Messenger desktop app during gaming.',
+    cmd: 'Stop-Process: Messenger.exe',
+    category: 'communication'
+  },
+  {
+    id: 'cr_box',
+    name: 'Box off',
+    desc: 'Closes Box sync during gaming.',
+    cmd: 'Stop-Process: Box.exe',
+    category: 'cloud'
+  },
+  {
+    id: 'cr_mega',
+    name: 'MEGA off',
+    desc: 'Closes MEGA sync during gaming.',
+    cmd: 'Stop-Process: MEGAsync.exe',
+    category: 'cloud'
+  },
+  {
+    id: 'cr_pcloud',
+    name: 'pCloud off',
+    desc: 'Closes pCloud sync during gaming.',
+    cmd: 'Stop-Process: pCloud.exe',
+    category: 'cloud'
+  },
+  {
+    id: 'cr_razersynapse',
+    name: 'Razer Synapse off',
+    desc: "Closes Razer Synapse during gaming. Off by default - only enable this if you don't rely on Synapse's in-game macros, per-game lighting profiles, or on-the-fly DPI switching, since closing it disables those while it's stopped.",
+    cmd: 'Stop-Process: Razer Synapse Service.exe, RzSynapse.exe',
+    category: 'system'
+  },
+  {
+    id: 'cr_lghub',
+    name: 'Logitech G HUB off',
+    desc: "Closes Logitech G HUB during gaming. Off by default - only enable this if you don't rely on G HUB's in-game macros, lighting profiles, or DPI switching, since closing it disables those while it's stopped.",
+    cmd: 'Stop-Process: lghub.exe, lghub_agent.exe',
+    category: 'system'
+  },
+  {
+    id: 'cr_icue',
+    name: 'Corsair iCUE off',
+    desc: "Closes Corsair iCUE during gaming. Off by default - only enable this if you don't rely on iCUE's in-game macros or lighting profiles, since closing it disables those while it's stopped.",
+    cmd: 'Stop-Process: iCUE.exe',
+    category: 'system'
+  },
+  {
+    id: 'cr_steelseriesgg',
+    name: 'SteelSeries GG off',
+    desc: "Closes SteelSeries GG during gaming. Off by default - only enable this if you don't rely on GG's in-game macros, lighting profiles, or Sonar audio features, since closing it disables those while it's stopped.",
+    cmd: 'Stop-Process: SteelSeriesGG.exe',
+    category: 'system'
+  },
+  {
+    id: 'cr_nzxtcam',
+    name: 'NZXT CAM off',
+    desc: "Closes NZXT CAM during gaming. Off by default - only enable this if you don't rely on CAM's in-game overlay or lighting/fan-curve profiles, since closing it disables those while it's stopped.",
+    cmd: 'Stop-Process: NZXT CAM.exe',
+    category: 'system'
   }
 ];

@@ -1525,7 +1525,7 @@ html, body {
 }
 
 .gauge-val-live.warn { color: #f0a500; }
-.gauge-val-live.danger { color: #ed1c24; }
+.gauge-val-live.danger { color: var(--danger); }
 
 .gauge-bar-wrap {
   height: 5px;
@@ -1587,7 +1587,7 @@ html, body {
 }
 
 .gauge-big-val.warn { color: #f0a500; }
-.gauge-big-val.danger { color: #ed1c24; }
+.gauge-big-val.danger { color: var(--danger); }
 
 .gauge-bar-wrap-big {
   height: 6px;
@@ -2231,7 +2231,7 @@ html, body {
   margin-top: 2px;
 }
 .mm-stat-val.warn { color: #f0a500; }
-.mm-stat-val.danger { color: #ed1c24; }
+.mm-stat-val.danger { color: var(--danger); }
 
 .mm-spark {
   display: flex;
@@ -2387,7 +2387,7 @@ html, body {
   white-space: nowrap;
 }
 .bar-stat-val.warn { color: #f0a500; }
-.bar-stat-val.danger { color: #ed1c24; }
+.bar-stat-val.danger { color: var(--danger); }
 
 .bar-controls {
   display: flex;
@@ -2678,7 +2678,7 @@ html, body {
 }
 
 .game-remove:hover {
-  color: #ed1c24;
+  color: var(--danger);
 }
 
 /* Compact toggle for game rows - a real smaller size, not just a visual

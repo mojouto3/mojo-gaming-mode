@@ -236,6 +236,29 @@ const TWEAK_DEFINITIONS = {
     // when running, but unnecessary if offline maps aren't used.
     applyCmd: `$marker = "$env:TEMP\\mgm_wasrunning_mapsbroker.flag"; $svc = Get-Service -Name 'MapsBroker' -ErrorAction SilentlyContinue; If ($svc -and $svc.Status -eq 'Running') { New-Item -Path $marker -ItemType File -Force | Out-Null } Else { Remove-Item $marker -ErrorAction SilentlyContinue }; Stop-Service -Name 'MapsBroker' -Force -ErrorAction SilentlyContinue; Set-Service -Name 'MapsBroker' -StartupType Disabled -ErrorAction SilentlyContinue; Exit 0`,
     revertCmd: `$marker = "$env:TEMP\\mgm_wasrunning_mapsbroker.flag"; sc.exe config MapsBroker start= demand | Out-Null; If (Test-Path $marker) { Remove-Item $marker -ErrorAction SilentlyContinue; Start-Service -Name 'MapsBroker' -ErrorAction SilentlyContinue }; Exit 0`
+  },
+
+  bits: {
+    name: 'Background Intelligent Transfer Service off',
+    requiresAdmin: true,
+    // Startup type varies by Windows edition/version, so capture whether it
+    // was actually running rather than assuming a default to restore to.
+    applyCmd: `$marker = "$env:TEMP\\mgm_wasrunning_bits.flag"; $svc = Get-Service -Name 'BITS' -ErrorAction SilentlyContinue; If ($svc -and $svc.Status -eq 'Running') { New-Item -Path $marker -ItemType File -Force | Out-Null } Else { Remove-Item $marker -ErrorAction SilentlyContinue }; Stop-Service -Name 'BITS' -Force -ErrorAction SilentlyContinue; Set-Service -Name 'BITS' -StartupType Disabled -ErrorAction SilentlyContinue; Exit 0`,
+    revertCmd: `$marker = "$env:TEMP\\mgm_wasrunning_bits.flag"; sc.exe config BITS start= demand | Out-Null; If (Test-Path $marker) { Remove-Item $marker -ErrorAction SilentlyContinue; Start-Service -Name 'BITS' -ErrorAction SilentlyContinue }; Exit 0`
+  },
+
+  pca: {
+    name: 'Program Compatibility Assistant off',
+    requiresAdmin: true,
+    applyCmd: `$marker = "$env:TEMP\\mgm_wasrunning_pca.flag"; $svc = Get-Service -Name 'PcaSvc' -ErrorAction SilentlyContinue; If ($svc -and $svc.Status -eq 'Running') { New-Item -Path $marker -ItemType File -Force | Out-Null } Else { Remove-Item $marker -ErrorAction SilentlyContinue }; Stop-Service -Name 'PcaSvc' -Force -ErrorAction SilentlyContinue; Set-Service -Name 'PcaSvc' -StartupType Disabled -ErrorAction SilentlyContinue; Exit 0`,
+    revertCmd: `$marker = "$env:TEMP\\mgm_wasrunning_pca.flag"; sc.exe config PcaSvc start= demand | Out-Null; If (Test-Path $marker) { Remove-Item $marker -ErrorAction SilentlyContinue; Start-Service -Name 'PcaSvc' -ErrorAction SilentlyContinue }; Exit 0`
+  },
+
+  deliveryopt: {
+    name: 'Delivery Optimization off',
+    requiresAdmin: true,
+    applyCmd: `$marker = "$env:TEMP\\mgm_wasrunning_deliveryopt.flag"; $svc = Get-Service -Name 'DoSvc' -ErrorAction SilentlyContinue; If ($svc -and $svc.Status -eq 'Running') { New-Item -Path $marker -ItemType File -Force | Out-Null } Else { Remove-Item $marker -ErrorAction SilentlyContinue }; Stop-Service -Name 'DoSvc' -Force -ErrorAction SilentlyContinue; Set-Service -Name 'DoSvc' -StartupType Disabled -ErrorAction SilentlyContinue; Exit 0`,
+    revertCmd: `$marker = "$env:TEMP\\mgm_wasrunning_deliveryopt.flag"; sc.exe config DoSvc start= demand | Out-Null; If (Test-Path $marker) { Remove-Item $marker -ErrorAction SilentlyContinue; Start-Service -Name 'DoSvc' -ErrorAction SilentlyContinue }; Exit 0`
   }
 
 };
