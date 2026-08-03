@@ -50,6 +50,13 @@
         "filter": [
           "**/*"
         ]
+      },
+      {
+        "from": "resources/presentmon/",
+        "to": "presentmon/",
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "publish": {
