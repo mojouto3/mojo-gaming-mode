@@ -741,6 +741,55 @@ const CUSTOM_RULE_CMDS = {
   cr_gamesprior: {
     apply: `$p = 'HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games'; If (!(Test-Path $p)) { New-Item -Path $p -Force | Out-Null }; Set-ItemProperty -Path $p -Name 'GPU Priority' -Value 8 -Type DWord; Set-ItemProperty -Path $p -Name 'Priority' -Value 6 -Type DWord; Set-ItemProperty -Path $p -Name 'Scheduling Category' -Value 'High' -Type String; Set-ItemProperty -Path $p -Name 'SFIO Priority' -Value 'High' -Type String; Exit 0`,
     revert: `$p = 'HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games'; Set-ItemProperty -Path $p -Name 'GPU Priority' -Value 2 -Type DWord -ErrorAction SilentlyContinue; Set-ItemProperty -Path $p -Name 'Priority' -Value 2 -Type DWord -ErrorAction SilentlyContinue; Set-ItemProperty -Path $p -Name 'Scheduling Category' -Value 'Medium' -Type String -ErrorAction SilentlyContinue; Set-ItemProperty -Path $p -Name 'SFIO Priority' -Value 'Normal' -Type String -ErrorAction SilentlyContinue; Exit 0`
+  },
+  // The following just kill the process on apply and don't try to relaunch
+  // it on revert (unlike cr_teams/cr_spotify/etc above) - their install
+  // paths vary too much across versions/editions to guess reliably, and
+  // their own description text in renderer/js/tweaks.js doesn't promise
+  // a relaunch, matching cr_phonelink/cr_copilot/cr_widgets/cr_xbox above.
+  cr_viber: {
+    apply: `Get-Process -Name 'Viber' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revert: `Exit 0`
+  },
+  cr_signal: {
+    apply: `Get-Process -Name 'Signal' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revert: `Exit 0`
+  },
+  cr_messenger: {
+    apply: `Get-Process -Name 'Messenger' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revert: `Exit 0`
+  },
+  cr_box: {
+    apply: `Get-Process -Name 'Box','Box Sync' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revert: `Exit 0`
+  },
+  cr_mega: {
+    apply: `Get-Process -Name 'MEGAsync' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revert: `Exit 0`
+  },
+  cr_pcloud: {
+    apply: `Get-Process -Name 'pCloud' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revert: `Exit 0`
+  },
+  cr_razersynapse: {
+    apply: `Get-Process -Name 'RzSynapse','Razer Synapse Service','Razer Central Service' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revert: `Exit 0`
+  },
+  cr_lghub: {
+    apply: `Get-Process -Name 'lghub','lghub_agent' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revert: `Exit 0`
+  },
+  cr_icue: {
+    apply: `Get-Process -Name 'iCUE' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revert: `Exit 0`
+  },
+  cr_steelseriesgg: {
+    apply: `Get-Process -Name 'SteelSeriesGG','GG' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revert: `Exit 0`
+  },
+  cr_nzxtcam: {
+    apply: `Get-Process -Name 'NZXT CAM','CAM' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revert: `Exit 0`
   }
 };
 
