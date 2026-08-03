@@ -16,6 +16,8 @@ contextBridge.exposeInMainWorld('mgm', {
   onTrayToggle: (cb) => ipcRenderer.on('tray-toggle-mode', (e, val) => cb(val)),
   metricsStart: () => ipcRenderer.send('metrics-start'),
   metricsStop: () => ipcRenderer.send('metrics-stop'),
+  fpsTrackingStart: () => ipcRenderer.send('fps-tracking-start'),
+  fpsTrackingStop: () => ipcRenderer.send('fps-tracking-stop'),
   getMetricsSnapshot: () => ipcRenderer.invoke('get-metrics-snapshot'),
   getPingSnapshot: () => ipcRenderer.invoke('get-ping-snapshot'),
   pingStart: () => ipcRenderer.send('ping-start'),
