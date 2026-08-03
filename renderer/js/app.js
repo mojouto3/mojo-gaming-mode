@@ -1134,6 +1134,7 @@ const cpuHistory = Array(20).fill(0);
 const ramHistory = Array(20).fill(0);
 const gpuHistory = Array(20).fill(0);
 const pingHistory = Array(20).fill(0);
+const cpuThrottleHistory = Array(20).fill(0);
 
 function renderSparkline(containerId, history, color, maxHeight = 28) {
   const el = document.getElementById(containerId);
@@ -1241,6 +1242,25 @@ function updateMetricsUI(data) {
     }
   }
 
+  // GPU throttle-reason badge - NVIDIA only. Both fields absent (undefined)
+  // means "not available on this GPU", which must stay visually distinct
+  // from "confirmed not throttling" (false), so the badge simply stays
+  // hidden rather than showing a false all-clear.
+  const gpuThrottleBadge = document.getElementById('gpu-throttle-badge');
+  if (gpuThrottleBadge) {
+    if (data.gpuThrottleThermal === undefined && data.gpuThrottlePower === undefined) {
+      gpuThrottleBadge.style.display = 'none';
+    } else if (data.gpuThrottleThermal) {
+      gpuThrottleBadge.textContent = 'Thermal throttle';
+      gpuThrottleBadge.style.display = '';
+    } else if (data.gpuThrottlePower) {
+      gpuThrottleBadge.textContent = 'Power limit';
+      gpuThrottleBadge.style.display = '';
+    } else {
+      gpuThrottleBadge.style.display = 'none';
+    }
+  }
+
   // GPU Temperature
   const gpuTempVal = document.getElementById('gpu-temp-val');
   const gpuTempBar = document.getElementById('gpu-temp-bar');
@@ -1255,6 +1275,23 @@ function updateMetricsUI(data) {
   } else if (gpuTempVal) {
     gpuTempVal.textContent = 'N/A';
     if (gpuTempSub) gpuTempSub.textContent = 'Not available';
+  }
+
+  // CPU Throttle - 0 means running at full clock speed; higher means the
+  // OS/firmware is capping it (usually heat). Same "higher is worse"
+  // convention as every other gauge here, so no inverted color logic.
+  const cpuThrottleVal = document.getElementById('cpu-throttle-val');
+  const cpuThrottleBar = document.getElementById('cpu-throttle-bar');
+  const cpuThrottleSub = document.getElementById('cpu-throttle-sub');
+  if (cpuThrottleVal && data.cpuThrottlePct !== undefined) {
+    const v = Math.max(0, Math.round(data.cpuThrottlePct));
+    cpuThrottleVal.textContent = v + '%';
+    cpuThrottleVal.className = 'gauge-big-val' + (v > 25 ? ' danger' : v > 5 ? ' warn' : '');
+    const color = v > 25 ? '#ed1c24' : v > 5 ? '#f0a500' : 'var(--acc)';
+    if (cpuThrottleBar) { cpuThrottleBar.style.width = v + '%'; cpuThrottleBar.style.background = color; }
+    if (cpuThrottleSub) cpuThrottleSub.textContent = v > 0 ? 'Clock capped by thermal/power limit' : 'Running at full speed';
+    cpuThrottleHistory.shift(); cpuThrottleHistory.push(v);
+    renderSparkline('cpu-throttle-spark', cpuThrottleHistory, color);
   }
 }
 
@@ -1287,11 +1324,22 @@ function toggleTweak(id, val) {
 
 function averageSnapshots(a, b) {
   if (!a || !b) return a || b || null;
-  return {
+  const result = {
     cpu: (a.cpu + b.cpu) / 2,
     ramPct: (a.ramPct + b.ramPct) / 2,
-    gpuUsage: (a.gpuUsage + b.gpuUsage) / 2
+    gpuUsage: (a.gpuUsage + b.gpuUsage) / 2,
+    cpuThrottlePct: (a.cpuThrottlePct + b.cpuThrottlePct) / 2
   };
+  // Booleans don't average - OR them across the two samples instead, so any
+  // throttle event during the sampling window gets surfaced. Guarded on
+  // undefined so "not available on this GPU" survives the average intact.
+  if (a.gpuThrottleThermal !== undefined || b.gpuThrottleThermal !== undefined) {
+    result.gpuThrottleThermal = !!(a.gpuThrottleThermal || b.gpuThrottleThermal);
+  }
+  if (a.gpuThrottlePower !== undefined || b.gpuThrottlePower !== undefined) {
+    result.gpuThrottlePower = !!(a.gpuThrottlePower || b.gpuThrottlePower);
+  }
+  return result;
 }
 
 function averagePing(a, b) {
@@ -2263,6 +2311,7 @@ function renderActivationImpact() {
   setStat('impact-cpu', before.cpu, after.cpu, true);
   setStat('impact-ram', before.ramPct, after.ramPct, true);
   setStat('impact-gpu', before.gpuUsage, after.gpuUsage, false);
+  setStat('impact-cputhrottle', before.cpuThrottlePct, after.cpuThrottlePct, true);
 
   const pingStat = document.getElementById('impact-ping-stat');
   if (pingStat) {
