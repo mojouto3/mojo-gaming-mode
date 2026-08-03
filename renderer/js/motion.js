@@ -59,9 +59,21 @@
       var newPanel = document.getElementById('tab-' + name);
       var oldPanel = document.querySelector('.tab-panel.active');
 
+      // Nav feedback (which item is selected, the sliding indicator) reacts
+      // the instant you click - it must not wait on the content crossfade
+      // below, or the whole thing reads as laggy. Only the actual panel
+      // swap (and the title/metrics-polling side effects bundled into the
+      // real switchTab) is deferred until the exit fade finishes.
+      if (el) {
+        document.querySelectorAll('.nav-item[data-tab]').forEach(function (n) {
+          n.classList.remove('active');
+        });
+        el.classList.add('active');
+      }
+      positionNavIndicator();
+
       if (!oldPanel || oldPanel === newPanel) {
         originalSwitchTab(name, el);
-        positionNavIndicator();
         if (newPanel) enterPanel(newPanel);
         return;
       }
@@ -70,7 +82,6 @@
       setTimeout(function () {
         oldPanel.classList.remove('tab-exiting');
         originalSwitchTab(name, el);
-        positionNavIndicator();
         if (newPanel) enterPanel(newPanel);
       }, TAB_TRANSITION_MS);
     };
@@ -101,8 +112,10 @@
     navIndicator.style.opacity = '1';
   }
 
-  // Position once on load, without animating in from a stale spot.
-  if (navIndicator) {
+  // Position without animating in from a stale spot (used at startup and
+  // for the late-settling corrections below - both should snap, not slide).
+  function positionNavIndicatorInstant() {
+    if (!navIndicator) return;
     navIndicator.style.transition = 'none';
     positionNavIndicator();
     requestAnimationFrame(function () {
@@ -110,5 +123,16 @@
         navIndicator.style.transition = '';
       });
     });
+  }
+
+  if (navIndicator) {
+    positionNavIndicatorInstant();
+    // Late-loading sidebar images (the GPU icon) and web font swap-in can
+    // both shift nav-item positions after the first measurement above, so
+    // re-measure once those settle instead of leaving a stale/clipped box.
+    window.addEventListener('load', positionNavIndicatorInstant);
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(positionNavIndicatorInstant);
+    }
   }
 })();
