@@ -15,6 +15,14 @@ while ($true) {
   # Use the same Performance Counter Task Manager itself reads from instead.
   $cpuSample = Get-Counter '\\Processor(_Total)\\% Processor Time' -SampleInterval 1 -MaxSamples 2 -ErrorAction SilentlyContinue
   $cpu = if ($cpuSample) { [math]::Round($cpuSample.CounterSamples[-1].CookedValue, 1) } else { 0 }
+  # % Performance Limit reflects how much the OS/firmware is capping the CPU's
+  # clock below maximum (thermal, power, or other reasons). Default to 100
+  # (no throttle) rather than 0 if the counter can't be read - some locales/
+  # OEM firmware don't expose "Processor Information" counters, and defaulting
+  # to 0 would falsely report full throttle instead of "unknown".
+  $cpuLimitSample = Get-Counter '\\Processor Information(_Total)\\% Performance Limit' -SampleInterval 1 -MaxSamples 1 -ErrorAction SilentlyContinue
+  $cpuPerfLimit = if ($cpuLimitSample) { [math]::Round($cpuLimitSample.CounterSamples[-1].CookedValue, 1) } else { 100 }
+  $cpuThrottlePct = [math]::Round(100 - $cpuPerfLimit, 1)
   $os = Get-CimInstance -ClassName Win32_OperatingSystem
   $ramTotal = [math]::Round($os.TotalVisibleMemorySize / 1MB, 1)
   $ramFree = [math]::Round($os.FreePhysicalMemory / 1MB, 1)
@@ -28,8 +36,15 @@ while ($true) {
   $gpuVramPct = 0
   $nvidiaSmi = Get-Command 'nvidia-smi' -ErrorAction SilentlyContinue
   $gpuTemp = 0
+  $gpuThrottleThermal = $null
+  $gpuThrottlePower = $null
   if ($nvidiaSmi) {
-    $smi = & nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total,temperature.gpu --format=csv,noheader,nounits 2>$null
+    # Throttle-reason fields come back as literal "Active"/"Not Active"
+    # strings, not booleans/ints - compare as strings below. AMD/Intel have
+    # no equivalent without vendor SDKs, so these stay $null (not $false) on
+    # the non-NVIDIA branch - "unavailable" must never be reported as "not
+    # throttling".
+    $smi = & nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total,temperature.gpu,clocks_throttle_reasons.sw_thermal_slowdown,clocks_throttle_reasons.hw_thermal_slowdown,clocks_throttle_reasons.hw_power_brake_slowdown --format=csv,noheader,nounits 2>$null
     if ($smi) {
       $parts = $smi.Trim().Split(',')
       if ($parts.Count -ge 4) {
@@ -38,6 +53,10 @@ while ($true) {
         $gpuVramTotal = [math]::Round([int]$parts[2].Trim() / 1024, 1)
         $gpuVramPct = if ($gpuVramTotal -gt 0) { [math]::Round(($gpuVramUsed / $gpuVramTotal) * 100, 1) } else { 0 }
         $gpuTemp = [int]$parts[3].Trim()
+      }
+      if ($parts.Count -ge 7) {
+        $gpuThrottleThermal = ($parts[4].Trim() -eq 'Active') -or ($parts[5].Trim() -eq 'Active')
+        $gpuThrottlePower = ($parts[6].Trim() -eq 'Active')
       }
     }
   } else {
@@ -57,8 +76,14 @@ while ($true) {
       if ($temp) { $gpuTemp = [math]::Round(($temp.CurrentTemperature / 10) - 273.15, 0) }
     } Catch {}
   }
-  $result = @{ cpu=$cpu; ramPct=$ramPct; ramUsed=$ramUsed; ramTotal=$ramTotal; gpuName=$gpuName; gpuUsage=$gpuUsage; gpuVramUsed=$gpuVramUsed; gpuVramTotal=$gpuVramTotal; gpuVramPct=$gpuVramPct; gpuTemp=$gpuTemp } | ConvertTo-Json -Compress
-  Write-Output $result
+  $result = @{ cpu=$cpu; cpuThrottlePct=$cpuThrottlePct; ramPct=$ramPct; ramUsed=$ramUsed; ramTotal=$ramTotal; gpuName=$gpuName; gpuUsage=$gpuUsage; gpuVramUsed=$gpuVramUsed; gpuVramTotal=$gpuVramTotal; gpuVramPct=$gpuVramPct; gpuTemp=$gpuTemp }
+  # Only add these keys when NVIDIA actually reported them - omitting the key
+  # entirely (vs. setting it to $null) is what makes the field come back as
+  # undefined in the renderer, which is how "not available on this GPU" is
+  # distinguished from a real "false" (not currently throttling).
+  if ($null -ne $gpuThrottleThermal) { $result.gpuThrottleThermal = $gpuThrottleThermal }
+  if ($null -ne $gpuThrottlePower) { $result.gpuThrottlePower = $gpuThrottlePower }
+  Write-Output ($result | ConvertTo-Json -Compress)
   Start-Sleep -Seconds 1
 }
 `;
@@ -67,19 +92,33 @@ const PS_SNAPSHOT_SCRIPT = `
 $ProgressPreference = 'SilentlyContinue'
 $cpuSample = Get-Counter '\\Processor(_Total)\\% Processor Time' -SampleInterval 1 -MaxSamples 2 -ErrorAction SilentlyContinue
 $cpu = if ($cpuSample) { [math]::Round($cpuSample.CounterSamples[-1].CookedValue, 1) } else { 0 }
+$cpuLimitSample = Get-Counter '\\Processor Information(_Total)\\% Performance Limit' -SampleInterval 1 -MaxSamples 1 -ErrorAction SilentlyContinue
+$cpuPerfLimit = if ($cpuLimitSample) { [math]::Round($cpuLimitSample.CounterSamples[-1].CookedValue, 1) } else { 100 }
+$cpuThrottlePct = [math]::Round(100 - $cpuPerfLimit, 1)
 $os = Get-CimInstance -ClassName Win32_OperatingSystem
 $ramTotal = [math]::Round($os.TotalVisibleMemorySize / 1MB, 1)
 $ramFree = [math]::Round($os.FreePhysicalMemory / 1MB, 1)
 $ramUsed = [math]::Round($ramTotal - $ramFree, 1)
 $ramPct = [math]::Round(($ramUsed / $ramTotal) * 100, 1)
 $gpuUsage = 0
+$gpuThrottleThermal = $null
+$gpuThrottlePower = $null
 $nvidiaSmi = Get-Command 'nvidia-smi' -ErrorAction SilentlyContinue
 if ($nvidiaSmi) {
-  $smi = & nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>$null
-  if ($smi) { $gpuUsage = [int]$smi.Trim() }
+  $smi = & nvidia-smi --query-gpu=utilization.gpu,clocks_throttle_reasons.sw_thermal_slowdown,clocks_throttle_reasons.hw_thermal_slowdown,clocks_throttle_reasons.hw_power_brake_slowdown --format=csv,noheader,nounits 2>$null
+  if ($smi) {
+    $parts = $smi.Trim().Split(',')
+    $gpuUsage = [int]$parts[0].Trim()
+    if ($parts.Count -ge 4) {
+      $gpuThrottleThermal = ($parts[1].Trim() -eq 'Active') -or ($parts[2].Trim() -eq 'Active')
+      $gpuThrottlePower = ($parts[3].Trim() -eq 'Active')
+    }
+  }
 }
-$result = @{ cpu=$cpu; ramPct=$ramPct; ramUsed=$ramUsed; ramTotal=$ramTotal; gpuUsage=$gpuUsage } | ConvertTo-Json -Compress
-Write-Output $result
+$result = @{ cpu=$cpu; cpuThrottlePct=$cpuThrottlePct; ramPct=$ramPct; ramUsed=$ramUsed; ramTotal=$ramTotal; gpuUsage=$gpuUsage }
+if ($null -ne $gpuThrottleThermal) { $result.gpuThrottleThermal = $gpuThrottleThermal }
+if ($null -ne $gpuThrottlePower) { $result.gpuThrottlePower = $gpuThrottlePower }
+Write-Output ($result | ConvertTo-Json -Compress)
 `;
 
 function start(callback) {
