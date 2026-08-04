@@ -63,6 +63,25 @@ let headerCols = null;
 let msBetweenPresentsIdx = -1;
 let currentTarget = null;
 
+// 1% lows need more than a single second of samples to mean anything (at
+// 60fps that's only ~1 worst frame) - a rolling window gives a stable
+// enough sample size while still reflecting recent performance rather than
+// the whole session.
+const ONE_PCT_LOW_WINDOW_MS = 10000;
+let rollingFrames = []; // { t: Date.now(), ms: frameTimeMs }
+
+function computeOnePercentLow(now) {
+  rollingFrames = rollingFrames.filter((f) => now - f.t <= ONE_PCT_LOW_WINDOW_MS);
+  if (!rollingFrames.length) return null;
+  const worstCount = Math.max(1, Math.ceil(rollingFrames.length * 0.01));
+  const worstMs = rollingFrames
+    .map((f) => f.ms)
+    .sort((a, b) => b - a)
+    .slice(0, worstCount);
+  const avgWorstMs = worstMs.reduce((a, b) => a + b, 0) / worstMs.length;
+  return Math.round(1000 / avgWorstMs);
+}
+
 function debugLog(msg) {
   if (onDebugCallback) onDebugCallback(msg);
 }
@@ -82,6 +101,7 @@ function stopCapture() {
     pmProcess = null;
   }
   frameTimesMs = [];
+  rollingFrames = [];
   headerCols = null;
   msBetweenPresentsIdx = -1;
   currentTarget = null;
@@ -90,6 +110,7 @@ function stopCapture() {
 function startCapture(processName) {
   currentTarget = processName;
   frameTimesMs = [];
+  rollingFrames = [];
   headerCols = null;
   msBetweenPresentsIdx = -1;
 
@@ -122,7 +143,10 @@ function startCapture(processName) {
       }
       if (msBetweenPresentsIdx === -1) return;
       const ms = parseFloat(parts[msBetweenPresentsIdx]);
-      if (!isNaN(ms) && ms > 0) frameTimesMs.push(ms);
+      if (!isNaN(ms) && ms > 0) {
+        frameTimesMs.push(ms);
+        rollingFrames.push({ t: Date.now(), ms });
+      }
     });
   });
 
@@ -134,14 +158,14 @@ function startCapture(processName) {
     if (pmProcess !== thisProcess) return; // superseded by a newer capture, ignore
     pmProcess = null;
     stopCapture();
-    if (onDataCallback) onDataCallback({ fps: null, frameTimeMs: null, processName: null });
+    if (onDataCallback) onDataCallback({ fps: null, frameTimeMs: null, fps1Low: null, processName: null });
   });
   thisProcess.on('close', (code) => {
     debugLog(`PresentMon exited (code ${code}) - target process likely closed`);
     if (pmProcess !== thisProcess) return; // superseded by a newer capture, ignore
     pmProcess = null;
     stopCapture();
-    if (onDataCallback) onDataCallback({ fps: null, frameTimeMs: null, processName: null });
+    if (onDataCallback) onDataCallback({ fps: null, frameTimeMs: null, fps1Low: null, processName: null });
   });
 
   // Frames arrive far more often than once per second at real framerates
@@ -149,14 +173,17 @@ function startCapture(processName) {
   // of pushing raw per-frame noise up through IPC.
   emitInterval = setInterval(() => {
     if (!onDataCallback) return;
+    const now = Date.now();
+    const fps1Low = computeOnePercentLow(now);
     if (!frameTimesMs.length) {
-      onDataCallback({ fps: null, frameTimeMs: null, processName: null });
+      onDataCallback({ fps: null, frameTimeMs: null, fps1Low: null, processName: null });
       return;
     }
     const avgMs = frameTimesMs.reduce((a, b) => a + b, 0) / frameTimesMs.length;
     onDataCallback({
       fps: Math.round(1000 / avgMs),
       frameTimeMs: Math.round(avgMs * 10) / 10,
+      fps1Low,
       processName: currentTarget
     });
     frameTimesMs = [];
@@ -209,7 +236,7 @@ function startTracking(callback, debugCallback) {
         // foreground app takes over below.
         if (!pmProcess) {
           debugLog(`foreground is "${name}" (excluded), no game running - no capture`);
-          if (onDataCallback) onDataCallback({ fps: null, frameTimeMs: null, processName: null });
+          if (onDataCallback) onDataCallback({ fps: null, frameTimeMs: null, fps1Low: null, processName: null });
         } else {
           debugLog(`foreground is "${name}" (excluded) - keeping existing capture on "${currentTarget}"`);
         }
