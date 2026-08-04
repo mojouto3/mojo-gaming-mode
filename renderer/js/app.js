@@ -795,6 +795,7 @@ function switchTab(name, el) {
   el.classList.add('active');
   const titles = { presets: 'Presets', tweaks: 'Tweaks', games: 'Games', rules: 'Custom rules', stats: 'Performance', settings: 'Settings' };
   document.getElementById('page-title').textContent = titles[name] || name;
+  updateTweaksSourceBadge();
   if (name === 'settings') initSettingsTab();
   if (name === 'stats') renderActivationImpact();
   if (name === 'games') renderGames();
@@ -1566,6 +1567,7 @@ async function revertMode(silent = false) {
 
   state.active = false;
   autoActivatedGameId = null;
+  updateTweaksSourceBadge();
 
   document.getElementById('status-dot').classList.remove('on');
   document.getElementById('status-label').textContent = 'Gaming mode off';
@@ -2119,6 +2121,10 @@ async function persistConfig() {
 // ── Game Detection ───────────────────────────────────────────────────────────
 
 let autoActivatedGameId = null;
+// Guards against two games being detected in quick succession before the
+// first's applyMode() finishes (state.active only flips true once that
+// resolves) - without this, both would race into applyMode() concurrently.
+let autoActivating = false;
 
 function getEnabledGameProcessNames() {
   return state.games.filter(g => g.enabled).map(g => g.exeName);
@@ -2274,25 +2280,51 @@ async function handleGameDetectionEvent(data) {
   if (!game || !game.enabled) return;
 
   if (data.event === 'started') {
-    if (!state.active) {
+    if (!state.active && !autoActivating) {
+      autoActivating = true;
       if (game.presetId) setPreset(game.presetId);
       autoActivatedGameId = game.id;
-      // silent=true suppresses the routine "activating..." toast, but
-      // applyMode() still returns the real result, so a genuine failure
-      // is never hidden just because this was triggered automatically.
-      const result = await applyMode(true);
-      if (result && result.success && result.failedCount > 0) {
-        showToast(`${game.name} detected, but ${result.failedCount} item(s) failed to apply`);
-      } else if (result && result.success) {
-        showToast(`${game.name} detected, gaming mode activated`);
-      } else {
-        showToast(`${game.name} detected, but gaming mode failed to activate - check the app`);
+      updateTweaksSourceBadge();
+      try {
+        // silent=true suppresses the routine "activating..." toast, but
+        // applyMode() still returns the real result, so a genuine failure
+        // is never hidden just because this was triggered automatically.
+        const result = await applyMode(true);
+        if (result && result.success && result.failedCount > 0) {
+          showToast(`${game.name} detected, but ${result.failedCount} item(s) failed to apply`);
+        } else if (result && result.success) {
+          showToast(`${game.name} detected, gaming mode activated`);
+        } else {
+          showToast(`${game.name} detected, but gaming mode failed to activate - check the app`);
+        }
+      } finally {
+        autoActivating = false;
       }
     }
   } else if (data.event === 'stopped') {
     if (state.active && autoActivatedGameId === game.id) {
       window.mgm.notifyGameClosed(game.name);
     }
+  }
+}
+
+// Only meaningful on the Tweaks tab, where the displayed tweaks otherwise
+// give no clue that the active preset came from a per-game profile instead
+// of whatever's selected on the Presets tab.
+function updateTweaksSourceBadge() {
+  const badge = document.getElementById('tweaks-source-badge');
+  const text = document.getElementById('tweaks-source-text');
+  if (!badge || !text) return;
+
+  const onTweaksTab = document.getElementById('tab-tweaks')?.classList.contains('active');
+  const game = autoActivatedGameId ? state.games.find(g => g.id === autoActivatedGameId) : null;
+
+  if (onTweaksTab && state.active && game && game.presetId) {
+    const presetLabel = { balanced: 'Balanced', performance: 'Performance', esports: 'Esports' }[game.presetId] || game.presetId;
+    text.textContent = `${presetLabel} (from: ${game.name})`;
+    badge.style.display = '';
+  } else {
+    badge.style.display = 'none';
   }
 }
 
