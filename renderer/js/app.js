@@ -1258,7 +1258,11 @@ function updateFpsUI(data) {
   fpsVal.className = 'gauge-big-val' + (v < 30 ? ' danger' : v < 60 ? ' warn' : '');
   const color = v < 30 ? '#ed1c24' : v < 60 ? '#f0a500' : 'var(--acc)';
   if (fpsBar) { fpsBar.style.width = Math.min(100, Math.round((v / 144) * 100)) + '%'; fpsBar.style.background = color; }
-  if (fpsSub) fpsSub.textContent = data.frameTimeMs !== null && data.frameTimeMs !== undefined ? 'Frame time: ' + data.frameTimeMs + 'ms avg' : '';
+  if (fpsSub) {
+    let subText = data.frameTimeMs !== null && data.frameTimeMs !== undefined ? 'Frame time: ' + data.frameTimeMs + 'ms avg' : '';
+    if (data.fps1Low !== null && data.fps1Low !== undefined) subText += (subText ? ' · ' : '') + '1% low: ' + data.fps1Low + ' fps';
+    fpsSub.textContent = subText;
+  }
   fpsHistory.shift(); fpsHistory.push(v);
   renderSparkline('fps-spark', fpsHistory, color);
 }
