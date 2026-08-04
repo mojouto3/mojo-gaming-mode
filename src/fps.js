@@ -21,11 +21,43 @@ function getExePath() {
 // currently the foreground window, so it works for any game without the
 // user having to add it anywhere first. Processes that clearly aren't games
 // (our own window, the desktop) are skipped rather than spawning PresentMon
-// against them; anything else that isn't actually presenting frames (e.g. a
-// text editor) simply yields no frame data, which already surfaces as the
-// normal "no game running" placeholder - no further heuristics needed.
+// against them.
+//
+// Ordinary desktop apps (browsers, editors, chat clients) DO still present
+// real frames via DXGI, just sparsely and irregularly since they only
+// redraw on interaction rather than running a continuous render loop - that
+// shows up as a low, jittery, misleading "FPS" number and a scary-looking
+// red/danger color for something that was never a game to begin with. There
+// is no reliable "is this a game" API to check instead, so the practical
+// fix is excluding the common non-game apps a gaming PC is actually likely
+// to have in the foreground - not exhaustive (no blocklist ever is), but
+// covers the overwhelming majority of cases. The Custom Rules list (already
+// maintained for a related reason - closing background apps during gaming)
+// doubles as a solid base set here, since virtually everything on it is a
+// companion/utility app, never a game itself.
 const OWN_PROCESS_NAMES = ['Mojo Gaming Mode', 'electron'];
-const EXCLUDED_PROCESS_NAMES = ['explorer', 'SearchHost', 'ShellExperienceHost', 'StartMenuExperienceHost'];
+const EXCLUDED_PROCESS_NAMES = [
+  // Shell / desktop
+  'explorer', 'SearchHost', 'ShellExperienceHost', 'StartMenuExperienceHost', 'SnippingTool',
+  // Browsers
+  'chrome', 'firefox', 'msedge', 'opera', 'brave', 'vivaldi',
+  // Editors, IDEs, terminals
+  'Code', 'devenv', 'sublime_text', 'notepad++', 'notepad', 'idea64', 'pycharm64',
+  'WindowsTerminal', 'cmd', 'powershell', 'pwsh', 'conhost',
+  // Office
+  'WINWORD', 'EXCEL', 'POWERPNT', 'OUTLOOK',
+  // AI assistants / chat tools
+  'claude', 'ChatGPT',
+  // Same companion/utility apps already targeted by Custom Rules (chat,
+  // launchers, cloud sync, peripheral managers) - see renderer/js/tweaks.js
+  'Teams', 'PhoneExperienceHost', 'Copilot', 'Widgets', 'EpicGamesLauncher',
+  'EABackgroundService', 'EADesktop', 'Spotify', 'Battle.net', 'UbisoftConnect',
+  'GalaxyClient', 'XboxApp', 'RockstarService', 'slack', 'Zoom', 'WhatsApp',
+  'Telegram', 'GoogleDriveFS', 'Dropbox', 'MinecraftLauncher', 'iTunes',
+  'RiotClientServices', 'OneDrive', 'iCloudDrive', 'Viber', 'Signal', 'Messenger',
+  'Box', 'MEGAsync', 'pCloud', 'Razer Synapse Service', 'RzSynapse', 'lghub',
+  'lghub_agent', 'iCUE', 'SteelSeriesGG', 'NZXT CAM'
+];
 
 const FOREGROUND_POLL_SCRIPT = `
 Add-Type @"
