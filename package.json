@@ -16,6 +16,7 @@
     "electron-builder": "^26.15.3"
   },
   "build": {
+    "npmRebuild": false,
     "appId": "com.mojomultimedia.gaming-mode",
     "productName": "Mojo Gaming Mode",
     "win": {
