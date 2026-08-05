@@ -233,14 +233,56 @@ function computeStatDisplay(id) {
   return null;
 }
 
-// Mirrors src/main.js's MINI_SIZE.height - mini-mode's window height for a
-// single row of stats. Extra wrapped rows (more than 5 stats enabled) grow
-// the window by this much per additional row; the renderer computes the
-// target height since it's the one that knows the CSS layout, main.js just
-// resizes to whatever it's told.
-const MINI_MODE_BASE_HEIGHT = 280;
-const MINI_MODE_ROW_HEIGHT = 58;
-const MINI_MODE_STATS_PER_ROW = 5;
+// Fixed, comfortable tile size - not dynamically computed to the minimum
+// that avoids text wrapping (an earlier version of this did that, and it
+// produced a window that grew wide with tiny squeezed cards instead of
+// staying compact with genuinely readable ones - wrong goal). Mini-mode
+// already wraps into new rows, unlike bar-mode's single non-wrapping row,
+// so there was never a need for per-content width math here: a constant
+// tile size with a fixed column count keeps the window width the same
+// for every user regardless of which stats they pick - only the height
+// changes, growing with however many rows are needed.
+const MINI_MODE_TILE_WIDTH = 88;
+const MINI_MODE_TILE_HEIGHT = 64;
+const MINI_MODE_TILE_GAP = 8;
+const MINI_MODE_COLUMNS = 3;
+const MINI_MODE_BODY_PADDING = 28; // .mm-body padding, both sides
+const MINI_MODE_WIDTH = MINI_MODE_COLUMNS * MINI_MODE_TILE_WIDTH + (MINI_MODE_COLUMNS - 1) * MINI_MODE_TILE_GAP + MINI_MODE_BODY_PADDING;
+
+// .mm-body has flex:1 (renderer/css/app.css), so it's normally stretched
+// to whatever height the window currently gives it - reading its height
+// directly would just report the CURRENT window size back, not the true
+// height its content needs. A previous version of this guessed a fixed
+// pixel constant instead of measuring, and that guess was wrong (cut off
+// the last row).
+//
+// It's not just height that's wrong to read directly, though - .mini-mode
+// is position:fixed with inset:0, so it (and therefore .mm-stats' wrap
+// width) is however wide the window CURRENTLY is, which on a fresh entry
+// is still whatever it was before this resize - not yet MINI_MODE_WIDTH.
+// Measuring against the wrong width means .mm-stats can wrap into the
+// wrong number of rows entirely (e.g. 2 tiles per row instead of 3),
+// silently producing a plausible-looking but wrong height - exactly the
+// class of bug that hit bar-mode's width measurement earlier. Forcing
+// the known target width during measurement, not just letting height go
+// auto, is what actually fixes it.
+function measureMiniModeHeight() {
+  const mini = document.getElementById('mini-mode');
+  const header = document.querySelector('#mini-mode .mm-header');
+  const body = document.querySelector('#mini-mode .mm-body');
+  if (!mini || !header || !body) return null;
+  const prevWidth = mini.style.width;
+  const prevFlex = body.style.flex;
+  const prevHeight = body.style.height;
+  mini.style.width = MINI_MODE_WIDTH + 'px';
+  body.style.flex = 'none';
+  body.style.height = 'auto';
+  const bodyHeight = body.scrollHeight;
+  mini.style.width = prevWidth;
+  body.style.flex = prevFlex;
+  body.style.height = prevHeight;
+  return header.offsetHeight + bodyHeight;
+}
 
 function buildMiniStatsDom() {
   const container = document.getElementById('mm-stats');
@@ -251,9 +293,8 @@ function buildMiniStatsDom() {
     return `<div class="mm-stat"><div class="mm-stat-label">${label}</div><div class="mm-stat-val" id="mm-val-${id}">--</div>${sparkHtml}</div>`;
   }).join('');
 
-  const rows = Math.max(1, Math.ceil(state.miniModeStats.length / MINI_MODE_STATS_PER_ROW));
-  const height = MINI_MODE_BASE_HEIGHT + (rows - 1) * MINI_MODE_ROW_HEIGHT;
-  if (miniModeActive) window.mgm.setMiniMode(true, height);
+  const height = measureMiniModeHeight();
+  if (miniModeActive && height) window.mgm.setMiniMode(true, height, MINI_MODE_WIDTH);
 }
 
 // Bar mode's drag handle, stats row, and controls are all flex-shrink:0 /
@@ -335,10 +376,13 @@ function updateBarMode() {
   });
 }
 
+const PRESET_ICONS = { balanced: 'ti-adjustments', performance: 'ti-rocket', esports: 'ti-trophy', custom: 'ti-puzzle' };
+
 function updateMiniMode() {
   if (!miniModeActive) return;
   const miniEl = document.getElementById('mini-mode');
   const presetEl = document.getElementById('mm-preset');
+  const presetIconEl = document.getElementById('mm-preset-icon');
   const tweaksEl = document.getElementById('mm-tweaks');
   const statusEl = document.getElementById('mm-status');
   const btnEl = document.getElementById('mm-activate-btn');
@@ -347,6 +391,7 @@ function updateMiniMode() {
   if (miniEl) miniEl.classList.toggle('active', !!state.active);
 
   if (presetEl) presetEl.textContent = (state.preset || 'balanced').charAt(0).toUpperCase() + (state.preset || 'balanced').slice(1);
+  if (presetIconEl) presetIconEl.className = 'ti ' + (PRESET_ICONS[state.preset] || 'ti-adjustments');
   if (tweaksEl) {
     const count = Object.values(state.tweaks).filter(Boolean).length;
     tweaksEl.textContent = count + ' tweak' + (count !== 1 ? 's' : '') + ' selected';
@@ -356,7 +401,7 @@ function updateMiniMode() {
     statusEl.className = 'mm-status' + (state.active ? ' active' : '');
   }
   if (btnEl && !miniActivateInProgress) {
-    btnEl.textContent = state.active ? 'Deactivate' : 'Activate';
+    btnEl.innerHTML = '<i class="ti ' + (state.active ? 'ti-power' : 'ti-bolt') + '" aria-hidden="true"></i>' + (state.active ? 'Deactivate' : 'Activate');
     btnEl.className = 'mm-activate-btn' + (state.active ? ' deact' : '');
   }
 
@@ -367,8 +412,9 @@ function updateMiniMode() {
     if (!disp) return;
     valEl.textContent = disp.text;
     valEl.className = 'mm-stat-val' + (disp.cls ? ' ' + disp.cls : '');
+    if (valEl.parentElement) valEl.parentElement.style.borderLeftColor = disp.color;
     const history = getStatHistory(id);
-    if (history) renderSparkline('mm-spark-' + id, history, disp.color, 12);
+    if (history) renderSparkline('mm-spark-' + id, history, disp.color, 16);
   });
 }
 
@@ -1281,10 +1327,19 @@ function renderSparkline(containerId, history, color, maxHeight = 28) {
   const el = document.getElementById(containerId);
   if (!el) return;
   const max = Math.max(...history, 1);
-  el.innerHTML = history.map(v => {
-    const h = Math.max(2, Math.round((v / max) * maxHeight));
-    return `<div class="spark-bar" style="height:${h}px;background:${color}"></div>`;
-  }).join('');
+  const w = 100;
+  const n = history.length;
+  const stepX = n > 1 ? w / (n - 1) : w;
+  const linePoints = history.map((v, i) => {
+    const x = (i * stepX).toFixed(1);
+    const y = (maxHeight - Math.max(1, (v / max) * maxHeight)).toFixed(1);
+    return `${x},${y}`;
+  }).join(' ');
+  const areaPoints = `0,${maxHeight} ${linePoints} ${w},${maxHeight}`;
+  el.innerHTML = `<svg width="100%" height="${maxHeight}" viewBox="0 0 ${w} ${maxHeight}" preserveAspectRatio="none">` +
+    `<polygon points="${areaPoints}" fill="${color}" opacity="0.18"></polygon>` +
+    `<polyline points="${linePoints}" fill="none" stroke="${color}" stroke-width="1.5"></polyline>` +
+    `</svg>`;
 }
 
 function toggleChanges() {
