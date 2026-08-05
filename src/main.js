@@ -108,6 +108,19 @@ const BAR_SIZE = { width: 480, height: 44 };
 // so re-entering either mode returns to the same spot instead of a fixed
 // default position every time.
 let lastFloatingPosition = null;
+// Distinguishes a genuine fresh entry into mini/bar mode (position should
+// come from lastFloatingPosition or a centered default) from a live
+// resize of an already-open one (e.g. the Overlay stats picker changing
+// selection, or the renderer's ResizeObserver reacting to a stat's value
+// text changing width) - the latter must keep whatever position the user
+// has it at right now, including mid-drag, not snap back to a remembered
+// spot on every resize. One shared variable rather than a flag per mode:
+// switching directly between mini and bar mode intentionally skips the
+// "disable" call for whichever one is being left (to keep live polling
+// running through the switch), so two separate flags would go stale the
+// moment someone toggles between the two instead of closing to normal
+// mode first.
+let currentFloatingMode = null; // null | 'mini' | 'bar'
 
 function centerOnCurrentDisplay(width, height) {
   if (!mainWindow || mainWindow.isDestroyed()) return;
@@ -1388,18 +1401,38 @@ function maybeShowMiniBarHint() {
   }).show();
 }
 
-ipcMain.on('set-mini-mode', (e, enabled) => {
+ipcMain.on('set-mini-mode', (e, enabled, height) => {
   if (!mainWindow || mainWindow.isDestroyed()) return;
   if (enabled) {
+    // The renderer knows how many stats are enabled (a user-configurable
+    // choice, Settings tab) and computes the height that fits them -
+    // this just clamps to never go below the 1-row default.
+    const targetHeight = Math.max(MINI_SIZE.height, height || 0);
     // Must lower the minimum size FIRST — Electron clamps setSize() to
     // whatever minWidth/minHeight is currently set, so without this the
     // window stayed stuck at the normal-mode minimum (760x580) instead of
     // shrinking down to the mini-mode size.
-    mainWindow.setMinimumSize(MINI_SIZE.width, MINI_SIZE.height);
-    if (lastFloatingPosition) {
-      mainWindow.setBounds({ ...lastFloatingPosition, width: MINI_SIZE.width, height: MINI_SIZE.height });
+    mainWindow.setMinimumSize(MINI_SIZE.width, targetHeight);
+
+    // Fresh entry: use the remembered exit position (or a centered
+    // default below). A live resize of an already-open card - e.g. the
+    // Overlay stats picker changing selection, or the renderer's
+    // ResizeObserver reacting to a stat's value text changing width -
+    // must keep wherever it actually is right now, including mid-drag,
+    // never snap back to a stale remembered position.
+    const currentBounds = mainWindow.getBounds();
+    const basePosition = currentFloatingMode === 'mini' ? { x: currentBounds.x, y: currentBounds.y } : lastFloatingPosition;
+
+    if (basePosition) {
+      // Clamp so a taller card (more stats enabled/wrapped rows) can't
+      // run off the bottom of whatever display it's on.
+      const targetDisplay = screen.getDisplayNearestPoint(basePosition);
+      const minY = targetDisplay.workArea.y;
+      const maxY = targetDisplay.workArea.y + targetDisplay.workArea.height - targetHeight;
+      const clampedY = Math.min(Math.max(basePosition.y, minY), Math.max(minY, maxY));
+      mainWindow.setBounds({ x: basePosition.x, y: clampedY, width: MINI_SIZE.width, height: targetHeight });
     } else {
-      mainWindow.setSize(MINI_SIZE.width, MINI_SIZE.height);
+      mainWindow.setSize(MINI_SIZE.width, targetHeight);
     }
     mainWindow.setResizable(false);
     // Mini-mode is meant to float over a game, so keep it on top
@@ -1408,9 +1441,11 @@ ipcMain.on('set-mini-mode', (e, enabled) => {
     // surface, which defeats the entire point of a during-game overlay.
     mainWindow.setAlwaysOnTop(true, 'screen-saver');
     maybeShowMiniBarHint();
+    currentFloatingMode = 'mini';
   } else {
     const b = mainWindow.getBounds();
     lastFloatingPosition = { x: b.x, y: b.y };
+    if (currentFloatingMode === 'mini') currentFloatingMode = null;
     mainWindow.setMinimumSize(NORMAL_MIN_SIZE.width, NORMAL_MIN_SIZE.height);
     centerOnCurrentDisplay(NORMAL_SIZE.width, NORMAL_SIZE.height);
     mainWindow.setResizable(true);
@@ -1418,30 +1453,52 @@ ipcMain.on('set-mini-mode', (e, enabled) => {
   }
 });
 
-ipcMain.on('set-bar-mode', (e, enabled) => {
+ipcMain.on('set-bar-mode', (e, enabled, width) => {
   if (!mainWindow || mainWindow.isDestroyed()) return;
   if (enabled) {
-    mainWindow.setMinimumSize(BAR_SIZE.width, BAR_SIZE.height);
+    // The renderer knows how many/which stats are enabled (a user-
+    // configurable choice, Settings tab) and computes the width that fits
+    // them - this just clamps to never go below the default.
+    const targetWidth = Math.max(BAR_SIZE.width, width || 0);
+    mainWindow.setMinimumSize(targetWidth, BAR_SIZE.height);
     mainWindow.setResizable(false);
     // 'screen-saver' is the highest level Electron supports - 'floating'
     // could be overridden by an exclusive-fullscreen game's own topmost
     // surface, which defeats the entire point of a during-game overlay.
     mainWindow.setAlwaysOnTop(true, 'screen-saver');
-    if (lastFloatingPosition) {
-      mainWindow.setBounds({ ...lastFloatingPosition, width: BAR_SIZE.width, height: BAR_SIZE.height });
+    // Fresh entry: use the remembered exit position (or a centered
+    // default below). A live resize of an already-open bar - e.g. the
+    // Overlay stats picker changing selection, or the renderer's
+    // ResizeObserver reacting to a stat's value text changing width -
+    // must keep wherever it actually is right now, including mid-drag,
+    // never snap back to a stale remembered position.
+    const currentBounds = mainWindow.getBounds();
+    const basePosition = currentFloatingMode === 'bar' ? { x: currentBounds.x, y: currentBounds.y } : lastFloatingPosition;
+
+    if (basePosition) {
+      // Growing/shrinking width keeps the base position's left edge fixed
+      // by default, but clamp so a wider bar can't run off whatever
+      // display it's on.
+      const targetDisplay = screen.getDisplayNearestPoint(basePosition);
+      const minX = targetDisplay.workArea.x;
+      const maxX = targetDisplay.workArea.x + targetDisplay.workArea.width - targetWidth;
+      const clampedX = Math.min(Math.max(basePosition.x, minX), Math.max(minX, maxX));
+      mainWindow.setBounds({ x: clampedX, y: basePosition.y, width: targetWidth, height: BAR_SIZE.height });
     } else {
-      mainWindow.setSize(BAR_SIZE.width, BAR_SIZE.height);
+      mainWindow.setSize(targetWidth, BAR_SIZE.height);
       // Start centered near the top of the primary display; the user can
       // then drag it wherever they like for the rest of the session.
       const display = screen.getPrimaryDisplay();
-      const x = Math.round(display.workArea.x + (display.workArea.width - BAR_SIZE.width) / 2);
+      const x = Math.round(display.workArea.x + (display.workArea.width - targetWidth) / 2);
       const y = display.workArea.y + 12;
       mainWindow.setPosition(x, y);
     }
     maybeShowMiniBarHint();
+    currentFloatingMode = 'bar';
   } else {
     const b = mainWindow.getBounds();
     lastFloatingPosition = { x: b.x, y: b.y };
+    if (currentFloatingMode === 'bar') currentFloatingMode = null;
     mainWindow.setMinimumSize(NORMAL_MIN_SIZE.width, NORMAL_MIN_SIZE.height);
     centerOnCurrentDisplay(NORMAL_SIZE.width, NORMAL_SIZE.height);
     mainWindow.setResizable(true);
