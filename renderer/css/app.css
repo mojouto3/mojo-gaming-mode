@@ -1372,6 +1372,60 @@ html, body {
   font-family: 'Courier New', monospace;
 }
 
+.overlay-stat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.overlay-stat-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 4px;
+  border-radius: 6px;
+}
+
+.overlay-stat-row:hover {
+  background: var(--card2);
+}
+
+.overlay-stat-label {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.overlay-stat-move {
+  display: flex;
+  gap: 2px;
+}
+
+.overlay-move-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.overlay-move-btn:hover:not(:disabled) {
+  border-color: var(--acc);
+  color: var(--acc);
+}
+
+.overlay-move-btn:disabled {
+  opacity: .3;
+  cursor: default;
+}
+
 .btn-restore {
   display: flex;
   align-items: center;
@@ -2259,6 +2313,7 @@ html, body {
 
 .mm-stats {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   cursor: pointer;
 }
@@ -2269,6 +2324,10 @@ html, body {
 
 .mm-stat {
   flex: 1;
+  /* Enough room for 5 stats to still fit on one row exactly like the
+     original fixed layout - a 6th+ enabled stat (Settings > Overlay
+     stats) wraps to an additional row instead of clipping the window. */
+  min-width: 42px;
   background: var(--card2);
   border-radius: 6px;
   padding: 6px;
@@ -2393,10 +2452,12 @@ html, body {
   flex-direction: row;
   flex-wrap: nowrap;
   align-items: baseline;
-  gap: 14px;
-  flex: 1 1 auto;
-  min-width: 0;
-  justify-content: center;
+  gap: 10px;
+  /* Always its natural content width, never stretched or compressed - the
+     window itself is resized (via ResizeObserver in app.js) to fit this,
+     rather than this row being squeezed/centered to fit an arbitrary
+     window size. */
+  flex: 0 0 auto;
   cursor: pointer;
 }
 
@@ -2454,6 +2515,7 @@ html, body {
   flex-shrink: 0;
   align-items: center;
   gap: 6px;
+  margin-left: 10px;
   -webkit-app-region: no-drag;
 }
 

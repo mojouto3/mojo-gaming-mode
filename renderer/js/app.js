@@ -18,7 +18,11 @@ const state = {
   lang: 'en',
   manualTheme: null,
   notifPrefs: { activate: true, deactivate: true, update: true },
-  showPerfImpact: true
+  showPerfImpact: true,
+  // Which stats show (and in what order) in mini-mode/bar-mode - an id's
+  // presence in the array IS "enabled", position IS display order.
+  miniModeStats: ['cpu', 'ram', 'gpu', 'ping', 'fps'],
+  barModeStats: ['cpu', 'ram', 'gpu', 'ping', 'fps']
 };
 
 ALL_TWEAKS.forEach(t => { state.tweaks[t.id] = t.presets.balanced; });
@@ -74,8 +78,11 @@ function enterMiniMode() {
   const vendor = state.gpu?.vendor || 'nvidia';
   mini.className = 'mini-mode entering theme-' + (state.manualTheme || vendor);
   requestAnimationFrame(() => requestAnimationFrame(() => mini.classList.remove('entering')));
+  // miniModeActive is already true at this point, so buildMiniStatsDom()'s
+  // own resize call below fires with the right height for however many
+  // stats are enabled - no separate setMiniMode(true) call needed here.
+  buildMiniStatsDom();
   updateLiveViews();
-  window.mgm.setMiniMode(true);
   window.mgm.metricsStart();
   window.mgm.pingStart();
   window.mgm.fpsTrackingStart();
@@ -103,8 +110,11 @@ function enterBarMode() {
   const vendor = state.gpu?.vendor || 'nvidia';
   bar.className = 'bar-mode entering theme-' + (state.manualTheme || vendor);
   requestAnimationFrame(() => requestAnimationFrame(() => bar.classList.remove('entering')));
+  // barModeActive is already true at this point, so buildBarStatsDom()'s
+  // own resize call below fires with the right width for however many
+  // stats are enabled - no separate setBarMode(true) call needed here.
+  buildBarStatsDom();
   updateLiveViews();
-  window.mgm.setBarMode(true);
   window.mgm.metricsStart();
   window.mgm.pingStart();
   window.mgm.fpsTrackingStart();
@@ -161,56 +171,168 @@ function statClass(v, warnAt, dangerAt) {
   return v > dangerAt ? ' danger' : v > warnAt ? ' warn' : '';
 }
 
+// Catalog of every stat mini-mode/bar-mode can show. state.miniModeStats /
+// state.barModeStats hold which of these are enabled and in what order -
+// an id's presence in the array IS "enabled", position IS display order.
+const STAT_LABELS = { cpu: 'CPU', ram: 'RAM', gpu: 'GPU', gputemp: 'GPU TEMP', cputhrottle: 'CPU THROTTLE', ping: 'PING', fps: 'FPS' };
+// Only these three carry historical data today (mirrors the original fixed
+// mini-mode layout) - gputemp/cputhrottle stay number-only, same as
+// ping/fps already were. Resolved lazily (not a plain object literal)
+// since cpuHistory/ramHistory/gpuHistory are declared further down this
+// file - fine here since it's only ever called after the whole script
+// (and those consts) has finished loading.
+const STAT_SPARK_IDS = new Set(['cpu', 'ram', 'gpu']);
+function getStatHistory(id) {
+  if (id === 'cpu') return cpuHistory;
+  if (id === 'ram') return ramHistory;
+  if (id === 'gpu') return gpuHistory;
+  return null;
+}
+
+// Returns { value, text, cls, color } for the current live reading of a
+// stat, or null if there's no data for it yet (leaves the "--" placeholder
+// in place rather than showing anything). Same per-stat thresholds as
+// before, just centralized instead of duplicated per fixed DOM element.
+function computeStatDisplay(id) {
+  if (id === 'cpu') {
+    if (lastMetrics.cpu === undefined) return null;
+    const v = Math.round(lastMetrics.cpu);
+    return { value: v, text: v + '%', cls: statClass(v, 50, 80).trim(), color: v > 80 ? '#ed1c24' : v > 50 ? '#f0a500' : 'var(--acc)' };
+  }
+  if (id === 'ram') {
+    if (lastMetrics.ramPct === undefined) return null;
+    const v = Math.round(lastMetrics.ramPct);
+    return { value: v, text: v + '%', cls: statClass(v, 60, 80).trim(), color: v > 80 ? '#ed1c24' : v > 60 ? '#f0a500' : 'var(--acc)' };
+  }
+  if (id === 'gpu') {
+    if (lastMetrics.gpuUsage === undefined || lastMetrics.gpuUsage <= 0) return null;
+    const v = Math.round(lastMetrics.gpuUsage);
+    return { value: v, text: v + '%', cls: statClass(v, 50, 80).trim(), color: v > 80 ? '#ed1c24' : v > 50 ? '#f0a500' : 'var(--acc)' };
+  }
+  if (id === 'gputemp') {
+    if (lastMetrics.gpuTemp === undefined || lastMetrics.gpuTemp <= 0) return null;
+    const v = Math.round(lastMetrics.gpuTemp);
+    return { value: v, text: v + '°C', cls: statClass(v, 70, 85).trim(), color: v > 85 ? '#ed1c24' : v > 70 ? '#f0a500' : 'var(--acc)' };
+  }
+  if (id === 'cputhrottle') {
+    if (lastMetrics.cpuThrottlePct === undefined) return null;
+    const v = Math.max(0, Math.round(lastMetrics.cpuThrottlePct));
+    return { value: v, text: v + '%', cls: v > 25 ? 'danger' : v > 5 ? 'warn' : '', color: v > 25 ? '#ed1c24' : v > 5 ? '#f0a500' : 'var(--acc)' };
+  }
+  if (id === 'ping') {
+    if (lastPing.ping === undefined) return null;
+    const v = Math.round(lastPing.ping);
+    if (v <= 0) return { value: 0, text: 'N/A', cls: 'danger', color: '#ed1c24' };
+    return { value: v, text: v + 'ms', cls: statClass(v, 60, 120).trim(), color: v > 120 ? '#ed1c24' : v > 60 ? '#f0a500' : 'var(--acc)' };
+  }
+  if (id === 'fps') {
+    if (lastFps.fps === null || lastFps.fps === undefined) return { value: 0, text: '--', cls: '', color: 'var(--acc)' };
+    const v = Math.round(lastFps.fps);
+    return { value: v, text: String(v), cls: v < 30 ? 'danger' : v < 60 ? 'warn' : '', color: v < 30 ? '#ed1c24' : v < 60 ? '#f0a500' : 'var(--acc)' };
+  }
+  return null;
+}
+
+// Mirrors src/main.js's MINI_SIZE.height - mini-mode's window height for a
+// single row of stats. Extra wrapped rows (more than 5 stats enabled) grow
+// the window by this much per additional row; the renderer computes the
+// target height since it's the one that knows the CSS layout, main.js just
+// resizes to whatever it's told.
+const MINI_MODE_BASE_HEIGHT = 280;
+const MINI_MODE_ROW_HEIGHT = 58;
+const MINI_MODE_STATS_PER_ROW = 5;
+
+function buildMiniStatsDom() {
+  const container = document.getElementById('mm-stats');
+  if (!container) return;
+  container.innerHTML = state.miniModeStats.map(id => {
+    const label = STAT_LABELS[id] || id.toUpperCase();
+    const sparkHtml = STAT_SPARK_IDS.has(id) ? `<div class="mm-spark" id="mm-spark-${id}"></div>` : '';
+    return `<div class="mm-stat"><div class="mm-stat-label">${label}</div><div class="mm-stat-val" id="mm-val-${id}">--</div>${sparkHtml}</div>`;
+  }).join('');
+
+  const rows = Math.max(1, Math.ceil(state.miniModeStats.length / MINI_MODE_STATS_PER_ROW));
+  const height = MINI_MODE_BASE_HEIGHT + (rows - 1) * MINI_MODE_ROW_HEIGHT;
+  if (miniModeActive) window.mgm.setMiniMode(true, height);
+}
+
+// Bar mode's drag handle, stats row, and controls are all flex-shrink:0 /
+// flex:0 0 auto (renderer/css/app.css .bar-drag/.bar-stats/.bar-controls) -
+// deliberately, so nothing ever gets squeezed unreadable. That means each
+// of the three always reports its true natural offsetWidth directly, with
+// no manual style-toggling needed to "unlock" it first - unlike an earlier
+// version of this code, which toggled inline styles to force a one-off
+// measurement and proved fragile (wrong results when the window's current
+// size didn't match what the content actually needed yet).
+//
+// A ResizeObserver watches all three and recomputes/resizes reactively
+// whenever any of them actually changes size - not just when the stat list
+// changes, but also e.g. the preset name in the drag handle changing length
+// ("Balanced" vs "Performance"). This only reacts to real, settled layout,
+// so it can't fire on a stale/mid-transition measurement the way a single
+// synchronous read right after an innerHTML write could.
+const BAR_MODE_MEASURE_BUFFER = 12; // small safety margin, e.g. for the value text growing from the "--" placeholder to a real reading
+let barModeResizeObserver = null;
+
+function recomputeBarModeWidth() {
+  if (!barModeActive) return;
+  const barEl = document.getElementById('bar-mode');
+  const dragEl = document.getElementById('bar-drag');
+  const statsEl = document.getElementById('bar-stats');
+  const controlsEl = barEl?.querySelector('.bar-controls');
+  if (!barEl || !dragEl || !statsEl || !controlsEl) return;
+  const style = getComputedStyle(barEl);
+  const gap = parseFloat(style.columnGap || style.gap) || 12;
+  const hPadding = (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.paddingRight) || 0);
+  const width = dragEl.offsetWidth + statsEl.offsetWidth + controlsEl.offsetWidth + gap * 2 + hPadding + BAR_MODE_MEASURE_BUFFER;
+  window.mgm.setBarMode(true, Math.round(width));
+}
+
+function ensureBarModeResizeObserver() {
+  if (barModeResizeObserver) return;
+  const dragEl = document.getElementById('bar-drag');
+  const statsEl = document.getElementById('bar-stats');
+  const controlsEl = document.querySelector('#bar-mode .bar-controls');
+  if (!dragEl || !statsEl || !controlsEl) return;
+  barModeResizeObserver = new ResizeObserver(() => recomputeBarModeWidth());
+  barModeResizeObserver.observe(dragEl);
+  barModeResizeObserver.observe(statsEl);
+  barModeResizeObserver.observe(controlsEl);
+}
+
+function buildBarStatsDom() {
+  const container = document.getElementById('bar-stats');
+  if (!container) return;
+  container.innerHTML = state.barModeStats.map(id => {
+    const label = STAT_LABELS[id] || id.toUpperCase();
+    return `<div class="bar-stat"><span class="bar-stat-label">${label}</span><span class="bar-stat-val" id="bar-val-${id}">--</span></div>`;
+  }).join('');
+  ensureBarModeResizeObserver();
+  // The observer fires once on observe() and again on any real size
+  // change, but also call this directly for the case where nothing's
+  // observed size actually changed (e.g. re-ordering the same set of
+  // stats) - the observer alone wouldn't fire then.
+  recomputeBarModeWidth();
+}
+
 function updateBarMode() {
   if (!barModeActive) return;
   const barEl = document.getElementById('bar-mode');
   const dotEl = document.getElementById('bar-dot');
   const presetEl = document.getElementById('bar-preset');
-  const cpuEl = document.getElementById('bar-cpu');
-  const ramEl = document.getElementById('bar-ram');
-  const gpuEl = document.getElementById('bar-gpu');
-  const pingEl = document.getElementById('bar-ping');
-  const fpsEl = document.getElementById('bar-fps');
 
   if (barEl) barEl.classList.toggle('active', !!state.active);
   if (dotEl) dotEl.classList.toggle('on', !!state.active);
   if (presetEl) presetEl.textContent = (state.preset || 'balanced').charAt(0).toUpperCase() + (state.preset || 'balanced').slice(1);
 
-  if (cpuEl && lastMetrics.cpu !== undefined) {
-    const v = Math.round(lastMetrics.cpu);
-    cpuEl.textContent = v + '%';
-    cpuEl.className = 'bar-stat-val' + statClass(v, 50, 80);
-  }
-  if (ramEl && lastMetrics.ramPct !== undefined) {
-    const v = Math.round(lastMetrics.ramPct);
-    ramEl.textContent = v + '%';
-    ramEl.className = 'bar-stat-val' + statClass(v, 60, 80);
-  }
-  if (gpuEl && lastMetrics.gpuUsage !== undefined && lastMetrics.gpuUsage > 0) {
-    const v = Math.round(lastMetrics.gpuUsage);
-    gpuEl.textContent = v + '%';
-    gpuEl.className = 'bar-stat-val' + statClass(v, 50, 80);
-  }
-  if (pingEl && lastPing.ping !== undefined) {
-    const v = Math.round(lastPing.ping);
-    if (v <= 0) {
-      pingEl.textContent = 'N/A';
-      pingEl.className = 'bar-stat-val danger';
-    } else {
-      pingEl.textContent = v + 'ms';
-      pingEl.className = 'bar-stat-val' + statClass(v, 60, 120);
-    }
-  }
-  if (fpsEl) {
-    if (lastFps.fps === null || lastFps.fps === undefined) {
-      fpsEl.textContent = '--';
-      fpsEl.className = 'bar-stat-val';
-    } else {
-      const v = Math.round(lastFps.fps);
-      fpsEl.textContent = String(v);
-      fpsEl.className = 'bar-stat-val' + (v < 30 ? ' danger' : v < 60 ? ' warn' : '');
-    }
-  }
+  state.barModeStats.forEach(id => {
+    const valEl = document.getElementById('bar-val-' + id);
+    if (!valEl) return;
+    const disp = computeStatDisplay(id);
+    if (!disp) return;
+    valEl.textContent = disp.text;
+    valEl.className = 'bar-stat-val' + (disp.cls ? ' ' + disp.cls : '');
+  });
 }
 
 function updateMiniMode() {
@@ -220,11 +342,6 @@ function updateMiniMode() {
   const tweaksEl = document.getElementById('mm-tweaks');
   const statusEl = document.getElementById('mm-status');
   const btnEl = document.getElementById('mm-activate-btn');
-  const cpuEl = document.getElementById('mm-cpu');
-  const ramEl = document.getElementById('mm-ram');
-  const gpuEl = document.getElementById('mm-gpu');
-  const pingEl = document.getElementById('mm-ping');
-  const fpsEl = document.getElementById('mm-fps');
 
   // Glow border while gaming mode is on
   if (miniEl) miniEl.classList.toggle('active', !!state.active);
@@ -243,44 +360,16 @@ function updateMiniMode() {
     btnEl.className = 'mm-activate-btn' + (state.active ? ' deact' : '');
   }
 
-  if (cpuEl && lastMetrics.cpu !== undefined) {
-    const v = Math.round(lastMetrics.cpu);
-    cpuEl.textContent = v + '%';
-    cpuEl.className = 'mm-stat-val' + (v > 80 ? ' danger' : v > 50 ? ' warn' : '');
-    renderSparkline('mm-cpu-spark', cpuHistory, v > 80 ? '#ed1c24' : v > 50 ? '#f0a500' : 'var(--acc)', 12);
-  }
-  if (ramEl && lastMetrics.ramPct !== undefined) {
-    const v = Math.round(lastMetrics.ramPct);
-    ramEl.textContent = v + '%';
-    ramEl.className = 'mm-stat-val' + (v > 80 ? ' danger' : v > 60 ? ' warn' : '');
-    renderSparkline('mm-ram-spark', ramHistory, v > 80 ? '#ed1c24' : v > 60 ? '#f0a500' : 'var(--acc)', 12);
-  }
-  if (gpuEl && lastMetrics.gpuUsage !== undefined && lastMetrics.gpuUsage > 0) {
-    const v = Math.round(lastMetrics.gpuUsage);
-    gpuEl.textContent = v + '%';
-    gpuEl.className = 'mm-stat-val' + (v > 80 ? ' danger' : v > 50 ? ' warn' : '');
-    renderSparkline('mm-gpu-spark', gpuHistory, v > 80 ? '#ed1c24' : v > 50 ? '#f0a500' : 'var(--acc)', 12);
-  }
-  if (pingEl && lastPing.ping !== undefined) {
-    const v = Math.round(lastPing.ping);
-    if (v <= 0) {
-      pingEl.textContent = 'N/A';
-      pingEl.className = 'mm-stat-val danger';
-    } else {
-      pingEl.textContent = v + 'ms';
-      pingEl.className = 'mm-stat-val' + (v > 120 ? ' danger' : v > 60 ? ' warn' : '');
-    }
-  }
-  if (fpsEl) {
-    if (lastFps.fps === null || lastFps.fps === undefined) {
-      fpsEl.textContent = '--';
-      fpsEl.className = 'mm-stat-val';
-    } else {
-      const v = Math.round(lastFps.fps);
-      fpsEl.textContent = String(v);
-      fpsEl.className = 'mm-stat-val' + (v < 30 ? ' danger' : v < 60 ? ' warn' : '');
-    }
-  }
+  state.miniModeStats.forEach(id => {
+    const valEl = document.getElementById('mm-val-' + id);
+    if (!valEl) return;
+    const disp = computeStatDisplay(id);
+    if (!disp) return;
+    valEl.textContent = disp.text;
+    valEl.className = 'mm-stat-val' + (disp.cls ? ' ' + disp.cls : '');
+    const history = getStatHistory(id);
+    if (history) renderSparkline('mm-spark-' + id, history, disp.color, 12);
+  });
 }
 
 async function init() {
@@ -324,6 +413,8 @@ async function init() {
     if (typeof config.showPerfImpact === 'boolean') state.showPerfImpact = config.showPerfImpact;
     state.games = Array.isArray(config.games) ? config.games : [];
     state.gameDetectionEnabled = !!config.gameDetectionEnabled;
+    if (Array.isArray(config.miniModeStats) && config.miniModeStats.length) state.miniModeStats = config.miniModeStats;
+    if (Array.isArray(config.barModeStats) && config.barModeStats.length) state.barModeStats = config.barModeStats;
 
     setPresetButtons(state.preset);
     applyLanguage(state.lang);
@@ -2077,7 +2168,71 @@ async function toggleAutostart(enabled) {
   showToast(enabled ? 'Autostart enabled' : 'Autostart disabled');
 }
 
+const OVERLAY_STAT_CATALOG = ['cpu', 'ram', 'gpu', 'gputemp', 'cputhrottle', 'ping', 'fps'];
+
+function toggleOverlayStat(mode, id, enabled) {
+  const list = mode === 'mini' ? state.miniModeStats : state.barModeStats;
+  const idx = list.indexOf(id);
+  if (enabled && idx === -1) list.push(id);
+  else if (!enabled && idx !== -1) list.splice(idx, 1);
+  persistConfig();
+  renderOverlayStatsSettings();
+  if (mode === 'mini') buildMiniStatsDom(); else buildBarStatsDom();
+}
+
+function moveOverlayStat(mode, id, dir) {
+  const list = mode === 'mini' ? state.miniModeStats : state.barModeStats;
+  const idx = list.indexOf(id);
+  if (idx === -1) return;
+  const swapWith = idx + dir;
+  if (swapWith < 0 || swapWith >= list.length) return;
+  [list[idx], list[swapWith]] = [list[swapWith], list[idx]];
+  persistConfig();
+  renderOverlayStatsSettings();
+  if (mode === 'mini') buildMiniStatsDom(); else buildBarStatsDom();
+}
+
+// Enabled stats render first, in their actual configured order (so the
+// up/down buttons visibly move the row within the list), followed by the
+// remaining disabled ones in catalog order.
+function renderOverlayStatsSettings() {
+  ['mini', 'bar'].forEach(mode => {
+    const container = document.getElementById('overlay-stats-' + mode);
+    if (!container) return;
+    const list = mode === 'mini' ? state.miniModeStats : state.barModeStats;
+    const disabledIds = OVERLAY_STAT_CATALOG.filter(id => !list.includes(id));
+    const displayOrder = [...list, ...disabledIds];
+    container.innerHTML = displayOrder.map(id => {
+      const idx = list.indexOf(id);
+      const enabled = idx !== -1;
+      const isFirst = !enabled || idx === 0;
+      const isLast = !enabled || idx === list.length - 1;
+      return `
+        <div class="overlay-stat-row">
+          <label class="tog tog-sm">
+            <input type="checkbox" class="overlay-stat-cb" data-mode="${mode}" data-id="${id}" ${enabled ? 'checked' : ''}>
+            <div class="tog-track"></div>
+            <div class="tog-thumb"></div>
+          </label>
+          <span class="overlay-stat-label">${STAT_LABELS[id]}</span>
+          <div class="overlay-stat-move">
+            <button class="overlay-move-btn" data-mode="${mode}" data-id="${id}" data-dir="-1" ${isFirst ? 'disabled' : ''} title="Move up"><i class="ti ti-chevron-up"></i></button>
+            <button class="overlay-move-btn" data-mode="${mode}" data-id="${id}" data-dir="1" ${isLast ? 'disabled' : ''} title="Move down"><i class="ti ti-chevron-down"></i></button>
+          </div>
+        </div>`;
+    }).join('');
+  });
+
+  document.querySelectorAll('.overlay-stat-cb').forEach(cb => {
+    cb.addEventListener('change', (e) => toggleOverlayStat(e.target.dataset.mode, e.target.dataset.id, e.target.checked));
+  });
+  document.querySelectorAll('.overlay-move-btn').forEach(btn => {
+    btn.addEventListener('click', () => moveOverlayStat(btn.dataset.mode, btn.dataset.id, parseInt(btn.dataset.dir, 10)));
+  });
+}
+
 function initSettingsTab() {
+  renderOverlayStatsSettings();
   // Restore last restore point timestamp
   if (state.lastRestorePoint) {
     const el = document.getElementById('restore-last');
@@ -2118,7 +2273,9 @@ async function persistConfig() {
     notifPrefs: state.notifPrefs,
     showPerfImpact: state.showPerfImpact,
     games: state.games,
-    gameDetectionEnabled: state.gameDetectionEnabled
+    gameDetectionEnabled: state.gameDetectionEnabled,
+    miniModeStats: state.miniModeStats,
+    barModeStats: state.barModeStats
   });
 }
 
