@@ -375,6 +375,22 @@
               </div>
             </div>
 
+            <div class="section-header" style="margin-top:16px"><span class="sh-title">OVERLAY STATS</span></div>
+            <div class="settings-card glass-card spotlight" style="margin-top:0">
+              <div class="settings-info" style="margin-bottom:12px">
+                <div class="settings-label">Mini mode</div>
+                <div class="settings-desc">Choose which live stats show in mini mode, and in what order.</div>
+              </div>
+              <div class="overlay-stat-list" id="overlay-stats-mini"></div>
+            </div>
+            <div class="settings-card glass-card spotlight" style="margin-top:8px">
+              <div class="settings-info" style="margin-bottom:12px">
+                <div class="settings-label">Bar mode</div>
+                <div class="settings-desc">Choose which live stats show in bar mode, and in what order.</div>
+              </div>
+              <div class="overlay-stat-list" id="overlay-stats-bar"></div>
+            </div>
+
             <div class="section-header" style="margin-top:16px"><span class="sh-title">PERFORMANCE</span></div>
             <div class="settings-card glass-card spotlight" style="margin-top:0">
               <div class="settings-row">
@@ -674,31 +690,8 @@
       </div>
       <div class="mm-status" id="mm-status"><span class="mm-status-dot" id="mm-status-dot"></span>Gaming mode off</div>
       <button class="mm-activate-btn" id="mm-activate-btn">Activate</button>
-      <div class="mm-stats">
-        <div class="mm-stat">
-          <div class="mm-stat-label">CPU</div>
-          <div class="mm-stat-val" id="mm-cpu">--</div>
-          <div class="mm-spark" id="mm-cpu-spark"></div>
-        </div>
-        <div class="mm-stat">
-          <div class="mm-stat-label">RAM</div>
-          <div class="mm-stat-val" id="mm-ram">--</div>
-          <div class="mm-spark" id="mm-ram-spark"></div>
-        </div>
-        <div class="mm-stat">
-          <div class="mm-stat-label">GPU</div>
-          <div class="mm-stat-val" id="mm-gpu">--</div>
-          <div class="mm-spark" id="mm-gpu-spark"></div>
-        </div>
-        <div class="mm-stat">
-          <div class="mm-stat-label">PING</div>
-          <div class="mm-stat-val" id="mm-ping">--</div>
-        </div>
-        <div class="mm-stat">
-          <div class="mm-stat-label">FPS</div>
-          <div class="mm-stat-val" id="mm-fps">--</div>
-        </div>
-      </div>
+      <!-- Populated by buildMiniStatsDom() from state.miniModeStats (Settings > Overlay stats) -->
+      <div class="mm-stats" id="mm-stats"></div>
     </div>
   </div>
 
@@ -709,13 +702,8 @@
       <span class="bar-dot" id="bar-dot"></span>
       <span class="bar-preset" id="bar-preset">Esports</span>
     </div>
-    <div class="bar-stats" id="bar-stats">
-      <div class="bar-stat"><span class="bar-stat-label">CPU</span><span class="bar-stat-val" id="bar-cpu">--</span></div>
-      <div class="bar-stat"><span class="bar-stat-label">RAM</span><span class="bar-stat-val" id="bar-ram">--</span></div>
-      <div class="bar-stat"><span class="bar-stat-label">GPU</span><span class="bar-stat-val" id="bar-gpu">--</span></div>
-      <div class="bar-stat"><span class="bar-stat-label">PING</span><span class="bar-stat-val" id="bar-ping">--</span></div>
-      <div class="bar-stat"><span class="bar-stat-label">FPS</span><span class="bar-stat-val" id="bar-fps">--</span></div>
-    </div>
+    <!-- Populated by buildBarStatsDom() from state.barModeStats (Settings > Overlay stats) -->
+    <div class="bar-stats" id="bar-stats"></div>
     <div class="bar-opacity-inline" id="bar-opacity-inline" style="display:none">
       <i class="ti ti-droplet-half-2"></i>
       <input type="range" id="bar-opacity-slider" min="30" max="100" value="100">
