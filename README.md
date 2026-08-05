@@ -24,10 +24,11 @@ A lightweight Windows gaming optimizer that automatically detects your GPU vendo
 - Custom Rules engine with 35 quick rules in 5 categories
 - Game detection: auto-activate gaming mode when a monitored game launches, with Steam/Epic library scan to find games automatically
 - Global keyboard shortcuts: Ctrl+G (toggle), Ctrl+B/P/E (presets)
-- Real FPS tracking (via PresentMon) in the Performance tab, mini mode, and bar mode - tracks whatever game currently has focus, no setup required
+- Real FPS tracking (via PresentMon) in the Performance tab, mini mode, and bar mode - tracks whatever game currently has focus, no setup required, plus a 1% low stat alongside the average
 - CPU throttle and GPU thermal/power throttle monitoring in the Performance tab
-- Mini mode: compact always-on-top card with live CPU / RAM / GPU / FPS stats, staying on top even over exclusive-fullscreen games
+- Mini mode: compact always-on-top card with live stats, staying on top even over exclusive-fullscreen games
 - Bar mode: thin, draggable, always-on-top overlay for in-game use, same always-on-top behavior
+- Configurable overlay stats: pick which of 7 stats show in mini mode and bar mode, and in what order, independently for each
 - Live window opacity control in mini mode and bar mode, remembered across restarts
 - Tray menu preset quick-switch with active tweak count in tooltip
 - First-launch onboarding with GPU detection and preset selection
@@ -133,10 +134,10 @@ Two compact, always-on-top views for keeping an eye on your system while gaming.
 
 | Mode | Size | Use case |
 |------|------|----------|
-| Mini mode | 264x280, fixed position | Compact card with preset, status, and live CPU / RAM / GPU / FPS stats plus history sparklines |
-| Bar mode | 480x44, draggable | Thin overlay strip, grab it anywhere and drop it wherever suits your game's HUD |
+| Mini mode | 308px wide (3-column grid), fixed position, grows taller to fit however many stats you've enabled | Compact card with preset, status, and your chosen stats plus history sparklines |
+| Bar mode | Grows wide enough to fit your chosen stats, draggable | Thin overlay strip, grab it anywhere and drop it wherever suits your game's HUD |
 
-Both modes stay on top of other windows - including exclusive-fullscreen games - and both share a live opacity slider (30 to 100 percent) accessible from the small droplet icon in either view. The opacity level is remembered the next time the app starts. Clicking the CPU / RAM / GPU stats in either mode jumps straight to the Performance tab in normal mode.
+Both modes stay on top of other windows - including exclusive-fullscreen games - and both share a live opacity slider (30 to 100 percent) accessible from the small droplet icon in either view. The opacity level is remembered the next time the app starts. Which stats show in each mode, and in what order, is configurable from the "Overlay stats" section in Settings. Clicking a stat in either mode jumps straight to the Performance tab in normal mode.
 
 ---
 
@@ -252,6 +253,7 @@ All PRs target `main` and require 1 review before merge.
 | v2.6.0 | Real game icons, full settings export/import, active-rules count fix | Done |
 | v2.7.0 | 2026-style glass UI redesign, 11 new Quick Rules, 3 new tweaks | Done |
 | v2.8.0 | CPU/GPU throttle detection, real FPS tracking (PresentMon), always-on-top overlay fix | Done |
+| v2.9.0 | Configurable overlay stats, FPS 1% lows, mini/bar mode visual redesign | Done |
 
 ---
 
