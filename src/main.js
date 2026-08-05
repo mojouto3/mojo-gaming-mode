@@ -1401,38 +1401,43 @@ function maybeShowMiniBarHint() {
   }).show();
 }
 
-ipcMain.on('set-mini-mode', (e, enabled, height) => {
+ipcMain.on('set-mini-mode', (e, enabled, height, width) => {
   if (!mainWindow || mainWindow.isDestroyed()) return;
   if (enabled) {
-    // The renderer knows how many stats are enabled (a user-configurable
-    // choice, Settings tab) and computes the height that fits them -
-    // this just clamps to never go below the 1-row default.
+    // The renderer knows how many/which stats are enabled (a user-
+    // configurable choice, Settings tab) and computes the size that fits
+    // them - width grows for long labels ("CPU THROTTLE" needs more room
+    // per tile than "CPU"), height grows for wrapped rows beyond 5 stats.
+    // This just clamps both to never go below the 1-row default.
     const targetHeight = Math.max(MINI_SIZE.height, height || 0);
+    const targetWidth = Math.max(MINI_SIZE.width, width || 0);
     // Must lower the minimum size FIRST — Electron clamps setSize() to
     // whatever minWidth/minHeight is currently set, so without this the
     // window stayed stuck at the normal-mode minimum (760x580) instead of
     // shrinking down to the mini-mode size.
-    mainWindow.setMinimumSize(MINI_SIZE.width, targetHeight);
+    mainWindow.setMinimumSize(targetWidth, targetHeight);
 
     // Fresh entry: use the remembered exit position (or a centered
     // default below). A live resize of an already-open card - e.g. the
-    // Overlay stats picker changing selection, or the renderer's
-    // ResizeObserver reacting to a stat's value text changing width -
-    // must keep wherever it actually is right now, including mid-drag,
-    // never snap back to a stale remembered position.
+    // Overlay stats picker changing selection, or a stat's value text
+    // changing width - must keep wherever it actually is right now,
+    // including mid-drag, never snap back to a stale remembered position.
     const currentBounds = mainWindow.getBounds();
     const basePosition = currentFloatingMode === 'mini' ? { x: currentBounds.x, y: currentBounds.y } : lastFloatingPosition;
 
     if (basePosition) {
-      // Clamp so a taller card (more stats enabled/wrapped rows) can't
-      // run off the bottom of whatever display it's on.
+      // Clamp so a taller/wider card (more stats enabled, wrapped rows,
+      // or long labels) can't run off whatever display it's on.
       const targetDisplay = screen.getDisplayNearestPoint(basePosition);
+      const minX = targetDisplay.workArea.x;
+      const maxX = targetDisplay.workArea.x + targetDisplay.workArea.width - targetWidth;
+      const clampedX = Math.min(Math.max(basePosition.x, minX), Math.max(minX, maxX));
       const minY = targetDisplay.workArea.y;
       const maxY = targetDisplay.workArea.y + targetDisplay.workArea.height - targetHeight;
       const clampedY = Math.min(Math.max(basePosition.y, minY), Math.max(minY, maxY));
-      mainWindow.setBounds({ x: basePosition.x, y: clampedY, width: MINI_SIZE.width, height: targetHeight });
+      mainWindow.setBounds({ x: clampedX, y: clampedY, width: targetWidth, height: targetHeight });
     } else {
-      mainWindow.setSize(MINI_SIZE.width, targetHeight);
+      mainWindow.setSize(targetWidth, targetHeight);
     }
     mainWindow.setResizable(false);
     // Mini-mode is meant to float over a game, so keep it on top
