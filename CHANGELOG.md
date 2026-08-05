@@ -4,6 +4,18 @@ All notable changes to Mojo Gaming Mode are documented here.
 
 ---
 
+## [2.9.0] - 2026-08-05
+
+### Added
+
+- **Configurable overlay stats**: a new "Overlay stats" section in Settings lets you choose which of 7 stats (CPU, RAM, GPU, GPU Temp, CPU Throttle, Ping, FPS) show in mini-mode and bar-mode, independently and in whatever order you like, instead of a fixed set of 5.
+- **FPS 1% lows**: alongside the average FPS reading, the Performance tab now shows a 1% low (average of the worst 1% of frame times over a rolling 10-second window) - a much better read on stutter than the average alone.
+- Mini-mode and bar-mode visual redesign: mini-mode tiles use a fixed, comfortable size in a 3-column grid, with the window growing taller to fit however many stats you've enabled instead of squeezing tiles to fit a fixed window. Sparklines are now smooth SVG area/line charts, tiles get a color-matched accent border, and the Activate/Deactivate button now matches the main app's pill-button style.
+
+### Fixed
+
+- FPS tracking no longer misreports a low/red-flagged FPS for ordinary desktop apps (browsers, editors, chat clients, etc.) that were never games - the excluded-process list now covers the same non-game apps already targeted elsewhere in the app.
+
 ## [2.8.0] - 2026-08-03
 
 ### Added
