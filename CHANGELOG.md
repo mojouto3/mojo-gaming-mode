@@ -4,7 +4,7 @@ All notable changes to Mojo Gaming Mode are documented here.
 
 ---
 
-## [2.9.0] - 2026-08-05
+## [2.9.1] - 2026-08-05
 
 ### Added
 
