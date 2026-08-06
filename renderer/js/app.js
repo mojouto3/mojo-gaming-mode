@@ -1478,19 +1478,27 @@ function updateMetricsUI(data) {
     }
   }
 
-  // GPU throttle-reason badge - NVIDIA only. Both fields absent (undefined)
-  // means "not available on this GPU", which must stay visually distinct
-  // from "confirmed not throttling" (false), so the badge simply stays
-  // hidden rather than showing a false all-clear.
+  // GPU throttle-reason badge - real thermal/power reason flags are only
+  // available via nvidia-smi, so non-NVIDIA GPUs can never report them. Both
+  // fields absent (undefined) is ambiguous on its own - it means either
+  // "confirmed not throttling isn't applicable" or "this GPU can't report
+  // it at all" - so fall back to the WMI-reported vendor name to tell those
+  // two cases apart, instead of just hiding the badge with no explanation.
   const gpuThrottleBadge = document.getElementById('gpu-throttle-badge');
   if (gpuThrottleBadge) {
-    if (data.gpuThrottleThermal === undefined && data.gpuThrottlePower === undefined) {
-      gpuThrottleBadge.style.display = 'none';
-    } else if (data.gpuThrottleThermal) {
+    gpuThrottleBadge.classList.remove('muted');
+    gpuThrottleBadge.removeAttribute('title');
+    if (data.gpuThrottleThermal) {
       gpuThrottleBadge.textContent = 'Thermal throttle';
       gpuThrottleBadge.style.display = '';
     } else if (data.gpuThrottlePower) {
       gpuThrottleBadge.textContent = 'Power limit';
+      gpuThrottleBadge.style.display = '';
+    } else if (data.gpuThrottleThermal === undefined && data.gpuThrottlePower === undefined
+      && data.gpuName && !/nvidia/i.test(data.gpuName)) {
+      gpuThrottleBadge.textContent = 'NVIDIA only';
+      gpuThrottleBadge.title = 'Thermal/power throttle detection currently requires nvidia-smi and isn\'t available for this GPU';
+      gpuThrottleBadge.classList.add('muted');
       gpuThrottleBadge.style.display = '';
     } else {
       gpuThrottleBadge.style.display = 'none';
