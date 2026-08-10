@@ -829,6 +829,7 @@ ipcMain.handle('apply-mode', async (e, config) => {
     }
     const failed = results.filter(r => !r.success && !r.skipped);
     console.log(`PERF: tweaks phase - ${enabledTweaks.length} items in ${Date.now() - __t0}ms`);
+    if (failed.length) console.log('PERF: failed tweaks -', JSON.stringify(failed));
 
     // Execute active custom rules (built-in Quick Rules), with real
     // per-rule success/failure tracking instead of firing and forgetting.
