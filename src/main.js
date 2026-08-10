@@ -819,6 +819,7 @@ ipcMain.handle('apply-mode', async (e, config) => {
     
 
     // Execute all enabled tweaks
+    const __t0 = Date.now();
     let results;
     try {
       results = await executeTweaks(enabledTweaks, TWEAK_DEFINITIONS, 'apply');
@@ -827,9 +828,11 @@ ipcMain.handle('apply-mode', async (e, config) => {
       return { success: false, error: ex.message };
     }
     const failed = results.filter(r => !r.success && !r.skipped);
+    console.log(`PERF: tweaks phase - ${enabledTweaks.length} items in ${Date.now() - __t0}ms`);
 
     // Execute active custom rules (built-in Quick Rules), with real
     // per-rule success/failure tracking instead of firing and forgetting.
+    const __t1 = Date.now();
     const enabledQuickRuleIds = config.customRulesActive
       ? Object.entries(config.customRulesActive).filter(([id, active]) => active).map(([id]) => id)
       : [];
@@ -838,12 +841,14 @@ ipcMain.handle('apply-mode', async (e, config) => {
       ? await executeQuickRules(enabledQuickRuleIds, CUSTOM_RULE_CMDS, 'apply')
       : [];
     const quickRuleFailed = quickRuleResults.filter(r => !r.success && !r.skipped);
+    console.log(`PERF: quick rules phase - ${enabledQuickRuleIds.length} items in ${Date.now() - __t1}ms`);
 
     // Execute user-created custom rules (Add custom rule modal), with real
     // per-rule success/failure tracking instead of firing and forgetting.
     // Store a deep copy as activeCustomRules so revert uses the exact state
     // that was actually applied (including any captured service startup
     // type), not whatever the renderer's config currently says.
+    const __t2 = Date.now();
     let customRuleResults = [];
     activeCustomRules = Array.isArray(config.rules) ? JSON.parse(JSON.stringify(config.rules)) : [];
     if (activeCustomRules.length) {
@@ -857,6 +862,8 @@ ipcMain.handle('apply-mode', async (e, config) => {
       });
     }
     const customRuleFailed = customRuleResults.filter(r => !r.success && !r.skipped);
+    console.log(`PERF: custom rules phase - ${activeCustomRules.length} items in ${Date.now() - __t2}ms`);
+    console.log(`PERF: TOTAL apply-mode - ${Date.now() - __t0}ms`);
 
     gamingModeActive = true;
     if (config.preset) currentPreset = config.preset;
