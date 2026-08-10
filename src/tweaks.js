@@ -259,6 +259,28 @@ const TWEAK_DEFINITIONS = {
     requiresAdmin: true,
     applyCmd: `$marker = "$env:TEMP\\mgm_wasrunning_deliveryopt.flag"; $svc = Get-Service -Name 'DoSvc' -ErrorAction SilentlyContinue; If ($svc -and $svc.Status -eq 'Running') { New-Item -Path $marker -ItemType File -Force | Out-Null } Else { Remove-Item $marker -ErrorAction SilentlyContinue }; Stop-Service -Name 'DoSvc' -Force -ErrorAction SilentlyContinue; Set-Service -Name 'DoSvc' -StartupType Disabled -ErrorAction SilentlyContinue; Exit 0`,
     revertCmd: `$marker = "$env:TEMP\\mgm_wasrunning_deliveryopt.flag"; sc.exe config DoSvc start= demand | Out-Null; If (Test-Path $marker) { Remove-Item $marker -ErrorAction SilentlyContinue; Start-Service -Name 'DoSvc' -ErrorAction SilentlyContinue }; Exit 0`
+  },
+
+  dps: {
+    name: 'Diagnostic Policy Service off',
+    requiresAdmin: true,
+    // Runs Automatic by default and stays running continuously (verified
+    // live: Status=Running, StartType=Automatic) - powers the built-in
+    // troubleshooters (e.g. "Diagnose network problems"), which stop
+    // working while this is off. No other functionality depends on it.
+    applyCmd: `Stop-Service -Name 'DPS' -Force -ErrorAction SilentlyContinue; Set-Service -Name 'DPS' -StartupType Disabled -ErrorAction SilentlyContinue; Exit 0`,
+    revertCmd: `sc.exe config DPS start= auto; sc.exe start DPS; Exit 0`
+  },
+
+  cdpsvc: {
+    name: 'Connected Devices Platform off',
+    requiresAdmin: true,
+    // Runs Automatic by default and stays running continuously (verified
+    // live: Status=Running, StartType=Automatic) - powers cross-device
+    // features (Phone Link continuity, nearby sharing). Not needed during
+    // a gaming session unless actively using those features.
+    applyCmd: `Stop-Service -Name 'CDPSvc' -Force -ErrorAction SilentlyContinue; Set-Service -Name 'CDPSvc' -StartupType Disabled -ErrorAction SilentlyContinue; Exit 0`,
+    revertCmd: `sc.exe config CDPSvc start= auto; sc.exe start CDPSvc; Exit 0`
   }
 
 };

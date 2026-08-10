@@ -180,6 +180,22 @@ const TWEAKS = {
       cmd: 'sc stop DoSvc & sc config DoSvc start=disabled',
       category: 'system',
       presets: { balanced: false, performance: true, esports: true }
+    },
+    {
+      id: 'dps',
+      name: 'Diagnostic Policy Service off',
+      desc: "Stops the background service behind Windows' built-in troubleshooters (e.g. \"Diagnose network problems\"). Runs continuously by default; safe to disable unless you actively use those troubleshooters.",
+      cmd: 'sc stop DPS & sc config DPS start=disabled',
+      category: 'system',
+      presets: { balanced: false, performance: true, esports: true }
+    },
+    {
+      id: 'cdpsvc',
+      name: 'Connected Devices Platform off',
+      desc: "Stops the background service powering cross-device features (Phone Link continuity, nearby sharing). Runs continuously by default; safe to disable unless you actively use those features.",
+      cmd: 'sc stop CDPSvc & sc config CDPSvc start=disabled',
+      category: 'system',
+      presets: { balanced: false, performance: true, esports: true }
     }
   ],
   ov: [
