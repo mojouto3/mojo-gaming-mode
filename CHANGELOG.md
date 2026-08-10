@@ -4,6 +4,17 @@ All notable changes to Mojo Gaming Mode are documented here.
 
 ---
 
+## [2.10.0] - 2026-08-10
+
+### Added
+
+- **2 new Windows system tweaks**: Diagnostic Policy Service off (powers the built-in troubleshooters, e.g. "Diagnose network problems") and Connected Devices Platform off (powers cross-device features like Phone Link continuity and nearby sharing). Both run continuously by default and are safe to disable unless you actively use those specific features.
+
+### Fixed
+
+- GPU throttle detection now shows an explicit "NVIDIA only" badge on AMD/Intel systems instead of just staying silently hidden, since there's no equivalent to `nvidia-smi`'s throttle-reason query for those vendors without their own SDKs.
+- Resolved a high-severity dependency vulnerability (js-yaml quadratic CPU consumption, CVE-2026-59870) used by the auto-updater at runtime.
+
 ## [2.9.1] - 2026-08-05
 
 ### Added

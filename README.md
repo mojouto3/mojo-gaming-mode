@@ -256,6 +256,7 @@ All PRs target `main` and require 1 review before merge.
 | v2.7.0 | 2026-style glass UI redesign, 11 new Quick Rules, 3 new tweaks | Done |
 | v2.8.0 | CPU/GPU throttle detection, real FPS tracking (PresentMon), always-on-top overlay fix | Done |
 | v2.9.1 | Configurable overlay stats, FPS 1% lows, mini/bar mode visual redesign | Done |
+| v2.10.0 | 2 new tweaks (DPS, Connected Devices Platform), AMD/Intel throttle badge fix, security fix | Done |
 
 ---
 
