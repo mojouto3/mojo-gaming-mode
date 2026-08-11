@@ -432,14 +432,6 @@ app.whenReady().then(async () => {
     await runPS(`Remove-ItemProperty -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\Psched' -Name 'NonBestEffortLimit' -ErrorAction SilentlyContinue; Exit 0`);
   } catch (e) {}
 
-  // Note: no migration cleanup for the removed 'pointerprecision' tweak.
-  // Unlike QoS's NonBestEffortLimit (an obscure key essentially only ever
-  // touched by tools like this one), MouseSpeed=0 is a common, legitimate
-  // personal preference many users set manually via Windows' own UI,
-  // independent of ever having used this tweak. There's no reliable way
-  // to tell "we set this" apart from "the user already had it this way",
-  // so automatically resetting it risks overwriting a real user choice.
-
   // One-time cleanup: briefly tried switching 'focusassist' to
   // NOC_GLOBAL_SETTING_TOASTS_ENABLED, based on documentation suggesting
   // DisableNotificationCenter only hides the panel rather than actually
@@ -807,13 +799,10 @@ const CUSTOM_RULE_CMDS = {
   },
   cr_asusdriverhub: {
     // Process name verified live: 'ASUS DriverHub'. Standalone driver-
-    // checker process (not tied to a hardware-controlling service like
-    // ArmouryCrateService - deliberately did NOT add an Armoury Crate
-    // rule since its watchdog service also runs fan curves/RGB and
-    // respawns the UI if killed). DriverHub previously had a publicly
-    // disclosed RCE vulnerability (patched) from its local update-check
-    // service - closing it during gaming is also reasonable defense in
-    // depth, not just a resource-usage tweak.
+    // checker process. DriverHub previously had a publicly disclosed RCE
+    // vulnerability (patched) from its local update-check service -
+    // closing it during gaming is also reasonable defense in depth, not
+    // just a resource-usage tweak.
     apply: `Get-Process -Name 'ASUS DriverHub' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
     revert: `Exit 0`
   },
