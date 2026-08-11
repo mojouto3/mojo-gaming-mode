@@ -4,6 +4,15 @@ All notable changes to Mojo Gaming Mode are documented here.
 
 ---
 
+## [2.11.0] - 2026-08-11
+
+### Added
+
+- **3 new Windows system tweaks**: Update Orchestrator Service off (schedules/triggers Windows Update activity, separate from the existing Windows Update pause tweak), Inventory and Compatibility Appraisal off (Microsoft hardware/software compatibility data collection, separate from telemetry), and Network throttling for background traffic off (removes the cap Windows puts on other apps' network traffic while gaming - only matters if something else is network-heavy at the same time, requires a restart, same as Nagle's algorithm).
+- **2 new Quick Rules**: ASUS DriverHub off (also closes a local update-check service that previously had a since-patched remote-code-execution vulnerability) and ASUS EZ Update off.
+
+Every tweak added this round was checked against official documentation or live-tested (not just assumed from popular "gaming tweak" advice) before shipping - one candidate (an MMCSS `SystemResponsiveness` tweak) was dropped after Microsoft's own docs showed it gets silently clamped back to the default and does nothing, and an ASUS Armoury Crate quick rule was dropped after live-testing showed its background service respawns the closed app within seconds.
+
 ## [2.10.0] - 2026-08-10
 
 ### Added
