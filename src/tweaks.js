@@ -305,6 +305,24 @@ const TWEAK_DEFINITIONS = {
     // tweak. Safe to disable; only affects data collection, not gameplay.
     applyCmd: `Stop-Service -Name 'InventorySvc' -Force -ErrorAction SilentlyContinue; Set-Service -Name 'InventorySvc' -StartupType Disabled -ErrorAction SilentlyContinue; Exit 0`,
     revertCmd: `sc.exe config InventorySvc start= auto; sc.exe start InventorySvc; Exit 0`
+  },
+
+  netthrottle: {
+    name: 'Network throttling for background traffic off',
+    requiresAdmin: true,
+    requiresReboot: true,
+    // Verified against official Microsoft docs (learn.microsoft.com,
+    // Multimedia Class Scheduler Service) - MMCSS caps non-priority
+    // network traffic to 10 packets/ms whenever a high-priority
+    // multimedia/game task is active, to protect that task's own network
+    // processing. Removing the cap (0xFFFFFFFF) only matters if something
+    // else is doing heavy network activity (downloads, streaming, sync)
+    // at the same time as gaming - no effect otherwise. Takes effect only
+    // after a restart (consistently documented across sources). Capture
+    // the real prior value rather than assuming the documented default
+    // (10), same reasoning as the hags tweak above.
+    applyCmd: `$p='HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile'; $marker="$env:TEMP\\mgm_netthrottle_prior.flag"; $cur = Get-ItemProperty -Path $p -Name NetworkThrottlingIndex -ErrorAction SilentlyContinue; If ($cur) { Set-Content -Path $marker -Value $cur.NetworkThrottlingIndex } Else { Set-Content -Path $marker -Value 'none' }; Set-ItemProperty -Path $p -Name 'NetworkThrottlingIndex' -Value 0xFFFFFFFF -Type DWord; Exit 0`,
+    revertCmd: `$p='HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile'; $marker="$env:TEMP\\mgm_netthrottle_prior.flag"; If (Test-Path $marker) { $prior = Get-Content -Path $marker; Remove-Item $marker -ErrorAction SilentlyContinue; If ($prior -eq 'none') { Remove-ItemProperty -Path $p -Name 'NetworkThrottlingIndex' -ErrorAction SilentlyContinue } Else { Set-ItemProperty -Path $p -Name 'NetworkThrottlingIndex' -Value ([int64]$prior) -Type DWord } }; Exit 0`
   }
 
 };
