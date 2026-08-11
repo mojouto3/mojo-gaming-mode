@@ -20,7 +20,7 @@ A lightweight Windows gaming optimizer that automatically detects your GPU vendo
 - Before/after performance snapshot on activation, shown as a toast and as a persistent card in the Performance tab
 - Network latency monitor in the Performance tab, color-coded with sparkline history
 - Full settings export and import (tweaks, Quick Rules, custom rules, games, and preferences), or just custom rules as JSON
-- 34 safe and fully revertible system tweaks
+- 35 safe and fully revertible system tweaks
 - Custom Rules engine with 35 quick rules in 5 categories
 - Game detection: auto-activate gaming mode when a monitored game launches, with Steam/Epic library scan to find games automatically
 - Global keyboard shortcuts: Ctrl+G (toggle), Ctrl+B/P/E (presets)
@@ -95,9 +95,10 @@ A lightweight Windows gaming optimizer that automatically detects your GPU vendo
 - Discord hardware acceleration off
 - Telemetry (DiagTrack + dmwappushsvc) off
 
-**Network** (2)
+**Network** (3)
 - Nagle algorithm disable
 - Network adapter power-saving off
+- Network throttling for background traffic off
 
 All tweaks are revertible. Every apply has a matching revert command.
 

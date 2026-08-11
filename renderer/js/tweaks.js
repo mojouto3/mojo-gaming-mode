@@ -282,6 +282,15 @@ const TWEAKS = {
       cmd: 'Set-NetAdapterPowerManagement -AllowComputerToTurnOffDevice Disabled',
       category: 'performance',
       presets: { balanced: false, performance: true, esports: true }
+    },
+    {
+      id: 'netthrottle',
+      name: 'Network throttling for background traffic off',
+      desc: "Removes the cap Windows normally puts on other apps' network traffic while a game/multimedia task has priority. Only matters if something else is doing heavy network activity (downloads, streaming, sync) at the same time as gaming.",
+      cmd: 'Registry: NetworkThrottlingIndex=0xFFFFFFFF',
+      category: 'performance',
+      restartInfo: 'Restart PC',
+      presets: { balanced: false, performance: false, esports: true }
     }
   ]
 };
