@@ -281,6 +281,30 @@ const TWEAK_DEFINITIONS = {
     // a gaming session unless actively using those features.
     applyCmd: `Stop-Service -Name 'CDPSvc' -Force -ErrorAction SilentlyContinue; Set-Service -Name 'CDPSvc' -StartupType Disabled -ErrorAction SilentlyContinue; Exit 0`,
     revertCmd: `sc.exe config CDPSvc start= auto; sc.exe start CDPSvc; Exit 0`
+  },
+
+  usosvc: {
+    name: 'Update Orchestrator Service off',
+    requiresAdmin: true,
+    // Runs Automatic by default and stays running continuously (verified
+    // live: Status=Running, StartType=Automatic) - schedules and triggers
+    // Windows Update activity, separate from wuauserv (already covered by
+    // the winupdate tweak). Same rationale as winupdate: pausing update
+    // orchestration during a gaming session is safe and fully revertible.
+    applyCmd: `Stop-Service -Name 'UsoSvc' -Force -ErrorAction SilentlyContinue; Set-Service -Name 'UsoSvc' -StartupType Disabled -ErrorAction SilentlyContinue; Exit 0`,
+    revertCmd: `sc.exe config UsoSvc start= auto; sc.exe start UsoSvc; Exit 0`
+  },
+
+  inventorysvc: {
+    name: 'Inventory and Compatibility Appraisal off',
+    requiresAdmin: true,
+    // Runs Automatic by default and stays running continuously (verified
+    // live: Status=Running, StartType=Automatic) - collects hardware/
+    // software compatibility data for Microsoft, separate from the
+    // DiagTrack/dmwappushservice pair already covered by the telemetry
+    // tweak. Safe to disable; only affects data collection, not gameplay.
+    applyCmd: `Stop-Service -Name 'InventorySvc' -Force -ErrorAction SilentlyContinue; Set-Service -Name 'InventorySvc' -StartupType Disabled -ErrorAction SilentlyContinue; Exit 0`,
+    revertCmd: `sc.exe config InventorySvc start= auto; sc.exe start InventorySvc; Exit 0`
   }
 
 };

@@ -196,6 +196,22 @@ const TWEAKS = {
       cmd: 'sc stop CDPSvc & sc config CDPSvc start=disabled',
       category: 'system',
       presets: { balanced: false, performance: true, esports: true }
+    },
+    {
+      id: 'usosvc',
+      name: 'Update Orchestrator Service off',
+      desc: "Stops the service that schedules and triggers Windows Update activity (separate from the Windows Update pause tweak above). Runs continuously by default; safe to disable during a gaming session.",
+      cmd: 'sc stop UsoSvc & sc config UsoSvc start=disabled',
+      category: 'system',
+      presets: { balanced: false, performance: true, esports: true }
+    },
+    {
+      id: 'inventorysvc',
+      name: 'Inventory and Compatibility Appraisal off',
+      desc: "Stops the background service that collects hardware/software compatibility data for Microsoft. Runs continuously by default; only affects data collection, not gameplay.",
+      cmd: 'sc stop InventorySvc & sc config InventorySvc start=disabled',
+      category: 'system',
+      presets: { balanced: false, performance: true, esports: true }
     }
   ],
   ov: [
