@@ -542,5 +542,19 @@ const CUSTOM_RULES = [
     desc: "Closes NZXT CAM during gaming. Off by default - only enable this if you don't rely on CAM's in-game overlay or lighting/fan-curve profiles, since closing it disables those while it's stopped.",
     cmd: 'Stop-Process: NZXT CAM.exe',
     category: 'system'
+  },
+  {
+    id: 'cr_asusdriverhub',
+    name: 'ASUS DriverHub off',
+    desc: "Closes ASUS DriverHub during gaming - a background driver-update checker, not tied to any in-game feature. DriverHub previously had a publicly disclosed remote-code-execution vulnerability (since patched) in its local update-check service, so closing it while gaming is also reasonable defense in depth, not just freeing up resources.",
+    cmd: 'Stop-Process: ASUS DriverHub.exe',
+    category: 'system'
+  },
+  {
+    id: 'cr_ezupdate',
+    name: 'ASUS EZ Update off',
+    desc: 'Closes ASUS EZ Update during gaming - a background BIOS/driver-update checker, not tied to any in-game feature.',
+    cmd: 'Stop-Process: EzUpdt.exe',
+    category: 'system'
   }
 ];

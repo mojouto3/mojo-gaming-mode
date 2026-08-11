@@ -804,6 +804,24 @@ const CUSTOM_RULE_CMDS = {
   cr_nzxtcam: {
     apply: `Get-Process -Name 'NZXT CAM','CAM' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
     revert: `Exit 0`
+  },
+  cr_asusdriverhub: {
+    // Process name verified live: 'ASUS DriverHub'. Standalone driver-
+    // checker process (not tied to a hardware-controlling service like
+    // ArmouryCrateService - deliberately did NOT add an Armoury Crate
+    // rule since its watchdog service also runs fan curves/RGB and
+    // respawns the UI if killed). DriverHub previously had a publicly
+    // disclosed RCE vulnerability (patched) from its local update-check
+    // service - closing it during gaming is also reasonable defense in
+    // depth, not just a resource-usage tweak.
+    apply: `Get-Process -Name 'ASUS DriverHub' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revert: `Exit 0`
+  },
+  cr_ezupdate: {
+    // Real process name is 'EzUpdt' (verified live via Task Manager - not
+    // 'EzUpdate', which doesn't match anything running).
+    apply: `Get-Process -Name 'EzUpdt' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revert: `Exit 0`
   }
 };
 

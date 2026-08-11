@@ -106,14 +106,14 @@ All tweaks are revertible. Every apply has a matching revert command.
 
 ## Custom Rules
 
-35 ready-made rules organized in 5 categories. Enable any combination and they run automatically on Activate, reverting on Deactivate.
+37 ready-made rules organized in 5 categories. Enable any combination and they run automatically on Activate, reverting on Deactivate.
 
 | Category | Rules |
 |----------|-------|
 | Game Launchers (9) | Epic Games, EA App, Battle.net, Ubisoft Connect, GOG Galaxy, Xbox App, Rockstar, Riot Client, Minecraft |
 | Communication (8) | Microsoft Teams, Slack, Zoom, WhatsApp, Telegram, Viber, Signal, Messenger |
 | Cloud Storage (7) | Google Drive, Dropbox, OneDrive, iCloud, Box, MEGA, pCloud |
-| System (9) | Phone Link, Copilot, Widgets, Windows games scheduling priority, Razer Synapse, Logitech G HUB, Corsair iCUE, SteelSeries GG, NZXT CAM |
+| System (11) | Phone Link, Copilot, Widgets, Windows games scheduling priority, Razer Synapse, Logitech G HUB, Corsair iCUE, SteelSeries GG, NZXT CAM, ASUS DriverHub, ASUS EZ Update |
 | Media (2) | Spotify, iTunes / Apple Music |
 
 The 5 gaming-peripheral-manager rules (Razer Synapse, Logitech G HUB, Corsair iCUE, SteelSeries GG, NZXT CAM) are off by default - closing them can disable in-game macros, lighting profiles, or DPI switching while stopped, so only enable them if you don't rely on those features during a session.
