@@ -814,8 +814,20 @@ const CUSTOM_RULE_CMDS = {
   }
 };
 
+// Times an async phase of apply-mode and logs it under a shared PERF prefix,
+// so per-phase timing doesn't need a hand-numbered timestamp variable at
+// each call site.
+async function timed(label, fn) {
+  const t0 = Date.now();
+  const result = await fn();
+  console.log(`PERF: ${label} in ${Date.now() - t0}ms`);
+  return result;
+}
+
 ipcMain.handle('apply-mode', async (e, config) => {
   try {
+    const __t0 = Date.now();
+
     // Get list of enabled tweak IDs
     const enabledTweaks = Object.entries(config.tweaks || {})
       .filter(([id, enabled]) => enabled)
@@ -823,54 +835,45 @@ ipcMain.handle('apply-mode', async (e, config) => {
 
     // Store active tweaks for revert
     activeTweakIds = [...enabledTweaks];
-    
+
 
     // Execute all enabled tweaks
-    const __t0 = Date.now();
     let results;
     try {
-      results = await executeTweaks(enabledTweaks, TWEAK_DEFINITIONS, 'apply');
+      results = await timed(`tweaks phase - ${enabledTweaks.length} items`, () => executeTweaks(enabledTweaks, TWEAK_DEFINITIONS, 'apply'));
     } catch(ex) {
       console.log('EXECUTOR ERROR:', ex.message, ex.stack);
       return { success: false, error: ex.message };
     }
     const failed = results.filter(r => !r.success && !r.skipped);
-    console.log(`PERF: tweaks phase - ${enabledTweaks.length} items in ${Date.now() - __t0}ms`);
     if (failed.length) console.log('PERF: failed tweaks -', JSON.stringify(failed));
 
     // Execute active custom rules (built-in Quick Rules), with real
     // per-rule success/failure tracking instead of firing and forgetting.
-    const __t1 = Date.now();
     const enabledQuickRuleIds = config.customRulesActive
       ? Object.entries(config.customRulesActive).filter(([id, active]) => active).map(([id]) => id)
       : [];
     activeQuickRuleIds = [...enabledQuickRuleIds];
-    const quickRuleResults = enabledQuickRuleIds.length
-      ? await executeQuickRules(enabledQuickRuleIds, CUSTOM_RULE_CMDS, 'apply')
-      : [];
+    const quickRuleResults = await timed(`quick rules phase - ${enabledQuickRuleIds.length} items`, () =>
+      enabledQuickRuleIds.length ? executeQuickRules(enabledQuickRuleIds, CUSTOM_RULE_CMDS, 'apply') : Promise.resolve([]));
     const quickRuleFailed = quickRuleResults.filter(r => !r.success && !r.skipped);
-    console.log(`PERF: quick rules phase - ${enabledQuickRuleIds.length} items in ${Date.now() - __t1}ms`);
 
     // Execute user-created custom rules (Add custom rule modal), with real
     // per-rule success/failure tracking instead of firing and forgetting.
     // Store a deep copy as activeCustomRules so revert uses the exact state
     // that was actually applied (including any captured service startup
     // type), not whatever the renderer's config currently says.
-    const __t2 = Date.now();
-    let customRuleResults = [];
     activeCustomRules = Array.isArray(config.rules) ? JSON.parse(JSON.stringify(config.rules)) : [];
-    if (activeCustomRules.length) {
-      customRuleResults = await executeCustomRules(activeCustomRules, 'apply');
-      // Merge captured service startup types back so revert can restore
-      // the real original state instead of guessing.
-      customRuleResults.forEach((r, i) => {
-        if (r.capturedStartType && activeCustomRules[i]) {
-          activeCustomRules[i].capturedStartType = r.capturedStartType;
-        }
-      });
-    }
+    const customRuleResults = await timed(`custom rules phase - ${activeCustomRules.length} items`, () =>
+      activeCustomRules.length ? executeCustomRules(activeCustomRules, 'apply') : Promise.resolve([]));
+    // Merge captured service startup types back so revert can restore the
+    // real original state instead of guessing.
+    customRuleResults.forEach((r, i) => {
+      if (r.capturedStartType && activeCustomRules[i]) {
+        activeCustomRules[i].capturedStartType = r.capturedStartType;
+      }
+    });
     const customRuleFailed = customRuleResults.filter(r => !r.success && !r.skipped);
-    console.log(`PERF: custom rules phase - ${activeCustomRules.length} items in ${Date.now() - __t2}ms`);
     console.log(`PERF: TOTAL apply-mode - ${Date.now() - __t0}ms`);
 
     gamingModeActive = true;

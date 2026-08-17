@@ -37,6 +37,7 @@ let lastPing = {};
 let lastFps = {};
 let miniActivateInProgress = false;
 let lastActivationImpact = null;
+let lastGpuThrottleState = null;
 
 function anyLiveViewActive() {
   const statsTabActive = document.getElementById('tab-stats')?.classList.contains('active');
@@ -1486,22 +1487,28 @@ function updateMetricsUI(data) {
   // two cases apart, instead of just hiding the badge with no explanation.
   const gpuThrottleBadge = document.getElementById('gpu-throttle-badge');
   if (gpuThrottleBadge) {
-    gpuThrottleBadge.classList.remove('muted');
-    gpuThrottleBadge.removeAttribute('title');
-    if (data.gpuThrottleThermal) {
-      gpuThrottleBadge.textContent = 'Thermal throttle';
-      gpuThrottleBadge.style.display = '';
-    } else if (data.gpuThrottlePower) {
-      gpuThrottleBadge.textContent = 'Power limit';
-      gpuThrottleBadge.style.display = '';
-    } else if (data.gpuThrottleThermal === undefined && data.gpuThrottlePower === undefined
-      && data.gpuName && !/nvidia/i.test(data.gpuName)) {
-      gpuThrottleBadge.textContent = 'NVIDIA only';
-      gpuThrottleBadge.title = 'Thermal/power throttle detection currently requires nvidia-smi and isn\'t available for this GPU';
-      gpuThrottleBadge.classList.add('muted');
-      gpuThrottleBadge.style.display = '';
-    } else {
-      gpuThrottleBadge.style.display = 'none';
+    const throttleState = data.gpuThrottleThermal ? 'thermal'
+      : data.gpuThrottlePower ? 'power'
+      : (data.gpuThrottleThermal === undefined && data.gpuThrottlePower === undefined && state.gpu?.vendor !== 'nvidia') ? 'nvidia-only'
+      : 'hidden';
+    if (throttleState !== lastGpuThrottleState) {
+      lastGpuThrottleState = throttleState;
+      gpuThrottleBadge.classList.remove('muted');
+      gpuThrottleBadge.removeAttribute('title');
+      if (throttleState === 'thermal') {
+        gpuThrottleBadge.textContent = 'Thermal throttle';
+        gpuThrottleBadge.style.display = '';
+      } else if (throttleState === 'power') {
+        gpuThrottleBadge.textContent = 'Power limit';
+        gpuThrottleBadge.style.display = '';
+      } else if (throttleState === 'nvidia-only') {
+        gpuThrottleBadge.textContent = 'NVIDIA only';
+        gpuThrottleBadge.title = 'Thermal/power throttle detection currently requires nvidia-smi and isn\'t available for this GPU';
+        gpuThrottleBadge.classList.add('muted');
+        gpuThrottleBadge.style.display = '';
+      } else {
+        gpuThrottleBadge.style.display = 'none';
+      }
     }
   }
 
