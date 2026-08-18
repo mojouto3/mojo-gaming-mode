@@ -26,6 +26,7 @@ A lightweight Windows gaming optimizer that automatically detects your GPU vendo
 - Global keyboard shortcuts: Ctrl+G (toggle), Ctrl+B/P/E (presets)
 - Real FPS tracking (via PresentMon) in the Performance tab, mini mode, and bar mode - tracks whatever game currently has focus, no setup required, plus a 1% low stat alongside the average
 - CPU throttle and GPU thermal/power throttle monitoring in the Performance tab
+- Auto process-priority boost (Above Normal) for whatever game FPS tracking currently identifies as the foreground app, while gaming mode is active - toggleable in Settings
 - Mini mode: compact always-on-top card with live stats, staying on top even over exclusive-fullscreen games
 - Bar mode: thin, draggable, always-on-top overlay for in-game use, same always-on-top behavior
 - Configurable overlay stats: pick which of 7 stats show in mini mode and bar mode, and in what order, independently for each
