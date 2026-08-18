@@ -159,6 +159,18 @@ function start(callback) {
 const PING_TARGET = '8.8.8.8';
 const PS_PING_SCRIPT = `
 $ProgressPreference = 'SilentlyContinue'
+# A freshly-spawned PowerShell process's very first network call measures
+# real cold-start overhead on top of actual RTT - confirmed live at ~180-
+# 190ms vs a steady 45-50ms baseline, on both the very first Test-Connection
+# call AND a second call immediately following it (so it's not specifically
+# about "the first cmdlet call" - a throwaway warm-up call tried first did
+# NOT fix it). A real wall-clock delay before the first measurement did fix
+# it (confirmed clean over multiple runs), consistent with the same kind of
+# one-time antivirus/security-software scanning overhead on new process
+# activity already identified for tweak execution (see PR #97's cold vs
+# warm Activate timing) - just showing up here as a smaller, per-process
+# delay instead of a slow first Activate.
+Start-Sleep -Milliseconds 1000
 while ($true) {
   $ping = 0
   Try {
@@ -221,6 +233,10 @@ function stopPing() {
 
 const PS_PING_SNAPSHOT_SCRIPT = `
 $ProgressPreference = 'SilentlyContinue'
+# Same cold-start delay as PS_PING_SCRIPT - without it this single-shot
+# snapshot's only measurement would be the inflated cold-start reading every
+# time, which would also skew the before/after activation impact card.
+Start-Sleep -Milliseconds 1000
 $ping = 0
 Try {
   $result = Test-Connection -ComputerName ${PING_TARGET} -Count 1 -ErrorAction SilentlyContinue
