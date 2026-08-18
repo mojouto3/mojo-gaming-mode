@@ -94,6 +94,7 @@ let detectedGPU = { vendor: 'nvidia', model: 'Unknown GPU' };
 let activeTweakIds = []; // tweaks currently applied, used for revert
 let activeCustomRules = []; // user-created custom rules currently applied (with captured revert state), used for revert
 let activeQuickRuleIds = []; // built-in Quick Rules (id-keyed) currently applied, used for revert
+let priorityBoostedProcess = null; // name of the process currently boosted to AboveNormal, used for revert
 let trayAnimInterval = null;
 let notifPrefs = { activate: true, deactivate: true, update: true };
 let currentPreset = 'balanced';
@@ -961,6 +962,7 @@ ipcMain.handle('revert-mode', async (e, config) => {
     activeCustomRules = [];
 
     gamingModeActive = false;
+    setPriorityBoost(null).catch(() => {});
     updateTrayMenu();
     updateDiscordPresence();
     if (tray) {
@@ -1129,12 +1131,34 @@ ipcMain.on('metrics-stop', () => {
   metrics.stop();
 });
 
+// Auto process-priority boost (issue #148): while gaming mode is active,
+// bump whatever FPS tracking currently identifies as the foreground game to
+// AboveNormal - not High, which risks starving other threads (audio, input
+// handling) in games that use many worker threads. Reuses the same
+// PriorityClass mechanism as the existing 'priority' custom rule type
+// (src/executor.js), just driven automatically by FPS tracking's foreground
+// detection instead of a manually-typed process name.
+async function setPriorityBoost(processName) {
+  if (processName === priorityBoostedProcess) return;
+  if (priorityBoostedProcess) {
+    const prior = String(priorityBoostedProcess).replace(/'/g, "''");
+    await runPS(`Get-Process -Name '${prior}' -ErrorAction SilentlyContinue | ForEach-Object { $_.PriorityClass = 'Normal' }; Exit 0`);
+    priorityBoostedProcess = null;
+  }
+  if (!processName || !gamingModeActive) return;
+  if (loadConfig().autoPriorityBoost === false) return;
+  const safe = String(processName).replace(/'/g, "''");
+  const result = await runPS(`Get-Process -Name '${safe}' -ErrorAction SilentlyContinue | ForEach-Object { $_.PriorityClass = 'AboveNormal' }; Exit 0`);
+  if (result.success) priorityBoostedProcess = processName;
+}
+
 // FPS tracking follows the same tab-visibility lifecycle as metrics
 // polling (Performance tab open, or mini/bar mode active) - independent of
 // the user's curated Games list, since that list is only for auto-applying
 // tweaks. It tracks whatever is currently the foreground window instead.
 ipcMain.on('fps-tracking-start', () => {
   fps.startTracking((data) => {
+    setPriorityBoost(data.processName).catch(() => {});
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('fps-data', data);
     }
@@ -1148,6 +1172,7 @@ ipcMain.on('fps-tracking-start', () => {
 
 ipcMain.on('fps-tracking-stop', () => {
   fps.stopTracking();
+  setPriorityBoost(null).catch(() => {});
 });
 
 ipcMain.handle('get-metrics-snapshot', async () => {
@@ -1544,6 +1569,7 @@ ipcMain.on('window-close', () => {
 
 // Auto-revert on app quit (tray Quit or system shutdown)
 async function revertOnExit() {
+  await setPriorityBoost(null).catch(() => {});
   if (gamingModeActive && (activeTweakIds.length > 0 || activeCustomRules.length > 0 || activeQuickRuleIds.length > 0)) {
     try {
       if (activeTweakIds.length > 0) {

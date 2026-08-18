@@ -208,7 +208,15 @@ function startCapture(processName) {
     const now = Date.now();
     const fps1Low = computeOnePercentLow(now);
     if (!frameTimesMs.length) {
-      onDataCallback({ fps: null, frameTimeMs: null, fps1Low: null, processName: null });
+      // No new frames this particular tick, but the capture is still
+      // genuinely targeting the same process (a real stop is reported
+      // separately by the 'close'/'error' handlers below, which explicitly
+      // send processName: null). Keeping processName populated here matters
+      // to any consumer that reacts to target changes (e.g. the auto
+      // priority-boost feature) - a quiet tick during a game with sparse
+      // frame timing (a static scene, or the user briefly tabbed to a
+      // loading screen) must not read as "the game closed".
+      onDataCallback({ fps: null, frameTimeMs: null, fps1Low, processName: currentTarget });
       return;
     }
     const avgMs = frameTimesMs.reduce((a, b) => a + b, 0) / frameTimesMs.length;

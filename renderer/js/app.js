@@ -19,6 +19,7 @@ const state = {
   manualTheme: null,
   notifPrefs: { activate: true, deactivate: true, update: true },
   showPerfImpact: true,
+  autoPriorityBoost: true,
   // Which stats show (and in what order) in mini-mode/bar-mode - an id's
   // presence in the array IS "enabled", position IS display order.
   miniModeStats: ['cpu', 'ram', 'gpu', 'ping', 'fps'],
@@ -458,6 +459,7 @@ async function init() {
     if (config.manualTheme) state.manualTheme = config.manualTheme;
     if (config.notifPrefs) state.notifPrefs = { ...state.notifPrefs, ...config.notifPrefs };
     if (typeof config.showPerfImpact === 'boolean') state.showPerfImpact = config.showPerfImpact;
+    if (typeof config.autoPriorityBoost === 'boolean') state.autoPriorityBoost = config.autoPriorityBoost;
     state.games = Array.isArray(config.games) ? config.games : [];
     state.gameDetectionEnabled = !!config.gameDetectionEnabled;
     if (Array.isArray(config.miniModeStats) && config.miniModeStats.length) state.miniModeStats = config.miniModeStats;
@@ -783,6 +785,14 @@ function bindEvents() {
   if (perfImpactCb) {
     perfImpactCb.addEventListener('change', (e) => {
       state.showPerfImpact = e.target.checked;
+      persistConfig();
+    });
+  }
+
+  const priorityBoostCb = document.getElementById('cb-priority-boost');
+  if (priorityBoostCb) {
+    priorityBoostCb.addEventListener('change', (e) => {
+      state.autoPriorityBoost = e.target.checked;
       persistConfig();
     });
   }
@@ -1836,6 +1846,7 @@ function exportFullConfigToFile() {
     gameDetectionEnabled: state.gameDetectionEnabled,
     notifPrefs: state.notifPrefs,
     showPerfImpact: state.showPerfImpact,
+    autoPriorityBoost: state.autoPriorityBoost,
     lang: state.lang,
     manualTheme: state.manualTheme,
     autostart: state.autostart
@@ -1900,6 +1911,7 @@ async function importFullConfigFromFile() {
   }
   if (typeof data.gameDetectionEnabled === 'boolean') cfg.gameDetectionEnabled = data.gameDetectionEnabled;
   if (typeof data.showPerfImpact === 'boolean') cfg.showPerfImpact = data.showPerfImpact;
+  if (typeof data.autoPriorityBoost === 'boolean') cfg.autoPriorityBoost = data.autoPriorityBoost;
   if (typeof data.autostart === 'boolean') cfg.autostart = data.autostart;
   if (typeof data.lang === 'string') cfg.lang = data.lang;
   if (data.manualTheme === null || typeof data.manualTheme === 'string') cfg.manualTheme = data.manualTheme;
@@ -2319,6 +2331,8 @@ function initSettingsTab() {
   });
   const perfImpactCbInit = document.getElementById('cb-perf-impact');
   if (perfImpactCbInit) perfImpactCbInit.checked = state.showPerfImpact !== false;
+  const priorityBoostCbInit = document.getElementById('cb-priority-boost');
+  if (priorityBoostCbInit) priorityBoostCbInit.checked = state.autoPriorityBoost !== false;
   // Settings vendor theme - show vendor name and logo
   const badge = document.getElementById('settings-gpu-badge');
   const vendorIcon = document.getElementById('settings-vendor-icon');
@@ -2342,6 +2356,7 @@ async function persistConfig() {
     manualTheme: state.manualTheme,
     notifPrefs: state.notifPrefs,
     showPerfImpact: state.showPerfImpact,
+    autoPriorityBoost: state.autoPriorityBoost,
     games: state.games,
     gameDetectionEnabled: state.gameDetectionEnabled,
     miniModeStats: state.miniModeStats,
