@@ -4,6 +4,17 @@ All notable changes to Mojo Gaming Mode are documented here.
 
 ---
 
+## [2.12.0] - 2026-08-18
+
+### Added
+
+- **Auto process-priority boost** for whatever game FPS tracking currently identifies as the foreground app, while gaming mode is active - bumps it to Above Normal process priority (not High, to avoid starving other threads like audio/input on games with many worker threads). Toggleable in Settings, on by default.
+
+### Fixed
+
+- Ping in the Performance tab no longer shows occasional inflated cold-start readings (a freshly-started measurement process's first network call carried real one-time overhead, unrelated to actual network conditions).
+- A GPU throttle badge inefficiency and a stale `package-lock.json` version, found during a code-review pass.
+
 ## [2.11.0] - 2026-08-11
 
 ### Added
