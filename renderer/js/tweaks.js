@@ -212,6 +212,22 @@ const TWEAKS = {
       cmd: 'sc stop InventorySvc & sc config InventorySvc start=disabled',
       category: 'system',
       presets: { balanced: false, performance: true, esports: true }
+    },
+    {
+      id: 'compatappraiser',
+      name: 'Compatibility Appraiser off',
+      desc: "Disables a daily scheduled task that scans installed programs and assesses Windows Update/upgrade eligibility - historically a known source of CPU/disk spikes (CompatTelRunner.exe). Only affects data collection, not gameplay.",
+      cmd: 'Disable-ScheduledTask: Microsoft Compatibility Appraiser Exp',
+      category: 'system',
+      presets: { balanced: false, performance: true, esports: true }
+    },
+    {
+      id: 'ceiptasks',
+      name: 'Customer Experience Improvement Program off',
+      desc: "Disables the Consolidator and UsbCeip scheduled tasks that collect anonymous usage statistics. A no-op if you never opted into CEIP, but stops the periodic collection attempt either way.",
+      cmd: 'Disable-ScheduledTask: Consolidator, UsbCeip',
+      category: 'system',
+      presets: { balanced: false, performance: true, esports: true }
     }
   ],
   ov: [
