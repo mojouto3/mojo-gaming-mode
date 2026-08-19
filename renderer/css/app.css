@@ -244,46 +244,6 @@ html, body {
   transition: background 0.3s;
 }
 
-.sidebar-logo {
-  padding: 18px 16px 14px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  border-bottom: 1px solid var(--border);
-}
-
-.logo-mark {
-  width: 34px;
-  height: 34px;
-  background: var(--acc);
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  font-size: 18px;
-  color: var(--bg);
-  transition: background 0.3s;
-}
-
-.logo-title {
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  color: var(--text);
-}
-
-.logo-sub {
-  font-size: 10px;
-  color: var(--text3);
-  margin-top: 1px;
-}
-
-.gpu-section {
-  padding: 12px;
-  border-bottom: 1px solid var(--border);
-}
-
 .section-label {
   font-size: 9px;
   font-weight: 600;
