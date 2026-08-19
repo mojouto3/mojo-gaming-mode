@@ -323,6 +323,30 @@ const TWEAK_DEFINITIONS = {
     // (10), same reasoning as the hags tweak above.
     applyCmd: `$p='HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile'; $marker="$env:TEMP\\mgm_netthrottle_prior.flag"; $cur = Get-ItemProperty -Path $p -Name NetworkThrottlingIndex -ErrorAction SilentlyContinue; If ($cur) { Set-Content -Path $marker -Value $cur.NetworkThrottlingIndex } Else { Set-Content -Path $marker -Value 'none' }; Set-ItemProperty -Path $p -Name 'NetworkThrottlingIndex' -Value 0xFFFFFFFF -Type DWord; Exit 0`,
     revertCmd: `$p='HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile'; $marker="$env:TEMP\\mgm_netthrottle_prior.flag"; If (Test-Path $marker) { $prior = Get-Content -Path $marker; Remove-Item $marker -ErrorAction SilentlyContinue; If ($prior -eq 'none') { Remove-ItemProperty -Path $p -Name 'NetworkThrottlingIndex' -ErrorAction SilentlyContinue } Else { Set-ItemProperty -Path $p -Name 'NetworkThrottlingIndex' -Value ([int64]$prior) -Type DWord } }; Exit 0`
+  },
+
+  compatappraiser: {
+    name: 'Compatibility Appraiser off',
+    requiresAdmin: true,
+    // Scheduled task (not a service), runs at least daily - collects
+    // installed-program telemetry and assesses Windows Update/upgrade
+    // eligibility. Verified live: disables cleanly via Disable-ScheduledTask
+    // and stays disabled (checked immediately and after a delay - some
+    // online reports claim it re-enables itself, not reproduced here).
+    applyCmd: `Disable-ScheduledTask -TaskName 'Microsoft Compatibility Appraiser Exp' -TaskPath '\\Microsoft\\Windows\\Application Experience\\' -ErrorAction SilentlyContinue; Exit 0`,
+    revertCmd: `Enable-ScheduledTask -TaskName 'Microsoft Compatibility Appraiser Exp' -TaskPath '\\Microsoft\\Windows\\Application Experience\\' -ErrorAction SilentlyContinue; Exit 0`
+  },
+
+  ceiptasks: {
+    name: 'Customer Experience Improvement Program off',
+    requiresAdmin: true,
+    // Two scheduled tasks (Consolidator + UsbCeip), same grouping approach
+    // as the existing telemetry tweak (DiagTrack + dmwappushservice).
+    // Both are opt-in data collection - a no-op if the user never consented
+    // to CEIP, but stop the periodic collection attempt either way.
+    // Verified live: both disable cleanly and stay disabled.
+    applyCmd: `Disable-ScheduledTask -TaskName 'Consolidator' -TaskPath '\\Microsoft\\Windows\\Customer Experience Improvement Program\\' -ErrorAction SilentlyContinue; Disable-ScheduledTask -TaskName 'UsbCeip' -TaskPath '\\Microsoft\\Windows\\Customer Experience Improvement Program\\' -ErrorAction SilentlyContinue; Exit 0`,
+    revertCmd: `Enable-ScheduledTask -TaskName 'Consolidator' -TaskPath '\\Microsoft\\Windows\\Customer Experience Improvement Program\\' -ErrorAction SilentlyContinue; Enable-ScheduledTask -TaskName 'UsbCeip' -TaskPath '\\Microsoft\\Windows\\Customer Experience Improvement Program\\' -ErrorAction SilentlyContinue; Exit 0`
   }
 
 };
