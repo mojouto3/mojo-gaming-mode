@@ -841,39 +841,12 @@ function applyGPUTheme(vendor) {
   document.documentElement.classList.remove('theme-nvidia', 'theme-amd', 'theme-intel');
   document.documentElement.classList.add('theme-' + vendor);
 
-  const isVendorTheme = ['nvidia', 'amd', 'intel'].includes(vendor);
-  const isManualVendor = state.manualTheme && isVendorTheme;
-
   // Badge in topbar - always shows real GPU model
   const rawModel = (state.gpu.model || '').replace(/\s+/g, ' ').trim();
   const fallbacks = { nvidia: 'NVIDIA GeForce', amd: 'AMD Radeon', intel: 'Intel Graphics' };
   const badgeText = rawModel.length > 3 ? rawModel : (fallbacks[state.gpu.vendor] || state.gpu.vendor);
   const badge = document.getElementById('gpu-badge');
   if (badge) badge.textContent = badgeText;
-
-  // Sidebar - depends on whether theme is vendor or custom
-  const vendorNames = { nvidia: 'NVIDIA', amd: 'AMD', intel: 'Intel' };
-  const vendorSubs = { nvidia: 'NVIDIA Control Panel', amd: 'AMD Adrenalin Edition', intel: 'Intel Arc Control' };
-  const logoMark = document.getElementById('logo-mark');
-  const logoSub = document.getElementById('logo-sub');
-
-  if (isVendorTheme) {
-    // Vendor theme - show vendor logo and branding
-    if (logoMark) {
-      logoMark.style.background = 'transparent';
-      logoMark.style.padding = '2px';
-      logoMark.innerHTML = '<img src="../assets/icons/' + vendor + '_logo.png" style="width:28px;height:28px;object-fit:contain;border-radius:4px">';
-    }
-    if (logoSub) logoSub.textContent = vendorSubs[vendor] || vendor;
-  } else {
-    // Custom theme - show MGM icon and GPU model
-    if (logoMark) {
-      logoMark.style.background = 'var(--acc)';
-      logoMark.style.padding = '0';
-      logoMark.innerHTML = '<i class="ti ti-device-gamepad-2"></i>';
-    }
-    if (logoSub) logoSub.textContent = rawModel.length > 3 ? rawModel : 'Gaming Mode Manager';
-  }
 
   // Update detected GPU section
   updateDetectedGPU(vendor, state.gpu.model);
@@ -988,7 +961,15 @@ function iconFor(id) {
     fso: 'maximize', hpet: 'clock', msi: 'cpu-2',
     xbox: 'brand-xbox', steam: 'brand-steam', nvoverlay: 'device-desktop',
     onedrive: 'cloud', discord: 'brand-discord', telemetry: 'radar',
-    nagle: 'network'
+    nagle: 'network',
+    focusassist: 'moon', winupdate: 'refresh-off', usbsuspend: 'usb',
+    xboxservices: 'brand-xbox', wersvc: 'bug', diskoptimize: 'disc',
+    hags: 'device-desktop-cog', printspooler: 'printer', fax: 'device-landline-phone',
+    retaildemo: 'building-store', wisvc: 'flask', mapsbroker: 'map',
+    bits: 'cloud-download', pca: 'puzzle', deliveryopt: 'cloud-upload',
+    dps: 'stethoscope', cdpsvc: 'devices', usosvc: 'refresh',
+    inventorysvc: 'clipboard-list', compatappraiser: 'clipboard-check',
+    ceiptasks: 'chart-bar', nicpower: 'plug-off', netthrottle: 'gauge'
   };
   return map[id] || 'settings';
 }
@@ -1093,8 +1074,13 @@ function renderCustomRules() {
     cr_xbox: 'brand-xbox', cr_rockstar: 'device-gamepad',
     cr_slack: 'brand-slack', cr_zoom: 'video', cr_whatsapp: 'brand-whatsapp',
     cr_telegram: 'brand-telegram', cr_googledrive: 'brand-google-drive', cr_dropbox: 'cloud',
-    cr_riot: 'device-gamepad-2', cr_onedrive_close: 'cloud-off', cr_icloud: 'cloud-off', cr_skype: 'brand-skype',
-    cr_minecraft: 'device-gamepad', cr_itunes: 'music'
+    cr_riot: 'device-gamepad-2', cr_onedrive_close: 'cloud-off', cr_icloud: 'cloud-off',
+    cr_minecraft: 'device-gamepad', cr_itunes: 'music',
+    cr_viber: 'message-circle', cr_signal: 'shield-lock', cr_messenger: 'brand-messenger',
+    cr_box: 'box', cr_mega: 'cloud', cr_pcloud: 'cloud',
+    cr_razersynapse: 'mouse', cr_lghub: 'mouse', cr_icue: 'bulb',
+    cr_steelseriesgg: 'headphones', cr_nzxtcam: 'activity',
+    cr_asusdriverhub: 'download', cr_ezupdate: 'refresh'
   };
 
   const categoryLabels = {
@@ -2333,12 +2319,6 @@ function initSettingsTab() {
   if (perfImpactCbInit) perfImpactCbInit.checked = state.showPerfImpact !== false;
   const priorityBoostCbInit = document.getElementById('cb-priority-boost');
   if (priorityBoostCbInit) priorityBoostCbInit.checked = state.autoPriorityBoost !== false;
-  // Settings vendor theme - show vendor name and logo
-  const badge = document.getElementById('settings-gpu-badge');
-  const vendorIcon = document.getElementById('settings-vendor-icon');
-  const vendorNames = { nvidia: 'NVIDIA', amd: 'AMD', intel: 'Intel' };
-  if (badge) badge.textContent = vendorNames[state.gpu.vendor] || state.gpu.vendor;
-  if (vendorIcon) vendorIcon.src = '../assets/icons/' + state.gpu.vendor + '_logo.png';
 }
 
 // ── Persist ───────────────────────────────────────────────────────────────────
