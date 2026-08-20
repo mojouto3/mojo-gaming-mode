@@ -357,6 +357,11 @@ function updateTrayMenu() {
     enabled: !gamingModeActive,
     click: () => switchPresetFromTray(p)
   }));
+  if (activePreset === 'custom') {
+    // Not a real switchable preset - just reflects that manual overrides/quick
+    // rules currently diverge from whichever preset is selected in-app.
+    presetItems.push({ label: '● Custom', enabled: false });
+  }
 
   const tweakCount = activeTweakIds.length;
   const tooltipText = gamingModeActive
