@@ -440,13 +440,6 @@ async function init() {
     state.manualOverrides = config.manualOverrides || {};
     Object.assign(state.tweaks, state.manualOverrides);
     if (config.customRules) state.rules = config.customRules;
-    if (typeof config.windowOpacity === 'number') {
-      const pct = Math.round(config.windowOpacity * 100);
-      const slider = document.getElementById('opacity-slider');
-      const val = document.getElementById('opacity-val');
-      if (slider) slider.value = pct;
-      if (val) val.textContent = pct + '%';
-    }
     // Init custom rules state
     if (typeof CUSTOM_RULES !== 'undefined') {
       CUSTOM_RULES.forEach(r => {
@@ -1240,6 +1233,8 @@ function refreshCustomCardState() {
   const ruleCount = Object.values(customRulesState).filter(Boolean).length;
   const overrideCount = Object.keys(state.manualOverrides || {}).length;
   const isCustom = ruleCount > 0 || overrideCount > 0;
+
+  window.mgm.notifyPresetChanged(isCustom ? 'custom' : state.preset);
 
   if (isCustom) {
     // Switching to Custom is triggered by any deviation from the preset,
