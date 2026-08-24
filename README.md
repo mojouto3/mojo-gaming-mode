@@ -265,6 +265,7 @@ All PRs target `main` and require 1 review before merge.
 | v2.10.0 | 2 new tweaks (DPS, Connected Devices Platform), AMD/Intel throttle badge fix, security fix | Done |
 | v2.11.0 | 3 new tweaks (Update Orchestrator, Inventory Appraisal, network throttling), 2 new Quick Rules (ASUS DriverHub, EZ Update) | Done |
 | v2.12.0 | Auto process-priority boost, ping cold-start reading fix, code-review cleanups | Done |
+| v2.13.0 | Compatibility Appraiser and CEIP tweaks, tray/preset sync fix | Done |
 
 ---
 

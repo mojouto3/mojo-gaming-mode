@@ -4,6 +4,17 @@ All notable changes to Mojo Gaming Mode are documented here.
 
 ---
 
+## [2.13.0] - 2026-08-24
+
+### Added
+
+- **Compatibility Appraiser and CEIP** scheduled task tweaks.
+
+### Fixed
+
+- The tray menu's active-preset marker went stale when switching presets from the app instead of the tray. It also now shows a "Custom" state when manual tweak overrides or quick rules diverge from the selected preset, instead of leaving a stale preset marked active.
+- Removed dead sidebar-logo code left over from an old layout, and filled in missing icons for tweaks and quick rules added since the icon maps were last updated.
+
 ## [2.12.0] - 2026-08-18
 
 ### Added
