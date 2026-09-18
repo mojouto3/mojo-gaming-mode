@@ -373,6 +373,30 @@ const TWEAKS = {
       category: 'performance',
       restartInfo: 'Restart PC',
       presets: { balanced: false, performance: false, esports: true }
+    },
+    {
+      id: 'dnscloudflare',
+      name: 'DNS: Cloudflare',
+      desc: "Switches DNS (IPv4 + IPv6) on every active network adapter to Cloudflare's 1.1.1.1 while gaming, restoring your original DNS on deactivate. Mutually exclusive with the other DNS options below - picking one turns off the others.",
+      cmd: 'Set-DnsClientServerAddress: 1.1.1.1, 1.0.0.1, 2606:4700:4700::1111, 2606:4700:4700::1001',
+      category: 'performance',
+      presets: { balanced: false, performance: false, esports: true }
+    },
+    {
+      id: 'dnsquad9',
+      name: 'DNS: Quad9',
+      desc: "Switches DNS (IPv4 + IPv6) on every active network adapter to Quad9's 9.9.9.9 (blocks known-malicious domains) while gaming, restoring your original DNS on deactivate. Alternative to Cloudflare - mutually exclusive with the other DNS options.",
+      cmd: 'Set-DnsClientServerAddress: 9.9.9.9, 149.112.112.112, 2620:fe::fe, 2620:fe::9',
+      category: 'performance',
+      presets: { balanced: false, performance: false, esports: false }
+    },
+    {
+      id: 'dnsopendns',
+      name: 'DNS: OpenDNS',
+      desc: 'Switches DNS (IPv4 + IPv6) on every active network adapter to OpenDNS while gaming, restoring your original DNS on deactivate. Mutually exclusive with the other DNS options above.',
+      cmd: 'Set-DnsClientServerAddress: 208.67.222.222, 208.67.220.220, 2620:119:35::35, 2620:119:53::53',
+      category: 'performance',
+      presets: { balanced: false, performance: false, esports: false }
     }
   ]
 };

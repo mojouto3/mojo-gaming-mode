@@ -444,6 +444,36 @@ const TWEAK_DEFINITIONS = {
     // other Windows System tweaks.
     applyCmd: `$p='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsCopilot'; If(!(Test-Path $p)){New-Item -Path $p -Force|Out-Null}; Set-ItemProperty -Path $p -Name 'TurnOffWindowsCopilot' -Value 1 -Type DWord; Get-Process -Name 'Copilot' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
     revertCmd: `$p='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsCopilot'; If(Test-Path $p){Remove-ItemProperty -Path $p -Name 'TurnOffWindowsCopilot' -ErrorAction SilentlyContinue}; Exit 0`
+  },
+
+  // DNS switcher - implemented as 3 mutually-exclusive tweaks (radio
+  // behavior enforced in renderer/js/app.js's toggleTweak) rather than a
+  // new "parameterized tweak" concept, so it plugs into the existing
+  // apply/revert-per-id engine unchanged. Each captures every touched
+  // adapter's prior DNS servers (or NONE for DHCP) before switching, same
+  // capture/restore idiom as visualfx, scaled to "per adapter" instead of
+  // "per registry value". A single Set-DnsClientServerAddress call with a
+  // mixed IPv4+IPv6 address list assigns each address to the right stack
+  // automatically, so IPv4 and IPv6 are set/restored together in one shot.
+  dnscloudflare: {
+    name: 'DNS: Cloudflare',
+    requiresAdmin: true,
+    applyCmd: `$adapters = Get-NetAdapter | Where-Object {$_.Status -eq 'Up'}; $marker = "$env:TEMP\\mgm_dns_prior_cloudflare.flag"; $lines = @(); ForEach ($a in $adapters) { $cur = Get-DnsClientServerAddress -InterfaceAlias $a.Name -ErrorAction SilentlyContinue | Select-Object -ExpandProperty ServerAddresses; $joined = If ($cur) { $cur -join ',' } Else { 'NONE' }; $lines += ($a.Name + '|' + $joined); Set-DnsClientServerAddress -InterfaceAlias $a.Name -ServerAddresses ('1.1.1.1','1.0.0.1','2606:4700:4700::1111','2606:4700:4700::1001') -ErrorAction SilentlyContinue }; Set-Content -Path $marker -Value $lines; Exit 0`,
+    revertCmd: `$marker = "$env:TEMP\\mgm_dns_prior_cloudflare.flag"; If (Test-Path $marker) { $lines = Get-Content -Path $marker; ForEach ($line in $lines) { $parts = $line -split '\\|', 2; $name = $parts[0]; $vals = $parts[1]; If ($vals -eq 'NONE') { Set-DnsClientServerAddress -InterfaceAlias $name -ResetServerAddresses -ErrorAction SilentlyContinue } Else { $arr = $vals -split ','; Set-DnsClientServerAddress -InterfaceAlias $name -ServerAddresses $arr -ErrorAction SilentlyContinue } }; Remove-Item $marker -ErrorAction SilentlyContinue }; Exit 0`
+  },
+
+  dnsquad9: {
+    name: 'DNS: Quad9',
+    requiresAdmin: true,
+    applyCmd: `$adapters = Get-NetAdapter | Where-Object {$_.Status -eq 'Up'}; $marker = "$env:TEMP\\mgm_dns_prior_quad9.flag"; $lines = @(); ForEach ($a in $adapters) { $cur = Get-DnsClientServerAddress -InterfaceAlias $a.Name -ErrorAction SilentlyContinue | Select-Object -ExpandProperty ServerAddresses; $joined = If ($cur) { $cur -join ',' } Else { 'NONE' }; $lines += ($a.Name + '|' + $joined); Set-DnsClientServerAddress -InterfaceAlias $a.Name -ServerAddresses ('9.9.9.9','149.112.112.112','2620:fe::fe','2620:fe::9') -ErrorAction SilentlyContinue }; Set-Content -Path $marker -Value $lines; Exit 0`,
+    revertCmd: `$marker = "$env:TEMP\\mgm_dns_prior_quad9.flag"; If (Test-Path $marker) { $lines = Get-Content -Path $marker; ForEach ($line in $lines) { $parts = $line -split '\\|', 2; $name = $parts[0]; $vals = $parts[1]; If ($vals -eq 'NONE') { Set-DnsClientServerAddress -InterfaceAlias $name -ResetServerAddresses -ErrorAction SilentlyContinue } Else { $arr = $vals -split ','; Set-DnsClientServerAddress -InterfaceAlias $name -ServerAddresses $arr -ErrorAction SilentlyContinue } }; Remove-Item $marker -ErrorAction SilentlyContinue }; Exit 0`
+  },
+
+  dnsopendns: {
+    name: 'DNS: OpenDNS',
+    requiresAdmin: true,
+    applyCmd: `$adapters = Get-NetAdapter | Where-Object {$_.Status -eq 'Up'}; $marker = "$env:TEMP\\mgm_dns_prior_opendns.flag"; $lines = @(); ForEach ($a in $adapters) { $cur = Get-DnsClientServerAddress -InterfaceAlias $a.Name -ErrorAction SilentlyContinue | Select-Object -ExpandProperty ServerAddresses; $joined = If ($cur) { $cur -join ',' } Else { 'NONE' }; $lines += ($a.Name + '|' + $joined); Set-DnsClientServerAddress -InterfaceAlias $a.Name -ServerAddresses ('208.67.222.222','208.67.220.220','2620:119:35::35','2620:119:53::53') -ErrorAction SilentlyContinue }; Set-Content -Path $marker -Value $lines; Exit 0`,
+    revertCmd: `$marker = "$env:TEMP\\mgm_dns_prior_opendns.flag"; If (Test-Path $marker) { $lines = Get-Content -Path $marker; ForEach ($line in $lines) { $parts = $line -split '\\|', 2; $name = $parts[0]; $vals = $parts[1]; If ($vals -eq 'NONE') { Set-DnsClientServerAddress -InterfaceAlias $name -ResetServerAddresses -ErrorAction SilentlyContinue } Else { $arr = $vals -split ','; Set-DnsClientServerAddress -InterfaceAlias $name -ServerAddresses $arr -ErrorAction SilentlyContinue } }; Remove-Item $marker -ErrorAction SilentlyContinue }; Exit 0`
   }
 
 };

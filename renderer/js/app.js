@@ -743,6 +743,7 @@ function bindEvents() {
   // Settings - Restore Point
   document.getElementById('btn-restore').addEventListener('click', createRestorePoint);
   document.getElementById('btn-restore-config')?.addEventListener('click', restoreConfigFromBackup);
+  initUltimatePerfCard();
   document.getElementById('btn-export-settings')?.addEventListener('click', exportFullConfigToFile);
   document.getElementById('btn-import-settings')?.addEventListener('click', importFullConfigFromFile);
 
@@ -966,7 +967,8 @@ function iconFor(id) {
     widgets: 'layout-grid-remove', activityhistory: 'history-off',
     consumerfeatures: 'apps-off', locationtracking: 'map-pin-off',
     bgapps: 'player-pause', mpo: 'layers-off', visualfx: 'blur-off',
-    copilot: 'robot-off'
+    copilot: 'robot-off', dnscloudflare: 'shield-lock', dnsquad9: 'world-check',
+    dnsopendns: 'router'
   };
   return map[id] || 'settings';
 }
@@ -1555,8 +1557,31 @@ function renderAll() {
 
 // ── Actions ───────────────────────────────────────────────────────────────────
 
+// DNS switcher: 3 separate tweaks behaving as a radio group ("DNS switcher"
+// dropdown in spirit) rather than independent checkboxes, so at most one
+// provider is ever active at once - see the DNS tweak comments in
+// src/tweaks.js for why they're modeled this way.
+const DNS_PROVIDER_TWEAK_IDS = ['dnscloudflare', 'dnsquad9', 'dnsopendns'];
+
 function toggleTweak(id, val) {
   state.tweaks[id] = val;
+  if (val && DNS_PROVIDER_TWEAK_IDS.includes(id)) {
+    DNS_PROVIDER_TWEAK_IDS.forEach(otherId => {
+      if (otherId === id || !state.tweaks[otherId]) return;
+      state.tweaks[otherId] = false;
+      delete state.manualOverrides[otherId];
+      const otherTweak = ALL_TWEAKS.find(t => t.id === otherId);
+      if (otherTweak && otherTweak.presets[state.preset] !== false) {
+        state.manualOverrides[otherId] = false;
+      }
+      const otherRow = document.getElementById('tr-' + otherId);
+      if (otherRow) {
+        otherRow.className = 'tweak-row';
+        const cb = otherRow.querySelector('input[type="checkbox"]');
+        if (cb) cb.checked = false;
+      }
+    });
+  }
   // Track as manual override only if different from preset default
   const tweak = ALL_TWEAKS.find(t => t.id === id);
   if (tweak && tweak.presets[state.preset] !== val) {
@@ -2182,6 +2207,49 @@ function updateDynamicTranslations() {
 
   // Re-render all tabs to pick up translations
   renderAll();
+}
+
+// Ultimate Performance power plan - standalone Enable/Disable button (not a
+// preset-tied checkbox tweak), with a laptop-detected warning since this
+// plan can keep the CPU/GPU from downclocking on battery.
+async function initUltimatePerfCard() {
+  const btn = document.getElementById('btn-ultimateperf');
+  if (!btn) return;
+
+  window.mgm.isLaptop().then(({ isLaptop }) => {
+    const warn = document.getElementById('ultimateperf-laptop-warn');
+    if (warn && isLaptop) warn.style.display = 'flex';
+  }).catch(() => {});
+
+  const setBtnState = (active) => {
+    btn.dataset.active = active ? '1' : '0';
+    btn.innerHTML = active
+      ? '<i class="ti ti-bolt-off"></i> Disable'
+      : '<i class="ti ti-bolt"></i> Enable';
+  };
+
+  window.mgm.getUltimatePerfStatus().then(({ active }) => setBtnState(active)).catch(() => {});
+
+  btn.addEventListener('click', async () => {
+    const currentlyActive = btn.dataset.active === '1';
+    btn.disabled = true;
+    btn.innerHTML = currentlyActive
+      ? '<i class="ti ti-loader"></i> Disabling...'
+      : '<i class="ti ti-loader"></i> Enabling...';
+
+    const result = currentlyActive
+      ? await window.mgm.disableUltimatePerf()
+      : await window.mgm.enableUltimatePerf();
+
+    btn.disabled = false;
+    if (result.success) {
+      setBtnState(!currentlyActive);
+      showToast(currentlyActive ? 'Ultimate Performance disabled' : 'Ultimate Performance enabled');
+    } else {
+      setBtnState(currentlyActive);
+      showToast(result.error || 'Failed to change power plan');
+    }
+  });
 }
 
 async function createRestorePoint() {
