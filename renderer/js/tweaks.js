@@ -260,6 +260,32 @@ const TWEAKS = {
       cmd: 'Registry: DisableLocation=1 & sc stop/disable lfsvc',
       category: 'system',
       presets: { balanced: false, performance: true, esports: true }
+    },
+    {
+      id: 'mpo',
+      name: 'Multiplane Overlay off',
+      desc: "Disables MPO, Microsoft's own documented workaround for overlay-related flickering and stutter on some GPU/driver combinations.",
+      cmd: 'Registry: OverlayTestMode=5 under Dwm',
+      category: 'performance',
+      restartInfo: 'Restart PC',
+      presets: { balanced: false, performance: false, esports: true }
+    },
+    {
+      id: 'visualfx',
+      name: 'Visual Effects - Best Performance',
+      desc: 'Turns off window/taskbar animations, transparency, and Aero Peek for a snappier, lower-overhead desktop. Noticeable cosmetic change.',
+      cmd: 'Registry: DragFullWindows, MinAnimate, TaskbarAnimations, EnableTransparency, EnableAeroPeek, VisualFXSetting=2',
+      category: 'performance',
+      restartInfo: 'Restart PC',
+      presets: { balanced: false, performance: false, esports: true }
+    },
+    {
+      id: 'copilot',
+      name: 'Windows Copilot/AI off',
+      desc: "Policy-locks Windows Copilot off system-wide and closes it if running. Not included in any preset - enable manually if you don't use Copilot.",
+      cmd: 'Registry: TurnOffWindowsCopilot=1 & Stop-Process Copilot.exe',
+      category: 'system',
+      presets: { balanced: false, performance: false, esports: false }
     }
   ],
   ov: [
@@ -309,6 +335,14 @@ const TWEAKS = {
       name: 'Telemetry off',
       desc: 'Stops the DiagTrack and dmwappushsvc data collection services, and sets the "optional diagnostic data" policy to off (may be partially ignored on Home editions - this does what Windows allows).',
       cmd: 'sc stop DiagTrack, dmwappushsvc & AllowTelemetry=0',
+      category: 'system',
+      presets: { balanced: false, performance: true, esports: true }
+    },
+    {
+      id: 'bgapps',
+      name: 'Background Apps off',
+      desc: "Flips the \"Let apps run in the background\" master switch off for UWP apps, stopping them from using CPU/network while you're not actively using them.",
+      cmd: 'Registry: GlobalUserDisabled=1 under BackgroundAccessApplications',
       category: 'system',
       presets: { balanced: false, performance: true, esports: true }
     }

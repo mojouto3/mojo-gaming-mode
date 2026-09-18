@@ -388,6 +388,62 @@ const TWEAK_DEFINITIONS = {
     // lfsvc is Manual/trigger-start by default, not Automatic).
     applyCmd: `$p='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors'; If(!(Test-Path $p)){New-Item -Path $p -Force|Out-Null}; Set-ItemProperty -Path $p -Name 'DisableLocation' -Value 1 -Type DWord; $marker = "$env:TEMP\\mgm_wasrunning_lfsvc.flag"; $svc = Get-Service -Name 'lfsvc' -ErrorAction SilentlyContinue; If ($svc -and $svc.Status -eq 'Running') { New-Item -Path $marker -ItemType File -Force | Out-Null } Else { Remove-Item $marker -ErrorAction SilentlyContinue }; Stop-Service -Name 'lfsvc' -Force -ErrorAction SilentlyContinue; Set-Service -Name 'lfsvc' -StartupType Disabled -ErrorAction SilentlyContinue; Exit 0`,
     revertCmd: `$p='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors'; If(Test-Path $p){Remove-ItemProperty -Path $p -Name 'DisableLocation' -ErrorAction SilentlyContinue}; $marker = "$env:TEMP\\mgm_wasrunning_lfsvc.flag"; sc.exe config lfsvc start= demand | Out-Null; If (Test-Path $marker) { Remove-Item $marker -ErrorAction SilentlyContinue; Start-Service -Name 'lfsvc' -ErrorAction SilentlyContinue }; Exit 0`
+  },
+
+  bgapps: {
+    name: 'Background Apps off',
+    requiresAdmin: false,
+    // "Let apps run in the background" master switch for UWP apps.
+    applyCmd: `$p='HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\BackgroundAccessApplications'; If(!(Test-Path $p)){New-Item -Path $p -Force|Out-Null}; Set-ItemProperty -Path $p -Name 'GlobalUserDisabled' -Value 1 -Type DWord; Exit 0`,
+    revertCmd: `$p='HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\BackgroundAccessApplications'; If(Test-Path $p){Remove-ItemProperty -Path $p -Name 'GlobalUserDisabled' -ErrorAction SilentlyContinue}; Exit 0`
+  },
+
+  mpo: {
+    name: 'Multiplane Overlay off',
+    requiresAdmin: true,
+    requiresReboot: true,
+    // OverlayTestMode=5 is Microsoft's own documented workaround for MPO-
+    // related flickering/stutter (referenced in Microsoft support articles
+    // for exactly that symptom). Absence of the value means MPO enabled
+    // (the default), so revert just removes it rather than writing back a
+    // captured value.
+    applyCmd: `$p='HKLM:\\SOFTWARE\\Microsoft\\Windows\\Dwm'; If(!(Test-Path $p)){New-Item -Path $p -Force|Out-Null}; Set-ItemProperty -Path $p -Name 'OverlayTestMode' -Value 5 -Type DWord; Exit 0`,
+    revertCmd: `$p='HKLM:\\SOFTWARE\\Microsoft\\Windows\\Dwm'; If(Test-Path $p){Remove-ItemProperty -Path $p -Name 'OverlayTestMode' -ErrorAction SilentlyContinue}; Exit 0`
+  },
+
+  visualfx: {
+    name: 'Visual Effects - Best Performance',
+    requiresAdmin: false,
+    restartInfo: 'Restart PC',
+    // Captures every prior value (registry path|name|type|value, one per
+    // line) into a marker file before writing the "best performance"
+    // values, same wasRunning/prior-value philosophy as hags/netthrottle -
+    // scaled up to several keys instead of one, since Explorer's real
+    // defaults vary enough between installs that assuming them on revert
+    // isn't safe.
+    applyCmd: `$items = @(
+  @{P='HKCU:\\Control Panel\\Desktop'; N='DragFullWindows'; T='String'; V='0'},
+  @{P='HKCU:\\Control Panel\\Desktop'; N='MenuShowDelay'; T='String'; V='0'},
+  @{P='HKCU:\\Control Panel\\Desktop\\WindowMetrics'; N='MinAnimate'; T='String'; V='0'},
+  @{P='HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced'; N='TaskbarAnimations'; T='DWord'; V=0},
+  @{P='HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced'; N='ListviewAlphaSelect'; T='DWord'; V=0},
+  @{P='HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced'; N='ListviewShadow'; T='DWord'; V=0},
+  @{P='HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects'; N='VisualFXSetting'; T='DWord'; V=2},
+  @{P='HKCU:\\Software\\Microsoft\\Windows\\DWM'; N='EnableAeroPeek'; T='DWord'; V=0},
+  @{P='HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize'; N='EnableTransparency'; T='DWord'; V=0}
+); $marker = "$env:TEMP\\mgm_visualfx_prior.flag"; $lines = @(); ForEach ($i in $items) { If (!(Test-Path $i.P)) { New-Item -Path $i.P -Force | Out-Null }; $cur = Get-ItemProperty -Path $i.P -Name $i.N -ErrorAction SilentlyContinue; If ($cur) { $lines += ($i.P + '|' + $i.N + '|' + $i.T + '|' + $cur.($i.N)) } Else { $lines += ($i.P + '|' + $i.N + '|' + $i.T + '|NONE') }; Set-ItemProperty -Path $i.P -Name $i.N -Value $i.V -Type $i.T }; Set-Content -Path $marker -Value $lines; Exit 0`,
+    revertCmd: `$marker = "$env:TEMP\\mgm_visualfx_prior.flag"; If (Test-Path $marker) { $lines = Get-Content -Path $marker; ForEach ($line in $lines) { $parts = $line -split '\\|', 4; $path = $parts[0]; $name = $parts[1]; $type = $parts[2]; $val = $parts[3]; If ($val -eq 'NONE') { If (Test-Path $path) { Remove-ItemProperty -Path $path -Name $name -ErrorAction SilentlyContinue } } Else { If (!(Test-Path $path)) { New-Item -Path $path -Force | Out-Null }; Set-ItemProperty -Path $path -Name $name -Value $val -Type $type -ErrorAction SilentlyContinue } }; Remove-Item $marker -ErrorAction SilentlyContinue }; Exit 0`
+  },
+
+  copilot: {
+    name: 'Windows Copilot/AI off',
+    requiresAdmin: true,
+    // Policy-locks Copilot off system-wide and closes it if already open.
+    // Left out of every preset by default (opt-in only, via Custom) since
+    // it's a more invasive/first-party-feature-locking change than the
+    // other Windows System tweaks.
+    applyCmd: `$p='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsCopilot'; If(!(Test-Path $p)){New-Item -Path $p -Force|Out-Null}; Set-ItemProperty -Path $p -Name 'TurnOffWindowsCopilot' -Value 1 -Type DWord; Get-Process -Name 'Copilot' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revertCmd: `$p='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsCopilot'; If(Test-Path $p){Remove-ItemProperty -Path $p -Name 'TurnOffWindowsCopilot' -ErrorAction SilentlyContinue}; Exit 0`
   }
 
 };

@@ -964,7 +964,9 @@ function iconFor(id) {
     inventorysvc: 'clipboard-list', compatappraiser: 'clipboard-check',
     ceiptasks: 'chart-bar', nicpower: 'plug-off', netthrottle: 'gauge',
     widgets: 'layout-grid-remove', activityhistory: 'history-off',
-    consumerfeatures: 'apps-off', locationtracking: 'map-pin-off'
+    consumerfeatures: 'apps-off', locationtracking: 'map-pin-off',
+    bgapps: 'player-pause', mpo: 'layers-off', visualfx: 'blur-off',
+    copilot: 'robot-off'
   };
   return map[id] || 'settings';
 }

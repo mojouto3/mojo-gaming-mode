@@ -9,6 +9,7 @@ All notable changes to Mojo Gaming Mode are documented here.
 ### Added
 
 - **4 new Windows system tweaks** (CTT WinUtil-inspired): Widgets off (removes the taskbar icon and stops the Widgets background service), Activity History off (stops background disk writes behind Timeline/the Activity feed, including any cloud upload of it), Consumer Features off (stops Windows from silently installing suggested/promoted Store apps), and Location Tracking off (turns off the location service system-wide via policy and stops the Geolocation Service). Activity History and Consumer Features are now part of the Balanced preset as the least invasive of the four; Widgets and Location Tracking join Performance and Esports.
+- **4 more tweaks**: Background Apps off (the "let apps run in the background" master switch for UWP apps), Multiplane Overlay off (Microsoft's own documented registry workaround for MPO-related flickering/stutter, Esports preset only), Visual Effects - Best Performance (turns off window/taskbar animations, transparency, and Aero Peek - a noticeable cosmetic change, so Esports preset only), and Windows Copilot/AI off (policy-locks Copilot off and closes it - left out of every preset by default given how invasive it is; enable manually via Custom).
 
 ## [2.13.0] - 2026-08-24
 
