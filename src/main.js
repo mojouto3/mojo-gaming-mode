@@ -656,6 +656,36 @@ ipcMain.handle('create-restore-point', async () => {
   });
 });
 
+// Ultimate Performance power plan - a standalone Enable/Disable action
+// rather than a checkbox tweak (per the CTT WinUtil UI it's modeled on),
+// since flipping the active system-wide power plan isn't something that
+// should silently happen/unhappen every time gaming mode toggles.
+const ULTIMATE_PERF_SOURCE_GUID = 'e9a42b02-d5df-448d-aa00-03f14749eb61';
+const BALANCED_GUID = '381b4222-f694-41f0-9685-ff5bb260df2e';
+const GUID_RE = "([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})";
+
+ipcMain.handle('is-laptop', async () => {
+  const result = await runPS(`$b = Get-CimInstance -ClassName Win32_Battery -ErrorAction SilentlyContinue; If ($b) { Write-Output 'LAPTOP' } Else { Write-Output 'DESKTOP' }; Exit 0`);
+  return { isLaptop: result.success && result.output.includes('LAPTOP') };
+});
+
+ipcMain.handle('get-ultimate-perf-status', async () => {
+  const result = await runPS(`$active = powercfg /getactivescheme; If ($active -match 'Ultimate Performance') { Write-Output 'ACTIVE' } Else { Write-Output 'INACTIVE' }; Exit 0`);
+  return { active: result.success && result.output.includes('ACTIVE') };
+});
+
+ipcMain.handle('enable-ultimate-perf', async () => {
+  const cmd = `$prior = ([regex]::Match((powercfg /getactivescheme), '${GUID_RE}')).Value; Set-Content -Path "$env:TEMP\\mgm_ultimateperf_prior.flag" -Value $prior; $match = (powercfg /list) | Select-String 'Ultimate Performance'; If ($match) { $guid = ([regex]::Match($match.Line, '${GUID_RE}')).Value } Else { $dup = powercfg -duplicatescheme ${ULTIMATE_PERF_SOURCE_GUID}; $guid = ([regex]::Match($dup, '${GUID_RE}')).Value }; powercfg /setactive $guid; Exit 0`;
+  const result = await runPS(cmd);
+  return { success: result.success, error: result.error };
+});
+
+ipcMain.handle('disable-ultimate-perf', async () => {
+  const cmd = `$marker = "$env:TEMP\\mgm_ultimateperf_prior.flag"; $match = (powercfg /list) | Select-String 'Ultimate Performance'; $guid = If ($match) { ([regex]::Match($match.Line, '${GUID_RE}')).Value } Else { $null }; If (Test-Path $marker) { $prior = (Get-Content -Path $marker | Select-Object -First 1).Trim(); If ($prior) { powercfg /setactive $prior } Else { powercfg /setactive ${BALANCED_GUID} }; Remove-Item $marker -ErrorAction SilentlyContinue } Else { powercfg /setactive ${BALANCED_GUID} }; If ($guid) { powercfg -delete $guid }; Exit 0`;
+  const result = await runPS(cmd);
+  return { success: result.success, error: result.error };
+});
+
 // Custom Rules definitions (mirrored from renderer for execution)
 const CUSTOM_RULE_CMDS = {
   cr_teams: {

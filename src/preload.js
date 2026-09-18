@@ -52,5 +52,9 @@ contextBridge.exposeInMainWorld('mgm', {
   setNotifPrefs: (prefs) => ipcRenderer.send('set-notif-prefs', prefs),
   setMiniMode: (enabled, height, width) => ipcRenderer.send('set-mini-mode', enabled, height, width),
   setBarMode: (enabled, width) => ipcRenderer.send('set-bar-mode', enabled, width),
-  setWindowOpacity: (value) => ipcRenderer.send('set-window-opacity', value)
+  setWindowOpacity: (value) => ipcRenderer.send('set-window-opacity', value),
+  isLaptop: () => ipcRenderer.invoke('is-laptop'),
+  getUltimatePerfStatus: () => ipcRenderer.invoke('get-ultimate-perf-status'),
+  enableUltimatePerf: () => ipcRenderer.invoke('enable-ultimate-perf'),
+  disableUltimatePerf: () => ipcRenderer.invoke('disable-ultimate-perf')
 });

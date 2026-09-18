@@ -164,6 +164,20 @@
               <button class="cat-filter-btn cat-communication" data-cat="communication">Communication</button>
               <button class="cat-filter-btn cat-cloud" data-cat="cloud">Cloud</button>
             </div>
+            <div class="settings-card glass-card spotlight" id="ultimateperf-card" style="margin-bottom:14px">
+              <div class="settings-row">
+                <div class="settings-info">
+                  <div class="settings-label">Ultimate Performance power plan</div>
+                  <div class="settings-desc">Unlocks Windows' hidden Ultimate Performance power plan - trims the small power-saving conveniences the OS otherwise keeps even on High Performance. Manual on/off, not tied to gaming mode or any preset.</div>
+                  <div class="settings-warn" id="ultimateperf-laptop-warn" style="display:none">
+                    <i class="ti ti-alert-triangle"></i> Laptop detected - can prevent CPU/GPU from downclocking on battery, hurting battery life and thermals. Best left off while unplugged.
+                  </div>
+                </div>
+                <button class="btn-restore" id="btn-ultimateperf">
+                  <i class="ti ti-bolt"></i> Enable
+                </button>
+              </div>
+            </div>
             <div id="tweak-no-results" class="tweak-no-results" style="display:none">No tweaks match your search.</div>
             <div class="section-header" id="sh-win"><span class="sh-title">WINDOWS SYSTEM</span><span class="sh-count" id="count-win"></span><label class="tog tog-sm" style="margin-left:auto"><input type="checkbox" data-tweak-cat="win"><div class="tog-track"></div><div class="tog-thumb"></div></label></div>
             <div id="tw-win"></div>

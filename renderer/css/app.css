@@ -2070,6 +2070,22 @@ html, body {
   font-size: 13px; padding: 32px 0;
 }
 
+/* Inline warning banner - e.g. laptop-detected caution under the Ultimate
+   Performance power plan toggle */
+.settings-warn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  background: rgba(240, 165, 0, 0.1);
+  border: 1px solid rgba(240, 165, 0, 0.3);
+  color: #f0a500;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 /* Reset defaults button */
 .btn-reset-defaults {
   background: transparent;

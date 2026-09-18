@@ -347,6 +347,133 @@ const TWEAK_DEFINITIONS = {
     // Verified live: both disable cleanly and stay disabled.
     applyCmd: `Disable-ScheduledTask -TaskName 'Consolidator' -TaskPath '\\Microsoft\\Windows\\Customer Experience Improvement Program\\' -ErrorAction SilentlyContinue; Disable-ScheduledTask -TaskName 'UsbCeip' -TaskPath '\\Microsoft\\Windows\\Customer Experience Improvement Program\\' -ErrorAction SilentlyContinue; Exit 0`,
     revertCmd: `Enable-ScheduledTask -TaskName 'Consolidator' -TaskPath '\\Microsoft\\Windows\\Customer Experience Improvement Program\\' -ErrorAction SilentlyContinue; Enable-ScheduledTask -TaskName 'UsbCeip' -TaskPath '\\Microsoft\\Windows\\Customer Experience Improvement Program\\' -ErrorAction SilentlyContinue; Exit 0`
+  },
+
+  // ── ADDED (v2.14.0) ─────────────────────────────────────────────────────────
+
+  widgets: {
+    name: 'Widgets off',
+    requiresAdmin: true,
+    // Uses the policy key (removes the taskbar icon system-wide) plus the
+    // wasRunning service pattern already used for fax/retaildemo/etc.,
+    // rather than removing the Web Experience Pack appx package outright -
+    // an appx removal can't be cleanly reverted, and every tweak here must
+    // have a working revertCmd.
+    applyCmd: `$p='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Dsh'; If(!(Test-Path $p)){New-Item -Path $p -Force|Out-Null}; Set-ItemProperty -Path $p -Name 'AllowNewsAndInterests' -Value 0 -Type DWord; $marker = "$env:TEMP\\mgm_wasrunning_widgets.flag"; $svc = Get-Service -Name 'WidgetService' -ErrorAction SilentlyContinue; If ($svc -and $svc.Status -eq 'Running') { New-Item -Path $marker -ItemType File -Force | Out-Null } Else { Remove-Item $marker -ErrorAction SilentlyContinue }; Stop-Service -Name 'WidgetService' -Force -ErrorAction SilentlyContinue; Set-Service -Name 'WidgetService' -StartupType Disabled -ErrorAction SilentlyContinue; Exit 0`,
+    revertCmd: `$p='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Dsh'; If(Test-Path $p){Remove-ItemProperty -Path $p -Name 'AllowNewsAndInterests' -ErrorAction SilentlyContinue}; $marker = "$env:TEMP\\mgm_wasrunning_widgets.flag"; sc.exe config WidgetService start= demand | Out-Null; If (Test-Path $marker) { Remove-Item $marker -ErrorAction SilentlyContinue; Start-Service -Name 'WidgetService' -ErrorAction SilentlyContinue }; Exit 0`
+  },
+
+  activityhistory: {
+    name: 'Activity History off',
+    requiresAdmin: true,
+    // Stops the background disk writes behind Timeline/the Activity feed
+    // (both local recording and any cloud upload of it).
+    applyCmd: `$p='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\System'; If(!(Test-Path $p)){New-Item -Path $p -Force|Out-Null}; Set-ItemProperty -Path $p -Name 'EnableActivityFeed' -Value 0 -Type DWord; Set-ItemProperty -Path $p -Name 'PublishUserActivities' -Value 0 -Type DWord; Set-ItemProperty -Path $p -Name 'UploadUserActivities' -Value 0 -Type DWord; Exit 0`,
+    revertCmd: `$p='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\System'; If(Test-Path $p){Remove-ItemProperty -Path $p -Name 'EnableActivityFeed' -ErrorAction SilentlyContinue; Remove-ItemProperty -Path $p -Name 'PublishUserActivities' -ErrorAction SilentlyContinue; Remove-ItemProperty -Path $p -Name 'UploadUserActivities' -ErrorAction SilentlyContinue}; Exit 0`
+  },
+
+  consumerfeatures: {
+    name: 'Consumer Features off',
+    requiresAdmin: true,
+    // Stops Windows from silently installing suggested/promoted Store apps.
+    applyCmd: `$p='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent'; If(!(Test-Path $p)){New-Item -Path $p -Force|Out-Null}; Set-ItemProperty -Path $p -Name 'DisableWindowsConsumerFeatures' -Value 1 -Type DWord; Exit 0`,
+    revertCmd: `$p='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent'; If(Test-Path $p){Remove-ItemProperty -Path $p -Name 'DisableWindowsConsumerFeatures' -ErrorAction SilentlyContinue}; Exit 0`
+  },
+
+  locationtracking: {
+    name: 'Location Tracking off',
+    requiresAdmin: true,
+    // Policy blocks the location feature system-wide in addition to
+    // stopping the Geolocation Service itself (wasRunning pattern, as
+    // lfsvc is Manual/trigger-start by default, not Automatic).
+    applyCmd: `$p='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors'; If(!(Test-Path $p)){New-Item -Path $p -Force|Out-Null}; Set-ItemProperty -Path $p -Name 'DisableLocation' -Value 1 -Type DWord; $marker = "$env:TEMP\\mgm_wasrunning_lfsvc.flag"; $svc = Get-Service -Name 'lfsvc' -ErrorAction SilentlyContinue; If ($svc -and $svc.Status -eq 'Running') { New-Item -Path $marker -ItemType File -Force | Out-Null } Else { Remove-Item $marker -ErrorAction SilentlyContinue }; Stop-Service -Name 'lfsvc' -Force -ErrorAction SilentlyContinue; Set-Service -Name 'lfsvc' -StartupType Disabled -ErrorAction SilentlyContinue; Exit 0`,
+    revertCmd: `$p='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors'; If(Test-Path $p){Remove-ItemProperty -Path $p -Name 'DisableLocation' -ErrorAction SilentlyContinue}; $marker = "$env:TEMP\\mgm_wasrunning_lfsvc.flag"; sc.exe config lfsvc start= demand | Out-Null; If (Test-Path $marker) { Remove-Item $marker -ErrorAction SilentlyContinue; Start-Service -Name 'lfsvc' -ErrorAction SilentlyContinue }; Exit 0`
+  },
+
+  bgapps: {
+    name: 'Background Apps off',
+    requiresAdmin: false,
+    // "Let apps run in the background" master switch for UWP apps.
+    applyCmd: `$p='HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\BackgroundAccessApplications'; If(!(Test-Path $p)){New-Item -Path $p -Force|Out-Null}; Set-ItemProperty -Path $p -Name 'GlobalUserDisabled' -Value 1 -Type DWord; Exit 0`,
+    revertCmd: `$p='HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\BackgroundAccessApplications'; If(Test-Path $p){Remove-ItemProperty -Path $p -Name 'GlobalUserDisabled' -ErrorAction SilentlyContinue}; Exit 0`
+  },
+
+  mpo: {
+    name: 'Multiplane Overlay off',
+    requiresAdmin: true,
+    requiresReboot: true,
+    // OverlayTestMode=5 is Microsoft's own documented workaround for MPO-
+    // related flickering/stutter (referenced in Microsoft support articles
+    // for exactly that symptom). Absence of the value means MPO enabled
+    // (the default), so revert just removes it rather than writing back a
+    // captured value.
+    applyCmd: `$p='HKLM:\\SOFTWARE\\Microsoft\\Windows\\Dwm'; If(!(Test-Path $p)){New-Item -Path $p -Force|Out-Null}; Set-ItemProperty -Path $p -Name 'OverlayTestMode' -Value 5 -Type DWord; Exit 0`,
+    revertCmd: `$p='HKLM:\\SOFTWARE\\Microsoft\\Windows\\Dwm'; If(Test-Path $p){Remove-ItemProperty -Path $p -Name 'OverlayTestMode' -ErrorAction SilentlyContinue}; Exit 0`
+  },
+
+  visualfx: {
+    name: 'Visual Effects - Best Performance',
+    requiresAdmin: false,
+    restartInfo: 'Restart PC',
+    // Captures every prior value (registry path|name|type|value, one per
+    // line) into a marker file before writing the "best performance"
+    // values, same wasRunning/prior-value philosophy as hags/netthrottle -
+    // scaled up to several keys instead of one, since Explorer's real
+    // defaults vary enough between installs that assuming them on revert
+    // isn't safe.
+    applyCmd: `$items = @(
+  @{P='HKCU:\\Control Panel\\Desktop'; N='DragFullWindows'; T='String'; V='0'},
+  @{P='HKCU:\\Control Panel\\Desktop'; N='MenuShowDelay'; T='String'; V='0'},
+  @{P='HKCU:\\Control Panel\\Desktop\\WindowMetrics'; N='MinAnimate'; T='String'; V='0'},
+  @{P='HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced'; N='TaskbarAnimations'; T='DWord'; V=0},
+  @{P='HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced'; N='ListviewAlphaSelect'; T='DWord'; V=0},
+  @{P='HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced'; N='ListviewShadow'; T='DWord'; V=0},
+  @{P='HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects'; N='VisualFXSetting'; T='DWord'; V=2},
+  @{P='HKCU:\\Software\\Microsoft\\Windows\\DWM'; N='EnableAeroPeek'; T='DWord'; V=0},
+  @{P='HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize'; N='EnableTransparency'; T='DWord'; V=0}
+); $marker = "$env:TEMP\\mgm_visualfx_prior.flag"; $lines = @(); ForEach ($i in $items) { If (!(Test-Path $i.P)) { New-Item -Path $i.P -Force | Out-Null }; $cur = Get-ItemProperty -Path $i.P -Name $i.N -ErrorAction SilentlyContinue; If ($cur) { $lines += ($i.P + '|' + $i.N + '|' + $i.T + '|' + $cur.($i.N)) } Else { $lines += ($i.P + '|' + $i.N + '|' + $i.T + '|NONE') }; Set-ItemProperty -Path $i.P -Name $i.N -Value $i.V -Type $i.T }; Set-Content -Path $marker -Value $lines; Exit 0`,
+    revertCmd: `$marker = "$env:TEMP\\mgm_visualfx_prior.flag"; If (Test-Path $marker) { $lines = Get-Content -Path $marker; ForEach ($line in $lines) { $parts = $line -split '\\|', 4; $path = $parts[0]; $name = $parts[1]; $type = $parts[2]; $val = $parts[3]; If ($val -eq 'NONE') { If (Test-Path $path) { Remove-ItemProperty -Path $path -Name $name -ErrorAction SilentlyContinue } } Else { If (!(Test-Path $path)) { New-Item -Path $path -Force | Out-Null }; Set-ItemProperty -Path $path -Name $name -Value $val -Type $type -ErrorAction SilentlyContinue } }; Remove-Item $marker -ErrorAction SilentlyContinue }; Exit 0`
+  },
+
+  copilot: {
+    name: 'Windows Copilot/AI off',
+    requiresAdmin: true,
+    // Policy-locks Copilot off system-wide and closes it if already open.
+    // Left out of every preset by default (opt-in only, via Custom) since
+    // it's a more invasive/first-party-feature-locking change than the
+    // other Windows System tweaks.
+    applyCmd: `$p='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsCopilot'; If(!(Test-Path $p)){New-Item -Path $p -Force|Out-Null}; Set-ItemProperty -Path $p -Name 'TurnOffWindowsCopilot' -Value 1 -Type DWord; Get-Process -Name 'Copilot' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revertCmd: `$p='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsCopilot'; If(Test-Path $p){Remove-ItemProperty -Path $p -Name 'TurnOffWindowsCopilot' -ErrorAction SilentlyContinue}; Exit 0`
+  },
+
+  // DNS switcher - implemented as 3 mutually-exclusive tweaks (radio
+  // behavior enforced in renderer/js/app.js's toggleTweak) rather than a
+  // new "parameterized tweak" concept, so it plugs into the existing
+  // apply/revert-per-id engine unchanged. Each captures every touched
+  // adapter's prior DNS servers (or NONE for DHCP) before switching, same
+  // capture/restore idiom as visualfx, scaled to "per adapter" instead of
+  // "per registry value". A single Set-DnsClientServerAddress call with a
+  // mixed IPv4+IPv6 address list assigns each address to the right stack
+  // automatically, so IPv4 and IPv6 are set/restored together in one shot.
+  dnscloudflare: {
+    name: 'DNS: Cloudflare',
+    requiresAdmin: true,
+    applyCmd: `$adapters = Get-NetAdapter | Where-Object {$_.Status -eq 'Up'}; $marker = "$env:TEMP\\mgm_dns_prior_cloudflare.flag"; $lines = @(); ForEach ($a in $adapters) { $cur = Get-DnsClientServerAddress -InterfaceAlias $a.Name -ErrorAction SilentlyContinue | Select-Object -ExpandProperty ServerAddresses; $joined = If ($cur) { $cur -join ',' } Else { 'NONE' }; $lines += ($a.Name + '|' + $joined); Set-DnsClientServerAddress -InterfaceAlias $a.Name -ServerAddresses ('1.1.1.1','1.0.0.1','2606:4700:4700::1111','2606:4700:4700::1001') -ErrorAction SilentlyContinue }; Set-Content -Path $marker -Value $lines; Exit 0`,
+    revertCmd: `$marker = "$env:TEMP\\mgm_dns_prior_cloudflare.flag"; If (Test-Path $marker) { $lines = Get-Content -Path $marker; ForEach ($line in $lines) { $parts = $line -split '\\|', 2; $name = $parts[0]; $vals = $parts[1]; If ($vals -eq 'NONE') { Set-DnsClientServerAddress -InterfaceAlias $name -ResetServerAddresses -ErrorAction SilentlyContinue } Else { $arr = $vals -split ','; Set-DnsClientServerAddress -InterfaceAlias $name -ServerAddresses $arr -ErrorAction SilentlyContinue } }; Remove-Item $marker -ErrorAction SilentlyContinue }; Exit 0`
+  },
+
+  dnsquad9: {
+    name: 'DNS: Quad9',
+    requiresAdmin: true,
+    applyCmd: `$adapters = Get-NetAdapter | Where-Object {$_.Status -eq 'Up'}; $marker = "$env:TEMP\\mgm_dns_prior_quad9.flag"; $lines = @(); ForEach ($a in $adapters) { $cur = Get-DnsClientServerAddress -InterfaceAlias $a.Name -ErrorAction SilentlyContinue | Select-Object -ExpandProperty ServerAddresses; $joined = If ($cur) { $cur -join ',' } Else { 'NONE' }; $lines += ($a.Name + '|' + $joined); Set-DnsClientServerAddress -InterfaceAlias $a.Name -ServerAddresses ('9.9.9.9','149.112.112.112','2620:fe::fe','2620:fe::9') -ErrorAction SilentlyContinue }; Set-Content -Path $marker -Value $lines; Exit 0`,
+    revertCmd: `$marker = "$env:TEMP\\mgm_dns_prior_quad9.flag"; If (Test-Path $marker) { $lines = Get-Content -Path $marker; ForEach ($line in $lines) { $parts = $line -split '\\|', 2; $name = $parts[0]; $vals = $parts[1]; If ($vals -eq 'NONE') { Set-DnsClientServerAddress -InterfaceAlias $name -ResetServerAddresses -ErrorAction SilentlyContinue } Else { $arr = $vals -split ','; Set-DnsClientServerAddress -InterfaceAlias $name -ServerAddresses $arr -ErrorAction SilentlyContinue } }; Remove-Item $marker -ErrorAction SilentlyContinue }; Exit 0`
+  },
+
+  dnsopendns: {
+    name: 'DNS: OpenDNS',
+    requiresAdmin: true,
+    applyCmd: `$adapters = Get-NetAdapter | Where-Object {$_.Status -eq 'Up'}; $marker = "$env:TEMP\\mgm_dns_prior_opendns.flag"; $lines = @(); ForEach ($a in $adapters) { $cur = Get-DnsClientServerAddress -InterfaceAlias $a.Name -ErrorAction SilentlyContinue | Select-Object -ExpandProperty ServerAddresses; $joined = If ($cur) { $cur -join ',' } Else { 'NONE' }; $lines += ($a.Name + '|' + $joined); Set-DnsClientServerAddress -InterfaceAlias $a.Name -ServerAddresses ('208.67.222.222','208.67.220.220','2620:119:35::35','2620:119:53::53') -ErrorAction SilentlyContinue }; Set-Content -Path $marker -Value $lines; Exit 0`,
+    revertCmd: `$marker = "$env:TEMP\\mgm_dns_prior_opendns.flag"; If (Test-Path $marker) { $lines = Get-Content -Path $marker; ForEach ($line in $lines) { $parts = $line -split '\\|', 2; $name = $parts[0]; $vals = $parts[1]; If ($vals -eq 'NONE') { Set-DnsClientServerAddress -InterfaceAlias $name -ResetServerAddresses -ErrorAction SilentlyContinue } Else { $arr = $vals -split ','; Set-DnsClientServerAddress -InterfaceAlias $name -ServerAddresses $arr -ErrorAction SilentlyContinue } }; Remove-Item $marker -ErrorAction SilentlyContinue }; Exit 0`
   }
 
 };

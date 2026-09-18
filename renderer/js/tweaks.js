@@ -228,6 +228,64 @@ const TWEAKS = {
       cmd: 'Disable-ScheduledTask: Consolidator, UsbCeip',
       category: 'system',
       presets: { balanced: false, performance: true, esports: true }
+    },
+    {
+      id: 'widgets',
+      name: 'Widgets off',
+      desc: 'Removes the Widgets icon from the taskbar and stops its background service.',
+      cmd: 'Registry: AllowNewsAndInterests=0 & sc stop/disable WidgetService',
+      category: 'system',
+      presets: { balanced: false, performance: true, esports: true }
+    },
+    {
+      id: 'activityhistory',
+      name: 'Activity History off',
+      desc: 'Stops the background disk writes behind Timeline and the Activity feed, including any cloud upload of it.',
+      cmd: 'Registry: EnableActivityFeed=0, PublishUserActivities=0, UploadUserActivities=0',
+      category: 'system',
+      presets: { balanced: true, performance: true, esports: true }
+    },
+    {
+      id: 'consumerfeatures',
+      name: 'Consumer Features off',
+      desc: "Stops Windows from silently installing suggested or promoted Store apps.",
+      cmd: 'Registry: DisableWindowsConsumerFeatures=1',
+      category: 'system',
+      presets: { balanced: true, performance: true, esports: true }
+    },
+    {
+      id: 'locationtracking',
+      name: 'Location Tracking off',
+      desc: 'Turns off the location service system-wide via policy and stops the Geolocation Service.',
+      cmd: 'Registry: DisableLocation=1 & sc stop/disable lfsvc',
+      category: 'system',
+      presets: { balanced: false, performance: true, esports: true }
+    },
+    {
+      id: 'mpo',
+      name: 'Multiplane Overlay off',
+      desc: "Disables MPO, Microsoft's own documented workaround for overlay-related flickering and stutter on some GPU/driver combinations.",
+      cmd: 'Registry: OverlayTestMode=5 under Dwm',
+      category: 'performance',
+      restartInfo: 'Restart PC',
+      presets: { balanced: false, performance: false, esports: true }
+    },
+    {
+      id: 'visualfx',
+      name: 'Visual Effects - Best Performance',
+      desc: 'Turns off window/taskbar animations, transparency, and Aero Peek for a snappier, lower-overhead desktop. Noticeable cosmetic change.',
+      cmd: 'Registry: DragFullWindows, MinAnimate, TaskbarAnimations, EnableTransparency, EnableAeroPeek, VisualFXSetting=2',
+      category: 'performance',
+      restartInfo: 'Restart PC',
+      presets: { balanced: false, performance: false, esports: true }
+    },
+    {
+      id: 'copilot',
+      name: 'Windows Copilot/AI off',
+      desc: "Policy-locks Windows Copilot off system-wide and closes it if running. Not included in any preset - enable manually if you don't use Copilot.",
+      cmd: 'Registry: TurnOffWindowsCopilot=1 & Stop-Process Copilot.exe',
+      category: 'system',
+      presets: { balanced: false, performance: false, esports: false }
     }
   ],
   ov: [
@@ -279,6 +337,14 @@ const TWEAKS = {
       cmd: 'sc stop DiagTrack, dmwappushsvc & AllowTelemetry=0',
       category: 'system',
       presets: { balanced: false, performance: true, esports: true }
+    },
+    {
+      id: 'bgapps',
+      name: 'Background Apps off',
+      desc: "Flips the \"Let apps run in the background\" master switch off for UWP apps, stopping them from using CPU/network while you're not actively using them.",
+      cmd: 'Registry: GlobalUserDisabled=1 under BackgroundAccessApplications',
+      category: 'system',
+      presets: { balanced: false, performance: true, esports: true }
     }
   ],
   net: [
@@ -307,6 +373,30 @@ const TWEAKS = {
       category: 'performance',
       restartInfo: 'Restart PC',
       presets: { balanced: false, performance: false, esports: true }
+    },
+    {
+      id: 'dnscloudflare',
+      name: 'DNS: Cloudflare',
+      desc: "Switches DNS (IPv4 + IPv6) on every active network adapter to Cloudflare's 1.1.1.1 while gaming, restoring your original DNS on deactivate. Mutually exclusive with the other DNS options below - picking one turns off the others.",
+      cmd: 'Set-DnsClientServerAddress: 1.1.1.1, 1.0.0.1, 2606:4700:4700::1111, 2606:4700:4700::1001',
+      category: 'performance',
+      presets: { balanced: false, performance: false, esports: true }
+    },
+    {
+      id: 'dnsquad9',
+      name: 'DNS: Quad9',
+      desc: "Switches DNS (IPv4 + IPv6) on every active network adapter to Quad9's 9.9.9.9 (blocks known-malicious domains) while gaming, restoring your original DNS on deactivate. Alternative to Cloudflare - mutually exclusive with the other DNS options.",
+      cmd: 'Set-DnsClientServerAddress: 9.9.9.9, 149.112.112.112, 2620:fe::fe, 2620:fe::9',
+      category: 'performance',
+      presets: { balanced: false, performance: false, esports: false }
+    },
+    {
+      id: 'dnsopendns',
+      name: 'DNS: OpenDNS',
+      desc: 'Switches DNS (IPv4 + IPv6) on every active network adapter to OpenDNS while gaming, restoring your original DNS on deactivate. Mutually exclusive with the other DNS options above.',
+      cmd: 'Set-DnsClientServerAddress: 208.67.222.222, 208.67.220.220, 2620:119:35::35, 2620:119:53::53',
+      category: 'performance',
+      presets: { balanced: false, performance: false, esports: false }
     }
   ]
 };
