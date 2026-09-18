@@ -347,6 +347,47 @@ const TWEAK_DEFINITIONS = {
     // Verified live: both disable cleanly and stay disabled.
     applyCmd: `Disable-ScheduledTask -TaskName 'Consolidator' -TaskPath '\\Microsoft\\Windows\\Customer Experience Improvement Program\\' -ErrorAction SilentlyContinue; Disable-ScheduledTask -TaskName 'UsbCeip' -TaskPath '\\Microsoft\\Windows\\Customer Experience Improvement Program\\' -ErrorAction SilentlyContinue; Exit 0`,
     revertCmd: `Enable-ScheduledTask -TaskName 'Consolidator' -TaskPath '\\Microsoft\\Windows\\Customer Experience Improvement Program\\' -ErrorAction SilentlyContinue; Enable-ScheduledTask -TaskName 'UsbCeip' -TaskPath '\\Microsoft\\Windows\\Customer Experience Improvement Program\\' -ErrorAction SilentlyContinue; Exit 0`
+  },
+
+  // ── ADDED (v2.14.0) ─────────────────────────────────────────────────────────
+
+  widgets: {
+    name: 'Widgets off',
+    requiresAdmin: true,
+    // Uses the policy key (removes the taskbar icon system-wide) plus the
+    // wasRunning service pattern already used for fax/retaildemo/etc.,
+    // rather than removing the Web Experience Pack appx package outright -
+    // an appx removal can't be cleanly reverted, and every tweak here must
+    // have a working revertCmd.
+    applyCmd: `$p='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Dsh'; If(!(Test-Path $p)){New-Item -Path $p -Force|Out-Null}; Set-ItemProperty -Path $p -Name 'AllowNewsAndInterests' -Value 0 -Type DWord; $marker = "$env:TEMP\\mgm_wasrunning_widgets.flag"; $svc = Get-Service -Name 'WidgetService' -ErrorAction SilentlyContinue; If ($svc -and $svc.Status -eq 'Running') { New-Item -Path $marker -ItemType File -Force | Out-Null } Else { Remove-Item $marker -ErrorAction SilentlyContinue }; Stop-Service -Name 'WidgetService' -Force -ErrorAction SilentlyContinue; Set-Service -Name 'WidgetService' -StartupType Disabled -ErrorAction SilentlyContinue; Exit 0`,
+    revertCmd: `$p='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Dsh'; If(Test-Path $p){Remove-ItemProperty -Path $p -Name 'AllowNewsAndInterests' -ErrorAction SilentlyContinue}; $marker = "$env:TEMP\\mgm_wasrunning_widgets.flag"; sc.exe config WidgetService start= demand | Out-Null; If (Test-Path $marker) { Remove-Item $marker -ErrorAction SilentlyContinue; Start-Service -Name 'WidgetService' -ErrorAction SilentlyContinue }; Exit 0`
+  },
+
+  activityhistory: {
+    name: 'Activity History off',
+    requiresAdmin: true,
+    // Stops the background disk writes behind Timeline/the Activity feed
+    // (both local recording and any cloud upload of it).
+    applyCmd: `$p='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\System'; If(!(Test-Path $p)){New-Item -Path $p -Force|Out-Null}; Set-ItemProperty -Path $p -Name 'EnableActivityFeed' -Value 0 -Type DWord; Set-ItemProperty -Path $p -Name 'PublishUserActivities' -Value 0 -Type DWord; Set-ItemProperty -Path $p -Name 'UploadUserActivities' -Value 0 -Type DWord; Exit 0`,
+    revertCmd: `$p='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\System'; If(Test-Path $p){Remove-ItemProperty -Path $p -Name 'EnableActivityFeed' -ErrorAction SilentlyContinue; Remove-ItemProperty -Path $p -Name 'PublishUserActivities' -ErrorAction SilentlyContinue; Remove-ItemProperty -Path $p -Name 'UploadUserActivities' -ErrorAction SilentlyContinue}; Exit 0`
+  },
+
+  consumerfeatures: {
+    name: 'Consumer Features off',
+    requiresAdmin: true,
+    // Stops Windows from silently installing suggested/promoted Store apps.
+    applyCmd: `$p='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent'; If(!(Test-Path $p)){New-Item -Path $p -Force|Out-Null}; Set-ItemProperty -Path $p -Name 'DisableWindowsConsumerFeatures' -Value 1 -Type DWord; Exit 0`,
+    revertCmd: `$p='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent'; If(Test-Path $p){Remove-ItemProperty -Path $p -Name 'DisableWindowsConsumerFeatures' -ErrorAction SilentlyContinue}; Exit 0`
+  },
+
+  locationtracking: {
+    name: 'Location Tracking off',
+    requiresAdmin: true,
+    // Policy blocks the location feature system-wide in addition to
+    // stopping the Geolocation Service itself (wasRunning pattern, as
+    // lfsvc is Manual/trigger-start by default, not Automatic).
+    applyCmd: `$p='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors'; If(!(Test-Path $p)){New-Item -Path $p -Force|Out-Null}; Set-ItemProperty -Path $p -Name 'DisableLocation' -Value 1 -Type DWord; $marker = "$env:TEMP\\mgm_wasrunning_lfsvc.flag"; $svc = Get-Service -Name 'lfsvc' -ErrorAction SilentlyContinue; If ($svc -and $svc.Status -eq 'Running') { New-Item -Path $marker -ItemType File -Force | Out-Null } Else { Remove-Item $marker -ErrorAction SilentlyContinue }; Stop-Service -Name 'lfsvc' -Force -ErrorAction SilentlyContinue; Set-Service -Name 'lfsvc' -StartupType Disabled -ErrorAction SilentlyContinue; Exit 0`,
+    revertCmd: `$p='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors'; If(Test-Path $p){Remove-ItemProperty -Path $p -Name 'DisableLocation' -ErrorAction SilentlyContinue}; $marker = "$env:TEMP\\mgm_wasrunning_lfsvc.flag"; sc.exe config lfsvc start= demand | Out-Null; If (Test-Path $marker) { Remove-Item $marker -ErrorAction SilentlyContinue; Start-Service -Name 'lfsvc' -ErrorAction SilentlyContinue }; Exit 0`
   }
 
 };

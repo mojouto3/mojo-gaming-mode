@@ -962,7 +962,9 @@ function iconFor(id) {
     bits: 'cloud-download', pca: 'puzzle', deliveryopt: 'cloud-upload',
     dps: 'stethoscope', cdpsvc: 'devices', usosvc: 'refresh',
     inventorysvc: 'clipboard-list', compatappraiser: 'clipboard-check',
-    ceiptasks: 'chart-bar', nicpower: 'plug-off', netthrottle: 'gauge'
+    ceiptasks: 'chart-bar', nicpower: 'plug-off', netthrottle: 'gauge',
+    widgets: 'layout-grid-remove', activityhistory: 'history-off',
+    consumerfeatures: 'apps-off', locationtracking: 'map-pin-off'
   };
   return map[id] || 'settings';
 }

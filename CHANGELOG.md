@@ -4,6 +4,12 @@ All notable changes to Mojo Gaming Mode are documented here.
 
 ---
 
+## [2.14.0] - 2026-09-18
+
+### Added
+
+- **4 new Windows system tweaks** (CTT WinUtil-inspired): Widgets off (removes the taskbar icon and stops the Widgets background service), Activity History off (stops background disk writes behind Timeline/the Activity feed, including any cloud upload of it), Consumer Features off (stops Windows from silently installing suggested/promoted Store apps), and Location Tracking off (turns off the location service system-wide via policy and stops the Geolocation Service). Activity History and Consumer Features are now part of the Balanced preset as the least invasive of the four; Widgets and Location Tracking join Performance and Esports.
+
 ## [2.13.0] - 2026-08-24
 
 ### Added

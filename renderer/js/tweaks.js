@@ -228,6 +228,38 @@ const TWEAKS = {
       cmd: 'Disable-ScheduledTask: Consolidator, UsbCeip',
       category: 'system',
       presets: { balanced: false, performance: true, esports: true }
+    },
+    {
+      id: 'widgets',
+      name: 'Widgets off',
+      desc: 'Removes the Widgets icon from the taskbar and stops its background service.',
+      cmd: 'Registry: AllowNewsAndInterests=0 & sc stop/disable WidgetService',
+      category: 'system',
+      presets: { balanced: false, performance: true, esports: true }
+    },
+    {
+      id: 'activityhistory',
+      name: 'Activity History off',
+      desc: 'Stops the background disk writes behind Timeline and the Activity feed, including any cloud upload of it.',
+      cmd: 'Registry: EnableActivityFeed=0, PublishUserActivities=0, UploadUserActivities=0',
+      category: 'system',
+      presets: { balanced: true, performance: true, esports: true }
+    },
+    {
+      id: 'consumerfeatures',
+      name: 'Consumer Features off',
+      desc: "Stops Windows from silently installing suggested or promoted Store apps.",
+      cmd: 'Registry: DisableWindowsConsumerFeatures=1',
+      category: 'system',
+      presets: { balanced: true, performance: true, esports: true }
+    },
+    {
+      id: 'locationtracking',
+      name: 'Location Tracking off',
+      desc: 'Turns off the location service system-wide via policy and stops the Geolocation Service.',
+      cmd: 'Registry: DisableLocation=1 & sc stop/disable lfsvc',
+      category: 'system',
+      presets: { balanced: false, performance: true, esports: true }
     }
   ],
   ov: [
