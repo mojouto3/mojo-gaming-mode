@@ -232,8 +232,8 @@ const TWEAKS = {
     {
       id: 'widgets',
       name: 'Widgets off',
-      desc: 'Removes the Widgets icon from the taskbar and stops its background service.',
-      cmd: 'Registry: AllowNewsAndInterests=0 & sc stop/disable WidgetService',
+      desc: 'Removes the Widgets icon from the taskbar (same toggle as Settings > Personalization > Taskbar) and closes the Widgets panel if open.',
+      cmd: 'Registry: TaskbarDa=0 & Stop-Process Widgets.exe',
       category: 'system',
       presets: { balanced: false, performance: true, esports: true }
     },

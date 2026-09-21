@@ -4,6 +4,12 @@ All notable changes to Mojo Gaming Mode are documented here.
 
 ---
 
+## [2.14.1] - 2026-09-21
+
+### Fixed
+
+- **Widgets off tweak** - the two original assumptions behind it were both wrong on real hardware: the `Policies\Microsoft\Dsh` registry key throws "unauthorized operation" even from an elevated process, and there is no "WidgetService" Windows service to stop/disable. Switched to `TaskbarDa` (the same per-user registry value Settings > Personalization > Taskbar's own "Widgets" toggle writes - no elevation needed) paired with closing `Widgets.exe` if already open. Found via live testing on a real machine after v2.14.0 shipped.
+
 ## [2.14.0] - 2026-09-18
 
 ### Added
