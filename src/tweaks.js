@@ -353,14 +353,18 @@ const TWEAK_DEFINITIONS = {
 
   widgets: {
     name: 'Widgets off',
-    requiresAdmin: true,
-    // Uses the policy key (removes the taskbar icon system-wide) plus the
-    // wasRunning service pattern already used for fax/retaildemo/etc.,
-    // rather than removing the Web Experience Pack appx package outright -
-    // an appx removal can't be cleanly reverted, and every tweak here must
-    // have a working revertCmd.
-    applyCmd: `$p='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Dsh'; If(!(Test-Path $p)){New-Item -Path $p -Force|Out-Null}; Set-ItemProperty -Path $p -Name 'AllowNewsAndInterests' -Value 0 -Type DWord; $marker = "$env:TEMP\\mgm_wasrunning_widgets.flag"; $svc = Get-Service -Name 'WidgetService' -ErrorAction SilentlyContinue; If ($svc -and $svc.Status -eq 'Running') { New-Item -Path $marker -ItemType File -Force | Out-Null } Else { Remove-Item $marker -ErrorAction SilentlyContinue }; Stop-Service -Name 'WidgetService' -Force -ErrorAction SilentlyContinue; Set-Service -Name 'WidgetService' -StartupType Disabled -ErrorAction SilentlyContinue; Exit 0`,
-    revertCmd: `$p='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Dsh'; If(Test-Path $p){Remove-ItemProperty -Path $p -Name 'AllowNewsAndInterests' -ErrorAction SilentlyContinue}; $marker = "$env:TEMP\\mgm_wasrunning_widgets.flag"; sc.exe config WidgetService start= demand | Out-Null; If (Test-Path $marker) { Remove-Item $marker -ErrorAction SilentlyContinue; Start-Service -Name 'WidgetService' -ErrorAction SilentlyContinue }; Exit 0`
+    requiresAdmin: false,
+    // Live-tested finding (v2.14.0 field report): the HKLM policy key
+    // (Policies\Microsoft\Dsh\AllowNewsAndInterests) throws "unauthorized
+    // operation" even from an elevated process on real hardware, and
+    // "WidgetService" does not exist as an actual Windows service to
+    // stop/disable - both original assumptions were wrong. TaskbarDa is the
+    // same per-user registry value Settings > Personalization > Taskbar's
+    // own "Widgets" toggle writes, needs no elevation, and is paired with
+    // closing Widgets.exe if it's already open (same as the cr_widgets
+    // Quick Rule elsewhere in this file).
+    applyCmd: `$p='HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced'; If(!(Test-Path $p)){New-Item -Path $p -Force|Out-Null}; Set-ItemProperty -Path $p -Name 'TaskbarDa' -Value 0 -Type DWord; Get-Process -Name 'Widgets' -ErrorAction SilentlyContinue | Stop-Process -Force; Exit 0`,
+    revertCmd: `$p='HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced'; If(Test-Path $p){Remove-ItemProperty -Path $p -Name 'TaskbarDa' -ErrorAction SilentlyContinue}; Exit 0`
   },
 
   activityhistory: {
